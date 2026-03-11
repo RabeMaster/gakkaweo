@@ -1,6 +1,17 @@
+[project]
+name = "gakkaweo-ai-service"
+version = "0.1.0"
+description = "가까워 AI 유사도 측정 서비스"
+requires-python = ">=3.14"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "sentence-transformers",
+]
+
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py314"
 
 [tool.ruff.lint]
 select = [
