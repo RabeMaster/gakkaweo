@@ -11,6 +11,14 @@ quote_type = double
 indent_style = space
 indent_size = 2
 
-[*.{java,py,md,yml,yaml}]
+[*.java]
+indent_style = space
+indent_size = 2
+
+[*.py]
 indent_style = space
 indent_size = 4
+
+[*.{md,yml,yaml}]
+indent_style = space
+indent_size = 2
