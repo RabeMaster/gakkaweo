@@ -4,14 +4,17 @@ spring:
   config:
     import: optional:file:.env[.properties]
   datasource:
-    url: jdbc:postgresql://localhost:${DB_PORT}/gakkaweo
+    url: jdbc:postgresql://localhost:${DB_PORT}/gakkaweo?stringtype=unspecified
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   data:
     redis:
       host: localhost
