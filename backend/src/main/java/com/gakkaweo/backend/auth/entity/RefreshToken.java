@@ -44,7 +44,7 @@ public class RefreshToken {
 
   private LocalDateTime createdAt;
 
-  @Setter private Boolean revoked = false;
+  @Setter private boolean revoked = false;
 
   public RefreshToken(Member member, String tokenHash, UUID familyId, LocalDateTime expiresAt) {
     this.member = member;
