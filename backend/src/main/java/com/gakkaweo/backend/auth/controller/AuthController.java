@@ -41,8 +41,11 @@ public class AuthController {
   }
 
   @PostMapping("/logout")
-  public ResponseEntity<Void> logout(@CookieValue("access_token") String accessToken) {
-    authService.logout(accessToken);
+  public ResponseEntity<Void> logout(
+      @CookieValue(value = "access_token", required = false) String accessToken) {
+    if (accessToken != null) {
+      authService.logout(accessToken);
+    }
 
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteAccessTokenCookie().toString())

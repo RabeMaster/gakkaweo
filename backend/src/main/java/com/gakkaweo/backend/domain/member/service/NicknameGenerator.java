@@ -34,21 +34,18 @@ public class NicknameGenerator {
     ThreadLocalRandom random = ThreadLocalRandom.current();
 
     for (int i = 0; i < MAX_RETRIES; i++) {
-      String nickname =
-          ADJECTIVES.get(random.nextInt(ADJECTIVES.size()))
-              + " "
-              + NOUNS.get(random.nextInt(NOUNS.size()));
+      String nickname = createRandomNickname(random);
       if (!memberRepository.existsByNickname(nickname)) {
         return nickname;
       }
     }
 
-    String fallback =
-        ADJECTIVES.get(random.nextInt(ADJECTIVES.size()))
-            + " "
-            + NOUNS.get(random.nextInt(NOUNS.size()))
-            + "_"
-            + random.nextInt(1000, 10000);
-    return fallback;
+    return createRandomNickname(random) + "_" + random.nextInt(1000, 10000);
+  }
+
+  private String createRandomNickname(ThreadLocalRandom random) {
+    return ADJECTIVES.get(random.nextInt(ADJECTIVES.size()))
+        + " "
+        + NOUNS.get(random.nextInt(NOUNS.size()));
   }
 }

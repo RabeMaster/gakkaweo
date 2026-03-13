@@ -1,5 +1,7 @@
 package com.gakkaweo.backend.auth.jwt;
 
+import static com.gakkaweo.backend.auth.service.AuthService.BLACKLIST_PREFIX;
+
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -66,6 +68,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   private boolean isBlacklisted(String jti) {
-    return redisTemplate.hasKey("blacklist:jti:" + jti);
+    return redisTemplate.hasKey(BLACKLIST_PREFIX + jti);
   }
 }

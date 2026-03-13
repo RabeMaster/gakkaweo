@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AuthService {
 
+  public static final String BLACKLIST_PREFIX = "blacklist:jti:";
+
   private final JwtProvider jwtProvider;
   private final RefreshTokenService refreshTokenService;
   private final MemberRepository memberRepository;
@@ -62,7 +64,7 @@ public class AuthService {
     if (remainingMillis > 0) {
       redisTemplate
           .opsForValue()
-          .set("blacklist:jti:" + jti, "logout", Duration.ofMillis(remainingMillis));
+          .set(BLACKLIST_PREFIX + jti, "logout", Duration.ofMillis(remainingMillis));
     }
   }
 
