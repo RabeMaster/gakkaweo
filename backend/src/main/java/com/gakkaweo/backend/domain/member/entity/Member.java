@@ -24,12 +24,12 @@ import lombok.Setter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member {
 
+  @Column(unique = true, nullable = false, updatable = false)
+  private final UUID publicId = UUID.randomUUID();
+
   @Id
   @GeneratedValue(strategy = IDENTITY)
   private Long id;
-
-  @Column(unique = true, nullable = false, updatable = false)
-  private UUID publicId = UUID.randomUUID();
 
   @Setter
   @Column(nullable = false, length = 50)
