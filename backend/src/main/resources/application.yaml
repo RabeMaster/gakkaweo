@@ -74,6 +74,19 @@ cookie:
 app:
   oauth2:
     authorized-redirect-uri: ${OAUTH_REDIRECT_URI:http://localhost:3000}
+  ai-service:
+    url: ${AI_SERVICE_URL:http://localhost:8000}
+    timeout: ${AI_SERVICE_TIMEOUT:3s}
+    similarity-cache-ttl: 24h
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      aiService:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
 
 server:
   port: 8080
