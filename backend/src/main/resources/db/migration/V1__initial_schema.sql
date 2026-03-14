@@ -8,18 +8,18 @@ CREATE TABLE members
     public_id   UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
     nickname    VARCHAR(50) NOT NULL,
     profile_url VARCHAR(500),
-    role       VARCHAR(20) DEFAULT 'USER',
-    created_at TIMESTAMP   DEFAULT NOW(),
-    updated_at TIMESTAMP   DEFAULT NOW()
+    role        VARCHAR(20)          DEFAULT 'USER',
+    created_at  TIMESTAMP            DEFAULT NOW(),
+    updated_at  TIMESTAMP            DEFAULT NOW()
 );
 
 -- 소셜 계정 연동
 CREATE TABLE social_accounts
 (
     id           BIGSERIAL PRIMARY KEY,
-    member_id   BIGINT       NOT NULL REFERENCES members (id),
+    member_id    BIGINT          NOT NULL REFERENCES members (id),
     provider     social_provider NOT NULL,
-    provider_id VARCHAR(100) NOT NULL,
+    provider_id  VARCHAR(100)    NOT NULL,
     email        VARCHAR(255),
     connected_at TIMESTAMP DEFAULT NOW(),
     UNIQUE (provider, provider_id)
@@ -43,15 +43,15 @@ CREATE TABLE game_sessions
 (
     id              BIGSERIAL PRIMARY KEY,
     public_id       UUID UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-    member_id       BIGINT NOT NULL REFERENCES members (id),
-    sentence_id     BIGINT NOT NULL REFERENCES daily_sentences (id),
-    status          VARCHAR(20)   DEFAULT 'IN_PROGRESS',
-    best_similarity DECIMAL(5, 2) DEFAULT 0,
-    attempt_count   INT           DEFAULT 0,
+    member_id       BIGINT      NOT NULL REFERENCES members (id),
+    sentence_id     BIGINT      NOT NULL REFERENCES daily_sentences (id),
+    status          VARCHAR(20)          DEFAULT 'IN_PROGRESS',
+    best_similarity DECIMAL(5, 2)        DEFAULT 0,
+    attempt_count   INT                  DEFAULT 0,
     cleared_at      TIMESTAMP,
-    version         INT           DEFAULT 0,
-    created_at      TIMESTAMP     DEFAULT NOW(),
-    updated_at      TIMESTAMP     DEFAULT NOW(),
+    version         INT                  DEFAULT 0,
+    created_at      TIMESTAMP            DEFAULT NOW(),
+    updated_at      TIMESTAMP            DEFAULT NOW(),
     UNIQUE (member_id, sentence_id)
 );
 
@@ -70,9 +70,9 @@ CREATE TABLE guess_history
 CREATE TABLE sentence_uploads
 (
     id           BIGSERIAL PRIMARY KEY,
-    admin_id     BIGINT NOT NULL REFERENCES members (id),
+    admin_id     BIGINT       NOT NULL REFERENCES members (id),
     file_name    VARCHAR(255) NOT NULL,
-    record_count INT    NOT NULL,
+    record_count INT          NOT NULL,
     created_at   TIMESTAMP DEFAULT NOW()
 );
 
