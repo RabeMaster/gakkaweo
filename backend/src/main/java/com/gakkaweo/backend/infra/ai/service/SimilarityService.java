@@ -5,7 +5,6 @@ import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.infra.ai.client.AiServiceClient;
 import com.gakkaweo.backend.infra.ai.client.dto.SimilarityResponse;
 import com.gakkaweo.backend.infra.ai.config.AiServiceProperties;
-import com.gakkaweo.backend.infra.ai.exception.AiServiceException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.math.BigDecimal;
@@ -41,6 +40,9 @@ public class SimilarityService {
 
   public BigDecimal calculateSimilarity(Long sentenceId, String guessText, String sentenceText) {
     String normalized = textNormalizer.normalize(guessText);
+    if (normalized.isEmpty()) {
+      throw new BusinessException(ErrorCode.INVALID_GUESS_TEXT);
+    }
     String cacheKey = buildCacheKey(sentenceId, normalized);
 
     BigDecimal cached = getFromCache(cacheKey);
@@ -62,8 +64,6 @@ public class SimilarityService {
                 aiServiceClient.calculateSimilarity(sentenceText, normalized);
             return BigDecimal.valueOf(response.score());
           });
-    } catch (AiServiceException e) {
-      return fallback(cacheKey, e);
     } catch (Exception e) {
       return fallback(cacheKey, e);
     }

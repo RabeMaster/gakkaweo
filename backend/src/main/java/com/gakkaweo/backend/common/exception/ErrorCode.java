@@ -14,6 +14,7 @@ public enum ErrorCode {
   INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다"),
   MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다"),
   OAUTH_PROVIDER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 로그인 프로바이더입니다"),
+  INVALID_GUESS_TEXT(HttpStatus.BAD_REQUEST, "유효하지 않은 추측 입력입니다"),
   AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스를 일시적으로 이용할 수 없습니다");
 
   private final HttpStatus status;

@@ -6,9 +6,8 @@ import com.gakkaweo.backend.infra.ai.exception.AiServiceException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 @Component
 @RequiredArgsConstructor
@@ -25,10 +24,8 @@ public class AiServiceClient {
           .body(new SimilarityRequest(text1, text2))
           .retrieve()
           .body(SimilarityResponse.class);
-    } catch (ResourceAccessException e) {
-      throw new AiServiceException("AI 서비스 연결 실패", e);
-    } catch (HttpClientErrorException e) {
-      throw new AiServiceException("AI 서비스 요청 오류: " + e.getStatusCode(), e);
+    } catch (RestClientException e) {
+      throw new AiServiceException("AI 서비스 요청 실패", e);
     }
   }
 
@@ -36,7 +33,7 @@ public class AiServiceClient {
     try {
       aiServiceRestClient.get().uri("/health").retrieve().toBodilessEntity();
       return true;
-    } catch (Exception e) {
+    } catch (RestClientException e) {
       return false;
     }
   }
