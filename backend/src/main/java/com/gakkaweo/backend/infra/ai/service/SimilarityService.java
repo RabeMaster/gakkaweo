@@ -4,10 +4,10 @@ import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.infra.ai.client.AiServiceClient;
 import com.gakkaweo.backend.infra.ai.client.dto.SimilarityResponse;
-import com.gakkaweo.backend.infra.ai.config.AiServiceProperties;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -22,23 +22,21 @@ public class SimilarityService {
   private final AiServiceClient aiServiceClient;
   private final TextNormalizer textNormalizer;
   private final StringRedisTemplate redisTemplate;
-  private final AiServiceProperties properties;
   private final CircuitBreaker circuitBreaker;
 
   public SimilarityService(
       AiServiceClient aiServiceClient,
       TextNormalizer textNormalizer,
       StringRedisTemplate redisTemplate,
-      AiServiceProperties properties,
       CircuitBreakerRegistry circuitBreakerRegistry) {
     this.aiServiceClient = aiServiceClient;
     this.textNormalizer = textNormalizer;
     this.redisTemplate = redisTemplate;
-    this.properties = properties;
     this.circuitBreaker = circuitBreakerRegistry.circuitBreaker("aiService");
   }
 
-  public BigDecimal calculateSimilarity(Long sentenceId, String guessText, String sentenceText) {
+  public BigDecimal calculateSimilarity(
+      Long sentenceId, String guessText, String sentenceText, Duration cacheTtl) {
     String normalized = textNormalizer.normalize(guessText);
     if (normalized.isEmpty()) {
       throw new BusinessException(ErrorCode.INVALID_GUESS_TEXT);
@@ -50,34 +48,23 @@ public class SimilarityService {
       return cached;
     }
 
-    BigDecimal score = callWithCircuitBreaker(sentenceText, normalized, cacheKey);
-    saveToCache(cacheKey, score);
+    BigDecimal score = callWithCircuitBreaker(sentenceText, normalized);
+    saveToCache(cacheKey, score, cacheTtl);
     return score;
   }
 
-  private BigDecimal callWithCircuitBreaker(
-      String sentenceText, String normalized, String cacheKey) {
+  private BigDecimal callWithCircuitBreaker(String sentenceText, String normalized) {
     try {
       return circuitBreaker.executeSupplier(
           () -> {
             SimilarityResponse response =
                 aiServiceClient.calculateSimilarity(sentenceText, normalized);
-            return BigDecimal.valueOf(response.score());
+            return BigDecimal.valueOf(response.score()).setScale(1, RoundingMode.HALF_UP);
           });
     } catch (Exception e) {
-      return fallback(cacheKey, e);
+      log.warn("AI 서비스 호출 실패: {}", e.getMessage());
+      throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
     }
-  }
-
-  private BigDecimal fallback(String cacheKey, Throwable t) {
-    log.warn("AI 서비스 호출 실패, 캐시 폴백 시도: {}", t.getMessage());
-
-    BigDecimal cached = getFromCache(cacheKey);
-    if (cached != null) {
-      return cached;
-    }
-
-    throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
   }
 
   private String buildCacheKey(Long sentenceId, String normalizedText) {
@@ -97,9 +84,8 @@ public class SimilarityService {
     return null;
   }
 
-  private void saveToCache(String cacheKey, BigDecimal score) {
+  private void saveToCache(String cacheKey, BigDecimal score, Duration ttl) {
     try {
-      Duration ttl = properties.getSimilarityCacheTtl();
       redisTemplate.opsForValue().set(cacheKey, score.toPlainString(), ttl);
     } catch (Exception e) {
       log.warn("Redis 캐시 저장 실패: {}", e.getMessage());
