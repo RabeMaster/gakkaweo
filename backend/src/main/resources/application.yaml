@@ -77,7 +77,6 @@ app:
   ai-service:
     url: ${AI_SERVICE_URL:http://localhost:8000}
     timeout: ${AI_SERVICE_TIMEOUT:3s}
-    similarity-cache-ttl: 24h
   game:
     similarity-threshold: ${SIMILARITY_THRESHOLD:95.0}
 

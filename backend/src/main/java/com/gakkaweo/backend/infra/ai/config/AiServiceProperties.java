@@ -12,5 +12,4 @@ public class AiServiceProperties {
 
   private final String url;
   private final Duration timeout;
-  private final Duration similarityCacheTtl;
 }
