@@ -34,7 +34,7 @@ public class GuessHistory {
   @Column(nullable = false, columnDefinition = "TEXT")
   private String guessText;
 
-  @Column(nullable = false, precision = 5, scale = 2)
+  @Column(nullable = false, precision = 4, scale = 1)
   private BigDecimal similarity;
 
   @Column(nullable = false)

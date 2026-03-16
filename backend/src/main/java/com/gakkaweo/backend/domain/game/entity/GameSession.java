@@ -23,7 +23,6 @@ import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Entity
 @Table(
@@ -48,18 +47,16 @@ public class GameSession {
   @JoinColumn(name = "sentence_id", nullable = false)
   private DailySentence sentence;
 
-  @Setter
   @Enumerated(EnumType.STRING)
   @Column(length = 20)
   private GameSessionStatus status = GameSessionStatus.IN_PROGRESS;
 
-  @Setter
-  @Column(precision = 5, scale = 2)
+  @Column(precision = 4, scale = 1)
   private BigDecimal bestSimilarity = BigDecimal.ZERO;
 
-  @Setter private Integer attemptCount = 0;
+  private Integer attemptCount = 0;
 
-  @Setter private LocalDateTime clearedAt;
+  private LocalDateTime clearedAt;
 
   @Version private Integer version;
 
@@ -70,6 +67,29 @@ public class GameSession {
   public GameSession(Member member, DailySentence sentence) {
     this.member = member;
     this.sentence = sentence;
+  }
+
+  public void incrementAttempt() {
+    this.attemptCount++;
+  }
+
+  public void updateBestSimilarity(BigDecimal similarity) {
+    if (similarity.compareTo(this.bestSimilarity) > 0) {
+      this.bestSimilarity = similarity;
+    }
+  }
+
+  public void markCleared() {
+    this.status = GameSessionStatus.CLEARED;
+    this.clearedAt = LocalDateTime.now();
+  }
+
+  public void markGivenUp() {
+    this.status = GameSessionStatus.GIVEN_UP;
+  }
+
+  public boolean isInProgress() {
+    return this.status == GameSessionStatus.IN_PROGRESS;
   }
 
   @PrePersist
