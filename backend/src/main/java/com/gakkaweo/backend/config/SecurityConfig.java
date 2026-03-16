@@ -11,6 +11,7 @@ import com.gakkaweo.backend.auth.oauth2.service.CustomOAuth2UserService;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -57,6 +58,12 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/health", "/auth/refresh")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/daily/today")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, "/daily/guess")
+                    .permitAll()
+                    .requestMatchers("/daily/**")
+                    .authenticated()
                     .anyRequest()
                     .authenticated())
         .oauth2Login(
