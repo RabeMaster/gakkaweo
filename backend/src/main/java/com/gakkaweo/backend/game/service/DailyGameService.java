@@ -242,7 +242,9 @@ public class DailyGameService {
       throw switch (session.getStatus()) {
         case CLEARED -> new BusinessException(ErrorCode.GAME_ALREADY_CLEARED);
         case GIVEN_UP -> new BusinessException(ErrorCode.GAME_ALREADY_GIVEN_UP);
-        case EXPIRED -> new BusinessException(ErrorCode.GAME_EXPIRED);
+        case EXPIRED ->
+            new BusinessException(
+                ErrorCode.GAME_EXPIRED); // 자정 스케줄러에서 IN_PROGRESS → EXPIRED 일괄 전이 예정
         default -> new IllegalStateException("도달할 수 없는 상태: " + session.getStatus());
       };
     }

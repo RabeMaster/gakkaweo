@@ -4,6 +4,8 @@ import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.infra.ai.client.AiServiceClient;
 import com.gakkaweo.backend.infra.ai.client.dto.SimilarityResponse;
+import com.gakkaweo.backend.infra.ai.exception.AiServiceException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.math.BigDecimal;
@@ -61,7 +63,10 @@ public class SimilarityService {
                 aiServiceClient.calculateSimilarity(sentenceText, normalized);
             return BigDecimal.valueOf(response.score()).setScale(1, RoundingMode.HALF_UP);
           });
-    } catch (Exception e) {
+    } catch (CallNotPermittedException e) {
+      log.warn("서킷 브레이커 OPEN 상태: {}", e.getMessage());
+      throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
+    } catch (AiServiceException e) {
       log.warn("AI 서비스 호출 실패: {}", e.getMessage());
       throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
     }
