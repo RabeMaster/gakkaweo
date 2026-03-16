@@ -15,7 +15,14 @@ public enum ErrorCode {
   MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "회원을 찾을 수 없습니다"),
   OAUTH_PROVIDER_NOT_SUPPORTED(HttpStatus.BAD_REQUEST, "지원하지 않는 소셜 로그인 프로바이더입니다"),
   INVALID_GUESS_TEXT(HttpStatus.BAD_REQUEST, "유효하지 않은 추측 입력입니다"),
-  AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스를 일시적으로 이용할 수 없습니다");
+  AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스를 일시적으로 이용할 수 없습니다"),
+
+  SENTENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "오늘의 문제를 찾을 수 없습니다"),
+  SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "게임 세션을 찾을 수 없습니다"),
+  GAME_ALREADY_CLEARED(HttpStatus.CONFLICT, "이미 정답을 맞춘 게임입니다"),
+  GAME_ALREADY_GIVEN_UP(HttpStatus.CONFLICT, "이미 포기한 게임입니다"),
+  GAME_EXPIRED(HttpStatus.CONFLICT, "만료된 게임입니다"),
+  CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "동시 수정 충돌이 발생했습니다");
 
   private final HttpStatus status;
   private final String message;
