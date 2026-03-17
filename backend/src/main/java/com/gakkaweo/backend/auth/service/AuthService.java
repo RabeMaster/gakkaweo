@@ -11,11 +11,13 @@ import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import io.jsonwebtoken.Claims;
 import java.time.Duration;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class AuthService {
 
   public static final String BLACKLIST_PREFIX = "blacklist:jti:";
@@ -41,6 +43,7 @@ public class AuthService {
     String accessToken =
         jwtProvider.createAccessToken(member.getPublicId(), member.getRole().name());
     String refreshToken = refreshTokenService.createRefreshToken(member);
+    log.info("토큰 발급: memberId={}", member.getPublicId());
     return new TokenPair(accessToken, refreshToken);
   }
 
@@ -53,6 +56,7 @@ public class AuthService {
     String accessToken =
         jwtProvider.createAccessToken(member.getPublicId(), member.getRole().name());
 
+    log.info("토큰 갱신: memberId={}", member.getPublicId());
     return new TokenPair(accessToken, newRawRefreshToken);
   }
 
@@ -66,6 +70,7 @@ public class AuthService {
           .opsForValue()
           .set(BLACKLIST_PREFIX + jti, "logout", Duration.ofMillis(remainingMillis));
     }
+    log.info("로그아웃: jti={}", jti);
   }
 
   @Transactional(readOnly = true)

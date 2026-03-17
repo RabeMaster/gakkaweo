@@ -9,12 +9,14 @@ import com.gakkaweo.backend.auth.util.CookieUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
   private final AuthService authService;
@@ -38,6 +40,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
       HttpServletRequest request, HttpServletResponse response, Authentication authentication)
       throws IOException {
     CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
+    log.info("OAuth2 로그인 성공: memberId={}", oAuth2User.getMember().getPublicId());
     TokenPair tokenPair = authService.issueTokens(oAuth2User.getMember());
 
     response.addHeader(

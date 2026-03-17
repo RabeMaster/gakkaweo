@@ -13,10 +13,12 @@ import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class RefreshTokenService {
 
   private final RefreshTokenRepository refreshTokenRepository;
@@ -50,11 +52,13 @@ public class RefreshTokenService {
             .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
 
     if (existing.isRevoked()) {
+      log.warn("Refresh Token 재사용 감지: familyId={}", existing.getFamilyId());
       revokeFamily(existing.getFamilyId());
       throw new BusinessException(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
     }
 
     if (existing.getExpiresAt().isBefore(LocalDateTime.now())) {
+      log.warn("만료된 Refresh Token 사용 시도: familyId={}", existing.getFamilyId());
       existing.setRevoked(true);
       throw new BusinessException(ErrorCode.EXPIRED_TOKEN);
     }
@@ -76,6 +80,7 @@ public class RefreshTokenService {
   public void revokeFamily(UUID familyId) {
     List<RefreshToken> tokens = refreshTokenRepository.findByFamilyId(familyId);
     tokens.forEach(token -> token.setRevoked(true));
+    log.info("Token Family 폐기: familyId={}, count={}", familyId, tokens.size());
   }
 
   @Transactional(readOnly = true)

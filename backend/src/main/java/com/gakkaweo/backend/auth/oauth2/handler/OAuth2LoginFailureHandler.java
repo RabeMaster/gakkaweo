@@ -7,11 +7,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
 
   private final OAuth2Properties oAuth2Properties;
@@ -28,6 +30,7 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
   public void onAuthenticationFailure(
       HttpServletRequest request, HttpServletResponse response, AuthenticationException exception)
       throws IOException {
+    log.warn("OAuth2 로그인 실패: {}", exception.getMessage());
     authorizationRequestRepository.deleteCookie(response);
 
     String errorMessage =
