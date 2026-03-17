@@ -70,12 +70,21 @@ public class DailyGameService {
 
     Instant expiresAt = LocalDate.now(KST).plusDays(1).atStartOfDay(KST).toInstant();
 
+    LocalDate yesterday = LocalDate.now(KST).minusDays(1);
+    String yesterdaySentence =
+        dailySentenceRepository
+            .findByUsedAt(yesterday)
+            .map(DailySentence::getSentence)
+            .orElse(null);
+
     return new TodayResponse(
         sentence.getPublicId(),
         hint.mask(),
         hint.charCounts().size(),
         hint.charCounts(),
-        expiresAt);
+        expiresAt,
+        yesterdaySentence,
+        yesterdaySentence != null ? yesterday : null);
   }
 
   @Transactional
@@ -150,10 +159,7 @@ public class DailyGameService {
     log.info("게임 포기: memberId={}, sentenceId={}", memberPublicId, sentenceId);
 
     return new GiveUpResponse(
-        sentence.getSentence(),
-        session.getAttemptCount(),
-        session.getBestSimilarity(),
-        session.getStatus().name());
+        session.getAttemptCount(), session.getBestSimilarity(), session.getStatus().name());
   }
 
   @Transactional(readOnly = true)

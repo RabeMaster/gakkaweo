@@ -10,7 +10,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Component
 @Slf4j
@@ -20,25 +20,28 @@ public class DailySentenceScheduler {
 
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
+  private final TransactionTemplate transactionTemplate;
 
   public DailySentenceScheduler(
       DailySentenceRepository dailySentenceRepository,
-      GameSessionRepository gameSessionRepository) {
+      GameSessionRepository gameSessionRepository,
+      TransactionTemplate transactionTemplate) {
     this.dailySentenceRepository = dailySentenceRepository;
     this.gameSessionRepository = gameSessionRepository;
+    this.transactionTemplate = transactionTemplate;
   }
 
   @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
   public void selectDailySentence() {
     log.info("일일 스케줄러 시작");
     try {
-      expireYesterdaySessions();
+      transactionTemplate.executeWithoutResult(status -> expireYesterdaySessions());
     } catch (Exception e) {
       log.error("전날 세션 만료 처리 실패: {}", e.getMessage(), e);
     }
 
     try {
-      selectTodaySentence();
+      transactionTemplate.executeWithoutResult(status -> selectTodaySentence());
     } catch (Exception e) {
       log.error("오늘의 문장 선정 실패: {}", e.getMessage(), e);
     }
@@ -54,8 +57,7 @@ public class DailySentenceScheduler {
     }
   }
 
-  @Transactional
-  public void expireYesterdaySessions() {
+  private void expireYesterdaySessions() {
     LocalDate yesterday = LocalDate.now(KST).minusDays(1);
     dailySentenceRepository
         .findByUsedAt(yesterday)
@@ -68,8 +70,7 @@ public class DailySentenceScheduler {
             });
   }
 
-  @Transactional
-  public void selectTodaySentence() {
+  private void selectTodaySentence() {
     LocalDate today = LocalDate.now(KST);
 
     if (dailySentenceRepository.findByUsedAt(today).isPresent()) {
