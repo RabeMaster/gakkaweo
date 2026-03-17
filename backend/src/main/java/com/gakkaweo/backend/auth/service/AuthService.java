@@ -2,10 +2,10 @@ package com.gakkaweo.backend.auth.service;
 
 import com.gakkaweo.backend.auth.dto.AuthResponse;
 import com.gakkaweo.backend.auth.dto.TokenPair;
-import com.gakkaweo.backend.auth.entity.RefreshToken;
 import com.gakkaweo.backend.auth.jwt.JwtProvider;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.domain.auth.entity.RefreshToken;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import io.jsonwebtoken.Claims;

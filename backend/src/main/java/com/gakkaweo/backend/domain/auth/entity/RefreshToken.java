@@ -1,4 +1,4 @@
-package com.gakkaweo.backend.auth.entity;
+package com.gakkaweo.backend.domain.auth.entity;
 
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
