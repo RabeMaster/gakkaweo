@@ -8,6 +8,9 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
   jpa:
     hibernate:
       ddl-auto: validate

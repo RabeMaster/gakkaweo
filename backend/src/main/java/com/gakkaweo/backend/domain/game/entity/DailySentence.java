@@ -10,8 +10,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -49,7 +49,7 @@ public class DailySentence {
   @Column(length = 20)
   private DailySentenceStatus status = DailySentenceStatus.ACTIVE;
 
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
   public DailySentence(String sentence) {
     this.sentence = sentence;
@@ -57,6 +57,6 @@ public class DailySentence {
 
   @PrePersist
   protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
+    this.createdAt = Instant.now();
   }
 }

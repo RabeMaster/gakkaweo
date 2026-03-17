@@ -12,7 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,7 +37,7 @@ public class SentenceUpload {
   @Column(nullable = false)
   private Integer recordCount;
 
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
   public SentenceUpload(Member admin, String fileName, Integer recordCount) {
     this.admin = admin;
@@ -47,6 +47,6 @@ public class SentenceUpload {
 
   @PrePersist
   protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
+    this.createdAt = Instant.now();
   }
 }

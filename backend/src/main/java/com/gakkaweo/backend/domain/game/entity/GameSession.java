@@ -18,7 +18,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -56,13 +56,13 @@ public class GameSession {
 
   private Integer attemptCount = 0;
 
-  private LocalDateTime clearedAt;
+  private Instant clearedAt;
 
   @Version private Integer version;
 
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
-  private LocalDateTime updatedAt;
+  private Instant updatedAt;
 
   public GameSession(Member member, DailySentence sentence) {
     this.member = member;
@@ -81,7 +81,7 @@ public class GameSession {
 
   public void markCleared() {
     this.status = GameSessionStatus.CLEARED;
-    this.clearedAt = LocalDateTime.now();
+    this.clearedAt = Instant.now();
   }
 
   public void markGivenUp() {
@@ -94,12 +94,12 @@ public class GameSession {
 
   @PrePersist
   protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
-    this.updatedAt = LocalDateTime.now();
+    this.createdAt = Instant.now();
+    this.updatedAt = Instant.now();
   }
 
   @PreUpdate
   protected void onUpdate() {
-    this.updatedAt = LocalDateTime.now();
+    this.updatedAt = Instant.now();
   }
 }

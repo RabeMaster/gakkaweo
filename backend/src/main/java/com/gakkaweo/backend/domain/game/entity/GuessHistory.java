@@ -12,7 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,7 +40,7 @@ public class GuessHistory {
   @Column(nullable = false)
   private Integer attemptNumber;
 
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
   public GuessHistory(
       GameSession session, String guessText, BigDecimal similarity, Integer attemptNumber) {
@@ -52,6 +52,6 @@ public class GuessHistory {
 
   @PrePersist
   protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
+    this.createdAt = Instant.now();
   }
 }
