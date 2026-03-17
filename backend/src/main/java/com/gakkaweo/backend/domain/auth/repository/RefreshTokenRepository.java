@@ -1,6 +1,6 @@
-package com.gakkaweo.backend.auth.repository;
+package com.gakkaweo.backend.domain.auth.repository;
 
-import com.gakkaweo.backend.auth.entity.RefreshToken;
+import com.gakkaweo.backend.domain.auth.entity.RefreshToken;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;

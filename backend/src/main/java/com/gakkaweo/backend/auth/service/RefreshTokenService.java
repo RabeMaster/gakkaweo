@@ -1,10 +1,10 @@
 package com.gakkaweo.backend.auth.service;
 
 import com.gakkaweo.backend.auth.config.JwtProperties;
-import com.gakkaweo.backend.auth.entity.RefreshToken;
-import com.gakkaweo.backend.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.domain.auth.entity.RefreshToken;
+import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
