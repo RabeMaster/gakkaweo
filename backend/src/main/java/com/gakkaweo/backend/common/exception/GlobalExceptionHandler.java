@@ -1,6 +1,6 @@
 package com.gakkaweo.backend.common.exception;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            LocalDateTime.now().toString());
+            Instant.now().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
@@ -39,10 +39,7 @@ public class GlobalExceptionHandler {
     log.warn("유효성 검증 실패: {}", message);
     ErrorBody body =
         new ErrorBody(
-            HttpStatus.BAD_REQUEST.value(),
-            "VALIDATION_FAILED",
-            message,
-            LocalDateTime.now().toString());
+            HttpStatus.BAD_REQUEST.value(), "VALIDATION_FAILED", message, Instant.now().toString());
     return ResponseEntity.badRequest().body(body);
   }
 
@@ -54,7 +51,7 @@ public class GlobalExceptionHandler {
             HttpStatus.BAD_REQUEST.value(),
             "MISSING_PARAMETER",
             e.getMessage(),
-            LocalDateTime.now().toString());
+            Instant.now().toString());
     return ResponseEntity.badRequest().body(body);
   }
 
@@ -66,7 +63,7 @@ public class GlobalExceptionHandler {
             HttpStatus.METHOD_NOT_ALLOWED.value(),
             "METHOD_NOT_ALLOWED",
             e.getMessage(),
-            LocalDateTime.now().toString());
+            Instant.now().toString());
     return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(body);
   }
 
@@ -79,7 +76,7 @@ public class GlobalExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            LocalDateTime.now().toString());
+            Instant.now().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 

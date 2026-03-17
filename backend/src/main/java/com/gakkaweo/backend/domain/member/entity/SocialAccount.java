@@ -14,7 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -47,7 +47,7 @@ public class SocialAccount {
   @Column(length = 255)
   private String email;
 
-  private LocalDateTime connectedAt;
+  private Instant connectedAt;
 
   public SocialAccount(Member member, SocialProvider provider, String providerId) {
     this.member = member;
@@ -57,6 +57,6 @@ public class SocialAccount {
 
   @PrePersist
   protected void onCreate() {
-    this.connectedAt = LocalDateTime.now();
+    this.connectedAt = Instant.now();
   }
 }

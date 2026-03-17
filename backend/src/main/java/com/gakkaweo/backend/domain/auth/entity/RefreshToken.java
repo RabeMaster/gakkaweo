@@ -12,7 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -40,13 +40,13 @@ public class RefreshToken {
   private UUID familyId;
 
   @Column(nullable = false)
-  private LocalDateTime expiresAt;
+  private Instant expiresAt;
 
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
   @Setter private boolean revoked = false;
 
-  public RefreshToken(Member member, String tokenHash, UUID familyId, LocalDateTime expiresAt) {
+  public RefreshToken(Member member, String tokenHash, UUID familyId, Instant expiresAt) {
     this.member = member;
     this.tokenHash = tokenHash;
     this.familyId = familyId;
@@ -55,6 +55,6 @@ public class RefreshToken {
 
   @PrePersist
   protected void onCreate() {
-    this.createdAt = LocalDateTime.now();
+    this.createdAt = Instant.now();
   }
 }

@@ -1,7 +1,7 @@
 package com.gakkaweo.backend.game.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 public record GameStatusResponse(
@@ -9,4 +9,4 @@ public record GameStatusResponse(
     String gameStatus,
     BigDecimal bestSimilarity,
     int attemptCount,
-    LocalDateTime clearedAt) {}
+    Instant clearedAt) {}

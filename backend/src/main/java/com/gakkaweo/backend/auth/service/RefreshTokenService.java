@@ -9,7 +9,7 @@ import com.gakkaweo.backend.domain.member.entity.Member;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
@@ -35,7 +35,7 @@ public class RefreshTokenService {
     String rawToken = UUID.randomUUID().toString();
     String tokenHash = hashToken(rawToken);
     UUID familyId = UUID.randomUUID();
-    LocalDateTime expiresAt = LocalDateTime.now().plus(jwtProperties.getRefreshExpiration());
+    Instant expiresAt = Instant.now().plus(jwtProperties.getRefreshExpiration());
 
     RefreshToken refreshToken = new RefreshToken(member, tokenHash, familyId, expiresAt);
     refreshTokenRepository.save(refreshToken);
@@ -57,7 +57,7 @@ public class RefreshTokenService {
       throw new BusinessException(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
     }
 
-    if (existing.getExpiresAt().isBefore(LocalDateTime.now())) {
+    if (existing.getExpiresAt().isBefore(Instant.now())) {
       log.warn("만료된 Refresh Token 사용 시도: familyId={}", existing.getFamilyId());
       existing.setRevoked(true);
       throw new BusinessException(ErrorCode.EXPIRED_TOKEN);
@@ -67,7 +67,7 @@ public class RefreshTokenService {
 
     String newRawToken = UUID.randomUUID().toString();
     String newTokenHash = hashToken(newRawToken);
-    LocalDateTime expiresAt = LocalDateTime.now().plus(jwtProperties.getRefreshExpiration());
+    Instant expiresAt = Instant.now().plus(jwtProperties.getRefreshExpiration());
 
     RefreshToken newRefreshToken =
         new RefreshToken(existing.getMember(), newTokenHash, existing.getFamilyId(), expiresAt);

@@ -21,8 +21,8 @@ import com.gakkaweo.backend.game.util.HintMaskGenerator;
 import com.gakkaweo.backend.infra.ai.service.SimilarityService;
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -68,7 +68,7 @@ public class DailyGameService {
     DailySentence sentence = findTodaySentence();
     HintMaskGenerator.HintMask hint = hintMaskGenerator.generate(sentence.getSentence());
 
-    LocalDateTime expiresAt = LocalDate.now(KST).plusDays(1).atStartOfDay();
+    Instant expiresAt = LocalDate.now(KST).plusDays(1).atStartOfDay(KST).toInstant();
 
     return new TodayResponse(
         sentence.getPublicId(),
@@ -116,7 +116,7 @@ public class DailyGameService {
         session.getAttemptCount(),
         isCorrect,
         session.getStatus().name(),
-        LocalDateTime.now());
+        Instant.now());
   }
 
   @Transactional(readOnly = true)
@@ -129,7 +129,7 @@ public class DailyGameService {
 
     boolean isCorrect = similarity.compareTo(gameProperties.getSimilarityThreshold()) >= 0;
 
-    return new GuessResponse(similarity, null, isCorrect, null, LocalDateTime.now());
+    return new GuessResponse(similarity, null, isCorrect, null, Instant.now());
   }
 
   @Transactional
