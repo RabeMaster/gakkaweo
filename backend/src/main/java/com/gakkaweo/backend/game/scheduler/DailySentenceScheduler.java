@@ -33,11 +33,16 @@ public class DailySentenceScheduler {
     log.info("일일 스케줄러 시작");
     try {
       expireYesterdaySessions();
-      selectTodaySentence();
-      log.info("일일 스케줄러 완료");
     } catch (Exception e) {
-      log.error("일일 스케줄러 실패: {}", e.getMessage(), e);
+      log.error("전날 세션 만료 처리 실패: {}", e.getMessage(), e);
     }
+
+    try {
+      selectTodaySentence();
+    } catch (Exception e) {
+      log.error("오늘의 문장 선정 실패: {}", e.getMessage(), e);
+    }
+    log.info("일일 스케줄러 완료");
   }
 
   @EventListener(ApplicationReadyEvent.class)
@@ -75,11 +80,7 @@ public class DailySentenceScheduler {
     DailySentence sentence =
         dailySentenceRepository
             .findRandomUnusedSentence()
-            .orElseThrow(
-                () -> {
-                  log.error("사용 가능한 문장이 없음 — 문장 추가 필요");
-                  return new IllegalStateException("사용 가능한 문장이 없습니다");
-                });
+            .orElseThrow(() -> new IllegalStateException("사용 가능한 문장이 없음 — 문장 추가 필요"));
 
     sentence.setUsedAt(today);
     dailySentenceRepository.save(sentence);
