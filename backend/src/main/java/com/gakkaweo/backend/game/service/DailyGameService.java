@@ -27,11 +27,13 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class DailyGameService {
 
   private static final ZoneId KST = ZoneId.of("Asia/Seoul");
@@ -102,6 +104,13 @@ public class DailyGameService {
 
     gameSessionRepository.save(session);
 
+    log.info(
+        "추측 제출: memberId={}, sentenceId={}, similarity={}, isCorrect={}",
+        memberPublicId,
+        request.sentenceId(),
+        similarity,
+        isCorrect);
+
     return new GuessResponse(
         similarity,
         session.getAttemptCount(),
@@ -137,6 +146,8 @@ public class DailyGameService {
 
     session.markGivenUp();
     gameSessionRepository.save(session);
+
+    log.info("게임 포기: memberId={}, sentenceId={}", memberPublicId, sentenceId);
 
     return new GiveUpResponse(
         sentence.getSentence(),
@@ -198,6 +209,10 @@ public class DailyGameService {
               try {
                 return gameSessionRepository.save(new GameSession(member, sentence));
               } catch (DataIntegrityViolationException e) {
+                log.debug(
+                    "세션 동시 생성 감지, 기존 세션 재조회: memberId={}, sentenceId={}",
+                    member.getPublicId(),
+                    sentence.getPublicId());
                 return gameSessionRepository
                     .findByMemberAndSentence(member, sentence)
                     .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));

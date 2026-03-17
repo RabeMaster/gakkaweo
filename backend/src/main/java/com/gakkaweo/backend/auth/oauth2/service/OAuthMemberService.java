@@ -7,10 +7,12 @@ import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.domain.member.service.NicknameGenerator;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 public class OAuthMemberService {
 
   private final SocialAccountRepository socialAccountRepository;
@@ -47,6 +49,7 @@ public class OAuthMemberService {
   private Member registerNewMember(OAuthAttributes attributes) {
     String nickname = nicknameGenerator.generate();
     Member member = memberRepository.save(new Member(nickname));
+    log.info("신규 회원 가입: provider={}, memberId={}", attributes.provider(), member.getPublicId());
 
     SocialAccount socialAccount =
         new SocialAccount(member, attributes.provider(), attributes.providerId());
