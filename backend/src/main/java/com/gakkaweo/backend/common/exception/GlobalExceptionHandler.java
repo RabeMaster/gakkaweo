@@ -71,9 +71,8 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-  public ResponseEntity<?> handleOptimisticLock(
-      ObjectOptimisticLockingFailureException ignoredException) {
-    log.warn("낙관적 락 충돌 발생");
+  public ResponseEntity<?> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
+    log.warn("낙관적 락 충돌 발생: entity={}, id={}", e.getPersistentClassName(), e.getIdentifier());
     ErrorCode errorCode = ErrorCode.CONCURRENT_MODIFICATION;
     ErrorBody body =
         new ErrorBody(
