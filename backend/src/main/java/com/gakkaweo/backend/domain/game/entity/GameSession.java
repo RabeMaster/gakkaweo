@@ -92,6 +92,10 @@ public class GameSession {
     return this.status == GameSessionStatus.IN_PROGRESS;
   }
 
+  public boolean isCleared() {
+    return this.status == GameSessionStatus.CLEARED;
+  }
+
   @PrePersist
   protected void onCreate() {
     this.createdAt = Instant.now();

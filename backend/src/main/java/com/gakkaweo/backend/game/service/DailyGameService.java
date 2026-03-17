@@ -94,7 +94,7 @@ public class DailyGameService {
 
     GameSession session = findOrCreateSession(member, sentence);
 
-    validateInProgress(session);
+    validateGuessAllowed(session);
 
     BigDecimal similarity =
         similarityService.calculateSimilarity(
@@ -102,14 +102,18 @@ public class DailyGameService {
 
     boolean isCorrect = similarity.compareTo(gameProperties.getSimilarityThreshold()) >= 0;
 
-    session.incrementAttempt();
-    session.updateBestSimilarity(similarity);
-    if (isCorrect) {
-      session.markCleared();
+    if (session.isInProgress()) {
+      session.incrementAttempt();
+      if (isCorrect) {
+        session.markCleared();
+      }
     }
+    session.updateBestSimilarity(similarity);
+
+    int guessSequence = (int) guessHistoryRepository.countBySession(session) + 1;
 
     guessHistoryRepository.save(
-        new GuessHistory(session, request.guessText(), similarity, session.getAttemptCount()));
+        new GuessHistory(session, request.guessText(), similarity, guessSequence));
 
     gameSessionRepository.save(session);
 
@@ -256,6 +260,17 @@ public class DailyGameService {
     return memberRepository
         .findByPublicId(publicId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+  }
+
+  private void validateGuessAllowed(GameSession session) {
+    if (session.isInProgress() || session.isCleared()) {
+      return;
+    }
+    throw switch (session.getStatus()) {
+      case GIVEN_UP -> new BusinessException(ErrorCode.GAME_ALREADY_GIVEN_UP);
+      case EXPIRED -> new BusinessException(ErrorCode.GAME_EXPIRED);
+      default -> new IllegalStateException("도달할 수 없는 상태: " + session.getStatus());
+    };
   }
 
   private void validateInProgress(GameSession session) {

@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface GuessHistoryRepository extends JpaRepository<GuessHistory, Long> {
 
   List<GuessHistory> findBySessionOrderByAttemptNumberAsc(GameSession session);
+
+  long countBySession(GameSession session);
 }
