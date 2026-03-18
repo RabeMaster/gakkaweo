@@ -58,6 +58,8 @@ public class GameSession {
 
   private Instant clearedAt;
 
+  private Integer finalRank;
+
   @Version private Integer version;
 
   private Instant createdAt;
@@ -90,6 +92,10 @@ public class GameSession {
 
   public boolean isCleared() {
     return this.status == GameSessionStatus.CLEARED;
+  }
+
+  public void recordFinalRank(int finalRank) {
+    this.finalRank = finalRank;
   }
 
   @PrePersist

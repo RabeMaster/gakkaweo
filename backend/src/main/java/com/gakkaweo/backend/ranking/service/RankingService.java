@@ -4,6 +4,7 @@ import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.dto.RankingResponse.RankingEntry;
+import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -110,6 +111,33 @@ public class RankingService {
     } catch (Exception e) {
       log.warn("랭킹 목록 조회 실패: {}", e.getMessage());
       return new RankingResponse(List.of(), 0);
+    }
+  }
+
+  public RankingSnapshot getAllRankingsForDate(LocalDate date) {
+    try {
+      String rankingKey = buildRankingKey(date);
+      Long totalPlayers = redisTemplate.opsForZSet().zCard(rankingKey);
+      if (totalPlayers == null || totalPlayers == 0) {
+        return new RankingSnapshot(List.of(), 0);
+      }
+
+      Set<String> allMembers = redisTemplate.opsForZSet().reverseRange(rankingKey, 0, -1);
+      if (allMembers == null || allMembers.isEmpty()) {
+        return new RankingSnapshot(List.of(), 0);
+      }
+
+      List<RankingSnapshot.MemberRank> memberRanks = new ArrayList<>();
+      int rank = 1;
+      for (String memberKey : allMembers) {
+        UUID publicId = UUID.fromString(memberKey.substring(MEMBER_PREFIX.length()));
+        memberRanks.add(new RankingSnapshot.MemberRank(publicId, rank++));
+      }
+
+      return new RankingSnapshot(memberRanks, totalPlayers.intValue());
+    } catch (Exception e) {
+      log.warn("랭킹 스냅샷 조회 실패: date={}, {}", date, e.getMessage());
+      return new RankingSnapshot(List.of(), 0);
     }
   }
 

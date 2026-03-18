@@ -49,10 +49,16 @@ public class DailySentence {
   @Column(length = 20)
   private DailySentenceStatus status = DailySentenceStatus.ACTIVE;
 
+  private Integer totalPlayers;
+
   private Instant createdAt;
 
   public DailySentence(String sentence) {
     this.sentence = sentence;
+  }
+
+  public void recordTotalPlayers(int totalPlayers) {
+    this.totalPlayers = totalPlayers;
   }
 
   @PrePersist
