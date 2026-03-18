@@ -3,6 +3,7 @@ package com.gakkaweo.backend.game.scheduler;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
+import com.gakkaweo.backend.ranking.service.RankingService;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import lombok.extern.slf4j.Slf4j;
@@ -20,14 +21,17 @@ public class DailySentenceScheduler {
 
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
+  private final RankingService rankingService;
   private final TransactionTemplate transactionTemplate;
 
   public DailySentenceScheduler(
       DailySentenceRepository dailySentenceRepository,
       GameSessionRepository gameSessionRepository,
+      RankingService rankingService,
       TransactionTemplate transactionTemplate) {
     this.dailySentenceRepository = dailySentenceRepository;
     this.gameSessionRepository = gameSessionRepository;
+    this.rankingService = rankingService;
     this.transactionTemplate = transactionTemplate;
   }
 
@@ -38,6 +42,13 @@ public class DailySentenceScheduler {
       transactionTemplate.executeWithoutResult(status -> expireYesterdaySessions());
     } catch (Exception e) {
       log.error("전날 세션 만료 처리 실패: {}", e.getMessage(), e);
+    }
+
+    try {
+      LocalDate yesterday = LocalDate.now(KST).minusDays(1);
+      rankingService.expirePreviousDayRankingKeys(yesterday);
+    } catch (Exception e) {
+      log.error("전날 랭킹 키 만료 처리 실패: {}", e.getMessage(), e);
     }
 
     try {

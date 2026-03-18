@@ -19,6 +19,7 @@ import com.gakkaweo.backend.game.dto.GuessResponse;
 import com.gakkaweo.backend.game.dto.TodayResponse;
 import com.gakkaweo.backend.game.util.HintMaskGenerator;
 import com.gakkaweo.backend.infra.ai.service.SimilarityService;
+import com.gakkaweo.backend.ranking.service.RankingService;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,6 +44,7 @@ public class DailyGameService {
   private final GuessHistoryRepository guessHistoryRepository;
   private final MemberRepository memberRepository;
   private final SimilarityService similarityService;
+  private final RankingService rankingService;
   private final HintMaskGenerator hintMaskGenerator;
   private final GameProperties gameProperties;
 
@@ -52,6 +54,7 @@ public class DailyGameService {
       GuessHistoryRepository guessHistoryRepository,
       MemberRepository memberRepository,
       SimilarityService similarityService,
+      RankingService rankingService,
       HintMaskGenerator hintMaskGenerator,
       GameProperties gameProperties) {
     this.dailySentenceRepository = dailySentenceRepository;
@@ -59,6 +62,7 @@ public class DailyGameService {
     this.guessHistoryRepository = guessHistoryRepository;
     this.memberRepository = memberRepository;
     this.similarityService = similarityService;
+    this.rankingService = rankingService;
     this.hintMaskGenerator = hintMaskGenerator;
     this.gameProperties = gameProperties;
   }
@@ -102,6 +106,8 @@ public class DailyGameService {
 
     boolean isCorrect = similarity.compareTo(gameProperties.getSimilarityThreshold()) >= 0;
 
+    BigDecimal previousBest = session.getBestSimilarity();
+
     if (session.isInProgress()) {
       session.incrementAttempt();
       if (isCorrect) {
@@ -116,6 +122,10 @@ public class DailyGameService {
         new GuessHistory(session, request.guessText(), similarity, guessSequence));
 
     gameSessionRepository.save(session);
+
+    if (similarity.compareTo(previousBest) > 0) {
+      rankingService.updateRanking(session, member);
+    }
 
     log.info(
         "추측 제출: memberId={}, sentenceId={}, similarity={}, isCorrect={}",
