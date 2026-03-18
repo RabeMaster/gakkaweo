@@ -20,7 +20,6 @@ public enum ErrorCode {
   SENTENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "오늘의 문제를 찾을 수 없습니다"),
   SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "게임 세션을 찾을 수 없습니다"),
   GAME_ALREADY_CLEARED(HttpStatus.CONFLICT, "이미 정답을 맞춘 게임입니다"),
-  GAME_ALREADY_GIVEN_UP(HttpStatus.CONFLICT, "이미 포기한 게임입니다"),
   GAME_EXPIRED(HttpStatus.CONFLICT, "만료된 게임입니다"),
   CONCURRENT_MODIFICATION(HttpStatus.CONFLICT, "동시 수정 충돌이 발생했습니다");
 

@@ -84,10 +84,6 @@ public class GameSession {
     this.clearedAt = Instant.now();
   }
 
-  public void markGivenUp() {
-    this.status = GameSessionStatus.GIVEN_UP;
-  }
-
   public boolean isInProgress() {
     return this.status == GameSessionStatus.IN_PROGRESS;
   }
