@@ -62,6 +62,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/daily/guess")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/ranking/today")
+                    .permitAll()
                     .requestMatchers("/daily/**")
                     .authenticated()
                     .anyRequest()
