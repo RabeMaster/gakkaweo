@@ -68,23 +68,6 @@ public class RankingService {
     }
   }
 
-  public Integer getMemberRank(UUID memberPublicId) {
-    try {
-      LocalDate today = LocalDate.now(KST);
-      String rankingKey = buildRankingKey(today);
-      String memberKey = MEMBER_PREFIX + memberPublicId;
-
-      Long rank = redisTemplate.opsForZSet().reverseRank(rankingKey, memberKey);
-      if (rank != null) {
-        return rank.intValue() + 1;
-      }
-      return null;
-    } catch (Exception e) {
-      log.warn("랭킹 조회 실패: memberId={}, {}", memberPublicId, e.getMessage());
-      return null;
-    }
-  }
-
   public RankingResponse getRankings() {
     try {
       LocalDate today = LocalDate.now(KST);
@@ -105,12 +88,11 @@ public class RankingService {
       List<RankingEntry> entries = new ArrayList<>();
       long rank = 1;
       for (String memberKey : topMembers) {
-        String publicIdStr = memberKey.replace(MEMBER_PREFIX, "");
+        String publicIdStr = memberKey.substring(MEMBER_PREFIX.length());
         String detailKey = buildDetailKey(today, UUID.fromString(publicIdStr));
 
         Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
         if (detail.isEmpty()) {
-          rank++;
           continue;
         }
 
@@ -132,26 +114,22 @@ public class RankingService {
   }
 
   public void expirePreviousDayRankingKeys(LocalDate date) {
-    try {
-      String rankingKey = buildRankingKey(date);
-      redisTemplate.expire(rankingKey, EXPIRE_TTL);
+    String rankingKey = buildRankingKey(date);
 
-      String detailPattern = DETAIL_KEY_PREFIX + date + ":*";
-      Set<String> detailKeys = redisTemplate.keys(detailPattern);
-      if (detailKeys != null && !detailKeys.isEmpty()) {
-        for (String key : detailKeys) {
-          redisTemplate.expire(key, EXPIRE_TTL);
-        }
+    Set<String> members = redisTemplate.opsForZSet().range(rankingKey, 0, -1);
+    int detailCount = 0;
+    if (members != null) {
+      for (String memberKey : members) {
+        String publicIdStr = memberKey.substring(MEMBER_PREFIX.length());
+        String detailKey = buildDetailKey(date, UUID.fromString(publicIdStr));
+        redisTemplate.expire(detailKey, EXPIRE_TTL);
+        detailCount++;
       }
-
-      log.info(
-          "전날 랭킹 키 TTL 설정: date={}, detailKeys={}",
-          date,
-          detailKeys != null ? detailKeys.size() : 0);
-    } catch (Exception e) {
-      log.warn("전날 랭킹 키 만료 처리 실패: {}", e.getMessage());
-      throw e;
     }
+
+    redisTemplate.expire(rankingKey, EXPIRE_TTL);
+
+    log.info("전날 랭킹 키 TTL 설정: date={}, detailKeys={}", date, detailCount);
   }
 
   private double encodeScore(BigDecimal similarity, int attemptCount, long elapsedSeconds) {
