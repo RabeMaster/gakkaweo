@@ -52,17 +52,22 @@ public class DailySentenceScheduler {
       log.error("전날 세션 만료 처리 실패: {}", e.getMessage(), e);
     }
 
+    LocalDate yesterday = LocalDate.now(KST).minusDays(1);
+    boolean snapshotSuccess = false;
     try {
-      transactionTemplate.executeWithoutResult(status -> snapshotYesterdayRankings());
+      RankingSnapshot snapshot = rankingService.getAllRankingsForDate(yesterday);
+      transactionTemplate.executeWithoutResult(status -> saveRankingSnapshot(yesterday, snapshot));
+      snapshotSuccess = true;
     } catch (Exception e) {
       log.error("전날 랭킹 스냅샷 저장 실패: {}", e.getMessage(), e);
     }
 
-    try {
-      LocalDate yesterday = LocalDate.now(KST).minusDays(1);
-      rankingService.expirePreviousDayRankingKeys(yesterday);
-    } catch (Exception e) {
-      log.error("전날 랭킹 키 만료 처리 실패: {}", e.getMessage(), e);
+    if (snapshotSuccess) {
+      try {
+        rankingService.expirePreviousDayRankingKeys(yesterday);
+      } catch (Exception e) {
+        log.error("전날 랭킹 키 만료 처리 실패: {}", e.getMessage(), e);
+      }
     }
 
     try {
@@ -95,10 +100,7 @@ public class DailySentenceScheduler {
             });
   }
 
-  private void snapshotYesterdayRankings() {
-    LocalDate yesterday = LocalDate.now(KST).minusDays(1);
-
-    RankingSnapshot snapshot = rankingService.getAllRankingsForDate(yesterday);
+  private void saveRankingSnapshot(LocalDate yesterday, RankingSnapshot snapshot) {
     if (snapshot.memberRanks().isEmpty()) {
       log.info("전날 랭킹 스냅샷: 데이터 없음, date={}", yesterday);
       return;
@@ -110,7 +112,7 @@ public class DailySentenceScheduler {
       return;
     }
 
-    sentence.setTotalPlayers(snapshot.totalPlayers());
+    sentence.recordTotalPlayers(snapshot.totalPlayers());
     dailySentenceRepository.save(sentence);
 
     List<GameSession> sessions = gameSessionRepository.findAllBySentenceWithMember(sentence);
