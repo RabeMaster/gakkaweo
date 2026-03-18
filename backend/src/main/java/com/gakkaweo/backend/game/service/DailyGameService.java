@@ -12,7 +12,6 @@ import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.game.config.GameProperties;
 import com.gakkaweo.backend.game.dto.GameStatusResponse;
-import com.gakkaweo.backend.game.dto.GiveUpResponse;
 import com.gakkaweo.backend.game.dto.GuessHistoryResponse;
 import com.gakkaweo.backend.game.dto.GuessRequest;
 import com.gakkaweo.backend.game.dto.GuessResponse;
@@ -155,27 +154,6 @@ public class DailyGameService {
     return new GuessResponse(similarity, null, isCorrect, null, Instant.now());
   }
 
-  @Transactional
-  public GiveUpResponse giveUp(UUID sentenceId, UUID memberPublicId) {
-    DailySentence sentence = findTodaySentenceByPublicId(sentenceId);
-    Member member = findMember(memberPublicId);
-
-    GameSession session =
-        gameSessionRepository
-            .findByMemberAndSentence(member, sentence)
-            .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
-
-    validateInProgress(session);
-
-    session.markGivenUp();
-    gameSessionRepository.save(session);
-
-    log.info("게임 포기: memberId={}, sentenceId={}", memberPublicId, sentenceId);
-
-    return new GiveUpResponse(
-        session.getAttemptCount(), session.getBestSimilarity(), session.getStatus().name());
-  }
-
   @Transactional(readOnly = true)
   public GuessHistoryResponse getHistory(UUID sentenceId, UUID memberPublicId) {
     DailySentence sentence = findTodaySentenceByPublicId(sentenceId);
@@ -277,20 +255,8 @@ public class DailyGameService {
       return;
     }
     throw switch (session.getStatus()) {
-      case GIVEN_UP -> new BusinessException(ErrorCode.GAME_ALREADY_GIVEN_UP);
       case EXPIRED -> new BusinessException(ErrorCode.GAME_EXPIRED);
       default -> new IllegalStateException("도달할 수 없는 상태: " + session.getStatus());
     };
-  }
-
-  private void validateInProgress(GameSession session) {
-    if (!session.isInProgress()) {
-      throw switch (session.getStatus()) {
-        case CLEARED -> new BusinessException(ErrorCode.GAME_ALREADY_CLEARED);
-        case GIVEN_UP -> new BusinessException(ErrorCode.GAME_ALREADY_GIVEN_UP);
-        case EXPIRED -> new BusinessException(ErrorCode.GAME_EXPIRED);
-        default -> new IllegalStateException("도달할 수 없는 상태: " + session.getStatus());
-      };
-    }
   }
 }

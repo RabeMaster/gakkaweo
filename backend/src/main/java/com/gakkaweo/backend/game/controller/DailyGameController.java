@@ -2,7 +2,6 @@ package com.gakkaweo.backend.game.controller;
 
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.game.dto.GameStatusResponse;
-import com.gakkaweo.backend.game.dto.GiveUpResponse;
 import com.gakkaweo.backend.game.dto.GuessHistoryResponse;
 import com.gakkaweo.backend.game.dto.GuessRequest;
 import com.gakkaweo.backend.game.dto.GuessResponse;
@@ -42,12 +41,6 @@ public class DailyGameController {
       return ResponseEntity.ok(dailyGameService.guessAnonymous(request));
     }
     return ResponseEntity.ok(dailyGameService.guessAuthenticated(request, userDetails.publicId()));
-  }
-
-  @PostMapping("/give-up")
-  public ResponseEntity<GiveUpResponse> giveUp(
-      @RequestParam UUID sentenceId, @AuthenticationPrincipal CustomUserDetails userDetails) {
-    return ResponseEntity.ok(dailyGameService.giveUp(sentenceId, userDetails.publicId()));
   }
 
   @GetMapping("/history")
