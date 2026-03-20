@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from sentence_transformers import util
 
-from app.model import model
+from app.model import encode_text
 from app.normalize import normalize_text
 from app.schemas import SimilarityRequest, SimilarityResponse
 
@@ -17,7 +17,8 @@ def health_check():
 def compute_similarity(request: SimilarityRequest):
     text1 = normalize_text(request.text1)
     text2 = normalize_text(request.text2)
-    embeddings = model.encode([text1, text2])
-    raw_score = util.cos_sim(embeddings[0], embeddings[1]).item()
+    embedding1 = encode_text(text1)
+    embedding2 = encode_text(text2)
+    raw_score = util.cos_sim(embedding1, embedding2).item()
     score = round(max(0.0, raw_score) * 100, 1)
     return SimilarityResponse(score=score, text1=text1, text2=text2)
