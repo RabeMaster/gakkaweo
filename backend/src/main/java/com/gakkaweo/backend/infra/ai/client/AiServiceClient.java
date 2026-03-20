@@ -15,13 +15,13 @@ public class AiServiceClient {
 
   private final RestClient aiServiceRestClient;
 
-  public SimilarityResponse calculateSimilarity(String text1, String text2) {
+  public SimilarityResponse calculateSimilarity(String sentence, String guess) {
     try {
       return aiServiceRestClient
           .post()
           .uri("/similarity")
           .contentType(MediaType.APPLICATION_JSON)
-          .body(new SimilarityRequest(text1, text2))
+          .body(new SimilarityRequest(sentence, guess))
           .retrieve()
           .body(SimilarityResponse.class);
     } catch (RestClientException e) {
