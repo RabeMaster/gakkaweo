@@ -18,6 +18,7 @@ import com.gakkaweo.backend.game.dto.GuessResponse;
 import com.gakkaweo.backend.game.dto.TodayResponse;
 import com.gakkaweo.backend.game.util.HintMaskGenerator;
 import com.gakkaweo.backend.infra.ai.service.SimilarityService;
+import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -28,6 +29,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,7 @@ public class DailyGameService {
   private final RankingService rankingService;
   private final HintMaskGenerator hintMaskGenerator;
   private final GameProperties gameProperties;
+  private final ApplicationEventPublisher eventPublisher;
 
   public DailyGameService(
       DailySentenceRepository dailySentenceRepository,
@@ -55,7 +58,8 @@ public class DailyGameService {
       SimilarityService similarityService,
       RankingService rankingService,
       HintMaskGenerator hintMaskGenerator,
-      GameProperties gameProperties) {
+      GameProperties gameProperties,
+      ApplicationEventPublisher eventPublisher) {
     this.dailySentenceRepository = dailySentenceRepository;
     this.gameSessionRepository = gameSessionRepository;
     this.guessHistoryRepository = guessHistoryRepository;
@@ -64,6 +68,7 @@ public class DailyGameService {
     this.rankingService = rankingService;
     this.hintMaskGenerator = hintMaskGenerator;
     this.gameProperties = gameProperties;
+    this.eventPublisher = eventPublisher;
   }
 
   @Transactional(readOnly = true)
@@ -124,6 +129,7 @@ public class DailyGameService {
 
     if (similarity.compareTo(previousBest) > 0) {
       rankingService.updateRanking(session, member);
+      eventPublisher.publishEvent(new RankingUpdateEvent());
     }
 
     log.info(
