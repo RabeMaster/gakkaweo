@@ -14,5 +14,4 @@ public class RateLimitProperties {
   private final int ssePerMinute;
   private final int authPerMinute;
   private final int bucketExpiryMinutes;
-  private final long cleanupIntervalMs;
 }
