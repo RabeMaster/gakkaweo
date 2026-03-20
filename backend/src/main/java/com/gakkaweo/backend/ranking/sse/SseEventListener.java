@@ -1,7 +1,6 @@
 package com.gakkaweo.backend.ranking.sse;
 
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
-import com.gakkaweo.backend.ranking.dto.SseEventType;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
@@ -44,10 +43,9 @@ public class SseEventListener {
   }
 
   @EventListener
-  public void onRankingUpdate(RankingUpdateEvent event) {
-    ScheduledFuture<?> existing = pendingBroadcast;
-    if (existing != null) {
-      existing.cancel(false);
+  public synchronized void onRankingUpdate(RankingUpdateEvent event) {
+    if (pendingBroadcast != null) {
+      pendingBroadcast.cancel(false);
     }
     pendingBroadcast =
         debounceExecutor.schedule(this::broadcastRanking, DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS);
@@ -66,7 +64,7 @@ public class SseEventListener {
       sseConnectionManager.broadcast(SseEventType.RANKING_UPDATE, ranking);
       log.debug("RANKING_UPDATE 브로드캐스트: totalPlayers={}", ranking.totalPlayers());
     } catch (Exception e) {
-      log.warn("RANKING_UPDATE 브로드캐스트 실패: {}", e.getMessage());
+      log.error("RANKING_UPDATE 브로드캐스트 실패: {}", e.getMessage());
     }
   }
 }

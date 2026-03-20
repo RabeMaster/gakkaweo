@@ -1,11 +1,9 @@
 package com.gakkaweo.backend.ranking.sse;
 
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
-import com.gakkaweo.backend.ranking.dto.SseEventType;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -85,7 +83,7 @@ public class SseConnectionManager {
       sendToAll(
           emitter -> emitter.send(SseEmitter.event().name(SseEventType.HEARTBEAT.name()).data("")));
     } catch (Exception e) {
-      log.warn("SSE heartbeat 처리 중 예외: {}", e.getMessage());
+      log.error("SSE heartbeat 처리 중 예외: {}", e.getMessage());
     }
   }
 
@@ -93,9 +91,9 @@ public class SseConnectionManager {
     try {
       RankingResponse ranking = rankingService.getRankings();
       emitter.send(SseEmitter.event().name(SseEventType.RANKING_UPDATE.name()).data(ranking));
-    } catch (IOException e) {
+    } catch (Exception e) {
       removeAndComplete(emitter);
-      log.warn("SSE 초기 데이터 전송 실패: {}", e.getMessage());
+      log.debug("SSE 초기 데이터 전송 실패: {}", e.getMessage());
     }
   }
 

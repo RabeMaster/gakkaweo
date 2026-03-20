@@ -1,4 +1,4 @@
-package com.gakkaweo.backend.ranking.dto;
+package com.gakkaweo.backend.ranking.sse;
 
 public enum SseEventType {
   RANKING_UPDATE,
