@@ -38,12 +38,6 @@ public class DailySentence {
   @Column(unique = true)
   private LocalDate usedAt;
 
-  @Setter private byte[] embedding;
-
-  @Setter
-  @Column(length = 100)
-  private String modelVersion;
-
   @Setter
   @Enumerated(EnumType.STRING)
   @Column(length = 20)
