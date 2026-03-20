@@ -64,6 +64,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/ranking/today")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/ranking/stream")
+                    .permitAll()
                     .requestMatchers("/daily/**")
                     .authenticated()
                     .anyRequest()

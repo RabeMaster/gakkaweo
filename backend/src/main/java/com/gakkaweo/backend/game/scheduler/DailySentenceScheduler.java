@@ -5,6 +5,7 @@ import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
+import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -16,6 +17,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -31,28 +33,33 @@ public class DailySentenceScheduler {
   private final GameSessionRepository gameSessionRepository;
   private final RankingService rankingService;
   private final TransactionTemplate transactionTemplate;
+  private final ApplicationEventPublisher eventPublisher;
 
   public DailySentenceScheduler(
       DailySentenceRepository dailySentenceRepository,
       GameSessionRepository gameSessionRepository,
       RankingService rankingService,
-      TransactionTemplate transactionTemplate) {
+      TransactionTemplate transactionTemplate,
+      ApplicationEventPublisher eventPublisher) {
     this.dailySentenceRepository = dailySentenceRepository;
     this.gameSessionRepository = gameSessionRepository;
     this.rankingService = rankingService;
     this.transactionTemplate = transactionTemplate;
+    this.eventPublisher = eventPublisher;
   }
 
   @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
-  public void selectDailySentence() {
+  public void executeMidnightJob() {
     log.info("일일 스케줄러 시작");
+    LocalDate today = LocalDate.now(KST);
+    LocalDate yesterday = today.minusDays(1);
+
     try {
-      transactionTemplate.executeWithoutResult(status -> expireYesterdaySessions());
+      transactionTemplate.executeWithoutResult(status -> expireYesterdaySessions(yesterday));
     } catch (Exception e) {
       log.error("전날 세션 만료 처리 실패: {}", e.getMessage(), e);
     }
 
-    LocalDate yesterday = LocalDate.now(KST).minusDays(1);
     boolean snapshotSuccess = false;
     try {
       RankingSnapshot snapshot = rankingService.getAllRankingsForDate(yesterday);
@@ -71,10 +78,15 @@ public class DailySentenceScheduler {
     }
 
     try {
-      transactionTemplate.executeWithoutResult(status -> selectTodaySentence());
+      transactionTemplate.executeWithoutResult(status -> selectTodaySentence(today));
     } catch (Exception e) {
       log.error("오늘의 문장 선정 실패: {}", e.getMessage(), e);
     }
+
+    dailySentenceRepository
+        .findByUsedAt(today)
+        .ifPresent(s -> eventPublisher.publishEvent(new DayChangeEvent(s.getPublicId())));
+
     log.info("일일 스케줄러 완료");
   }
 
@@ -83,12 +95,11 @@ public class DailySentenceScheduler {
     LocalDate today = LocalDate.now(KST);
     if (dailySentenceRepository.findByUsedAt(today).isEmpty()) {
       log.info("오늘 날짜 기준으로 선택된 문장이 없어 즉시 선정을 진행합니다.");
-      selectDailySentence();
+      executeMidnightJob();
     }
   }
 
-  private void expireYesterdaySessions() {
-    LocalDate yesterday = LocalDate.now(KST).minusDays(1);
+  private void expireYesterdaySessions(LocalDate yesterday) {
     dailySentenceRepository
         .findByUsedAt(yesterday)
         .ifPresent(
@@ -137,9 +148,7 @@ public class DailySentenceScheduler {
         snapshot.totalPlayers());
   }
 
-  private void selectTodaySentence() {
-    LocalDate today = LocalDate.now(KST);
-
+  private void selectTodaySentence(LocalDate today) {
     if (dailySentenceRepository.findByUsedAt(today).isPresent()) {
       log.info("오늘의 문장이 이미 선정됨: date={}", today);
       return;
