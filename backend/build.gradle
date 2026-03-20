@@ -35,6 +35,9 @@ dependencies {
     // Resilience4j
     implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.3.0'
 
+    // Rate Limiting
+    implementation 'com.bucket4j:bucket4j_jdk17-core:8.17.0'
+
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     compileOnly 'org.projectlombok:lombok'

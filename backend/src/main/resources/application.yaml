@@ -82,6 +82,13 @@ app:
     timeout: ${AI_SERVICE_TIMEOUT:3s}
   game:
     similarity-threshold: ${SIMILARITY_THRESHOLD:95.0}
+  rate-limit:
+    guess-per-minute: ${RATE_LIMIT_GUESS:40}
+    read-per-minute: ${RATE_LIMIT_READ:60}
+    sse-per-minute: ${RATE_LIMIT_SSE:10}
+    auth-per-minute: ${RATE_LIMIT_AUTH:10}
+    bucket-expiry-minutes: ${RATE_LIMIT_BUCKET_EXPIRY:10}
+    cleanup-interval-ms: ${RATE_LIMIT_CLEANUP_INTERVAL_MS:300000}
 
 resilience4j:
   circuitbreaker:

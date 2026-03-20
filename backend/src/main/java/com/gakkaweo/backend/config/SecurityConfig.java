@@ -8,6 +8,7 @@ import com.gakkaweo.backend.auth.oauth2.CookieAuthorizationRequestRepository;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginFailureHandler;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import com.gakkaweo.backend.auth.oauth2.service.CustomOAuth2UserService;
+import com.gakkaweo.backend.ratelimit.filter.RateLimitFilter;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +27,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
+  private final RateLimitFilter rateLimitFilter;
   private final CustomOAuth2UserService customOAuth2UserService;
   private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
   private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
@@ -34,12 +36,14 @@ public class SecurityConfig {
 
   public SecurityConfig(
       JwtAuthenticationFilter jwtAuthenticationFilter,
+      RateLimitFilter rateLimitFilter,
       CustomOAuth2UserService customOAuth2UserService,
       OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
       OAuth2LoginFailureHandler oAuth2LoginFailureHandler,
       CookieAuthorizationRequestRepository authorizationRequestRepository,
       OAuth2Properties oAuth2Properties) {
     this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    this.rateLimitFilter = rateLimitFilter;
     this.customOAuth2UserService = customOAuth2UserService;
     this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
     this.oAuth2LoginFailureHandler = oAuth2LoginFailureHandler;
@@ -79,7 +83,8 @@ public class SecurityConfig {
                     .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
                     .successHandler(oAuth2LoginSuccessHandler)
                     .failureHandler(oAuth2LoginFailureHandler))
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        .addFilterAfter(rateLimitFilter, JwtAuthenticationFilter.class);
     return http.build();
   }
 
