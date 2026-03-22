@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.domain.member.repository;
 
+import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.entity.SocialAccount;
 import com.gakkaweo.backend.domain.member.entity.SocialProvider;
 import java.util.Optional;
@@ -10,4 +11,6 @@ public interface SocialAccountRepository extends JpaRepository<SocialAccount, Lo
 
   @EntityGraph(attributePaths = "member")
   Optional<SocialAccount> findByProviderAndProviderId(SocialProvider provider, String providerId);
+
+  void deleteByMember(Member member);
 }

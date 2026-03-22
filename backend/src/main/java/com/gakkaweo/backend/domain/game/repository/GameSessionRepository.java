@@ -25,4 +25,8 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
 
   @Query("SELECT g FROM GameSession g JOIN FETCH g.member WHERE g.sentence = :sentence")
   List<GameSession> findAllBySentenceWithMember(@Param("sentence") DailySentence sentence);
+
+  @Modifying
+  @Query("UPDATE GameSession g SET g.member = null WHERE g.member = :member")
+  int anonymizeByMember(@Param("member") Member member);
 }
