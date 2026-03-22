@@ -40,7 +40,7 @@ public class GameSession {
   private Long id;
 
   @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "member_id", nullable = false)
+  @JoinColumn(name = "member_id")
   private Member member;
 
   @ManyToOne(fetch = LAZY)
