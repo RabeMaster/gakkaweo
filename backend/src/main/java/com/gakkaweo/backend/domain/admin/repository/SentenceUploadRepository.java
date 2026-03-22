@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface SentenceUploadRepository extends JpaRepository<SentenceUpload, Long> {
 
-  @Modifying
+  @Modifying(clearAutomatically = true)
   @Query("UPDATE SentenceUpload s SET s.admin = null WHERE s.admin = :admin")
   int anonymizeByAdmin(@Param("admin") Member admin);
 }

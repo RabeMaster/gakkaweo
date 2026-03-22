@@ -14,7 +14,7 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
 
   Optional<GameSession> findByMemberAndSentence(Member member, DailySentence sentence);
 
-  @Modifying
+  @Modifying(clearAutomatically = true)
   @Query(
       "UPDATE GameSession g SET g.status ="
           + " com.gakkaweo.backend.domain.game.entity.GameSessionStatus.EXPIRED"
@@ -26,7 +26,7 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
   @Query("SELECT g FROM GameSession g JOIN FETCH g.member WHERE g.sentence = :sentence")
   List<GameSession> findAllBySentenceWithMember(@Param("sentence") DailySentence sentence);
 
-  @Modifying
+  @Modifying(clearAutomatically = true)
   @Query("UPDATE GameSession g SET g.member = null WHERE g.member = :member")
   int anonymizeByMember(@Param("member") Member member);
 }

@@ -15,7 +15,7 @@ public interface SocialAccountRepository extends JpaRepository<SocialAccount, Lo
   @EntityGraph(attributePaths = "member")
   Optional<SocialAccount> findByProviderAndProviderId(SocialProvider provider, String providerId);
 
-  @Modifying
+  @Modifying(clearAutomatically = true)
   @Query("DELETE FROM SocialAccount s WHERE s.member = :member")
   int deleteByMember(@Param("member") Member member);
 }
