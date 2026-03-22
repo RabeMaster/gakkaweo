@@ -28,7 +28,7 @@ public class SentenceUpload {
   private Long id;
 
   @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "admin_id")
+  @JoinColumn(name = "admin_id", nullable = true)
   private Member admin;
 
   @Column(nullable = false, length = 255)
