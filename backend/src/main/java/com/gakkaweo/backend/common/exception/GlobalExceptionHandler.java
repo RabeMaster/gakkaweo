@@ -80,5 +80,16 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
-  record ErrorBody(int status, String code, String message, String timestamp) {}
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<?> handleException(Exception e) {
+    log.error("예상하지 못한 서버 오류 발생", e);
+    ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+    ErrorBody body =
+        new ErrorBody(
+            errorCode.getStatus().value(),
+            errorCode.name(),
+            errorCode.getMessage(),
+            Instant.now().toString());
+    return ResponseEntity.status(errorCode.getStatus()).body(body);
+  }
 }
