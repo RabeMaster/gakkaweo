@@ -13,22 +13,18 @@ import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RefreshTokenService {
 
   private final RefreshTokenRepository refreshTokenRepository;
   private final JwtProperties jwtProperties;
-
-  public RefreshTokenService(
-      RefreshTokenRepository refreshTokenRepository, JwtProperties jwtProperties) {
-    this.refreshTokenRepository = refreshTokenRepository;
-    this.jwtProperties = jwtProperties;
-  }
 
   @Transactional
   public String createRefreshToken(Member member) {

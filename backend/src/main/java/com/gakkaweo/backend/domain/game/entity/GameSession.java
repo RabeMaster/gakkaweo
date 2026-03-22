@@ -40,7 +40,7 @@ public class GameSession {
   private Long id;
 
   @ManyToOne(fetch = LAZY)
-  @JoinColumn(name = "member_id")
+  @JoinColumn(name = "member_id", nullable = true)
   private Member member;
 
   @ManyToOne(fetch = LAZY)
@@ -58,6 +58,7 @@ public class GameSession {
 
   private Instant clearedAt;
 
+  @Column(nullable = true)
   private Integer finalRank;
 
   @Version private Integer version;

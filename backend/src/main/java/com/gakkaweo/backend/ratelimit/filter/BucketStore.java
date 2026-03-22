@@ -7,20 +7,18 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class BucketStore {
 
   private final RateLimitProperties properties;
   private final Map<String, BucketEntry> buckets = new ConcurrentHashMap<>();
-
-  public BucketStore(RateLimitProperties properties) {
-    this.properties = properties;
-  }
 
   public Bucket resolveBucket(EndpointGroup group, String key) {
     String bucketKey = group.name() + ":" + key;

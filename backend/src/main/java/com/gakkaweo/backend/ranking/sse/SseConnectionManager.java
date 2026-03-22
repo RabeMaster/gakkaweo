@@ -1,5 +1,7 @@
 package com.gakkaweo.backend.ranking.sse;
 
+import com.gakkaweo.backend.common.exception.BusinessException;
+import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import jakarta.annotation.PostConstruct;
@@ -10,14 +12,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class SseConnectionManager {
 
   private static final int MAX_CONNECTIONS = 500;
@@ -32,10 +34,6 @@ public class SseConnectionManager {
             t.setDaemon(true);
             return t;
           });
-
-  public SseConnectionManager(RankingService rankingService) {
-    this.rankingService = rankingService;
-  }
 
   @PostConstruct
   void startHeartbeat() {
@@ -53,9 +51,9 @@ public class SseConnectionManager {
     emitters.clear();
   }
 
-  public SseEmitter register() {
+  public synchronized SseEmitter register() {
     if (emitters.size() >= MAX_CONNECTIONS) {
-      throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "SSE 최대 연결 수 초과");
+      throw new BusinessException(ErrorCode.SSE_MAX_CONNECTIONS);
     }
 
     SseEmitter emitter = new SseEmitter(0L);
@@ -83,7 +81,7 @@ public class SseConnectionManager {
       sendToAll(
           emitter -> emitter.send(SseEmitter.event().name(SseEventType.HEARTBEAT.name()).data("")));
     } catch (Exception e) {
-      log.error("SSE heartbeat 처리 중 예외: {}", e.getMessage());
+      log.error("SSE heartbeat 처리 중 예외", e);
     }
   }
 
@@ -93,7 +91,7 @@ public class SseConnectionManager {
       emitter.send(SseEmitter.event().name(SseEventType.RANKING_UPDATE.name()).data(ranking));
     } catch (Exception e) {
       removeAndComplete(emitter);
-      log.debug("SSE 초기 데이터 전송 실패: {}", e.getMessage());
+      log.debug("SSE 초기 데이터 전송 실패: {}", e.getMessage(), e);
     }
   }
 

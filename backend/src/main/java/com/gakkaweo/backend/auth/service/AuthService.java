@@ -1,5 +1,7 @@
 package com.gakkaweo.backend.auth.service;
 
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.BLACKLIST_PREFIX;
+
 import com.gakkaweo.backend.auth.dto.AuthResponse;
 import com.gakkaweo.backend.auth.dto.TokenPair;
 import com.gakkaweo.backend.auth.jwt.JwtProvider;
@@ -11,6 +13,7 @@ import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import io.jsonwebtoken.Claims;
 import java.time.Duration;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -18,25 +21,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AuthService {
-
-  public static final String BLACKLIST_PREFIX = "blacklist:jti:";
 
   private final JwtProvider jwtProvider;
   private final RefreshTokenService refreshTokenService;
   private final MemberRepository memberRepository;
   private final StringRedisTemplate redisTemplate;
-
-  public AuthService(
-      JwtProvider jwtProvider,
-      RefreshTokenService refreshTokenService,
-      MemberRepository memberRepository,
-      StringRedisTemplate redisTemplate) {
-    this.jwtProvider = jwtProvider;
-    this.refreshTokenService = refreshTokenService;
-    this.memberRepository = memberRepository;
-    this.redisTemplate = redisTemplate;
-  }
 
   @Transactional
   public TokenPair issueTokens(Member member) {

@@ -9,6 +9,7 @@ import com.gakkaweo.backend.game.dto.TodayResponse;
 import com.gakkaweo.backend.game.service.DailyGameService;
 import jakarta.validation.Valid;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,13 +21,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/daily")
+@RequiredArgsConstructor
 public class DailyGameController {
 
   private final DailyGameService dailyGameService;
-
-  public DailyGameController(DailyGameService dailyGameService) {
-    this.dailyGameService = dailyGameService;
-  }
 
   @GetMapping("/today")
   public ResponseEntity<TodayResponse> getToday() {

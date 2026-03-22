@@ -10,6 +10,7 @@ import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import com.gakkaweo.backend.auth.oauth2.service.CustomOAuth2UserService;
 import com.gakkaweo.backend.ratelimit.filter.RateLimitFilter;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -24,6 +25,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -33,23 +35,6 @@ public class SecurityConfig {
   private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
   private final CookieAuthorizationRequestRepository authorizationRequestRepository;
   private final OAuth2Properties oAuth2Properties;
-
-  public SecurityConfig(
-      JwtAuthenticationFilter jwtAuthenticationFilter,
-      RateLimitFilter rateLimitFilter,
-      CustomOAuth2UserService customOAuth2UserService,
-      OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
-      OAuth2LoginFailureHandler oAuth2LoginFailureHandler,
-      CookieAuthorizationRequestRepository authorizationRequestRepository,
-      OAuth2Properties oAuth2Properties) {
-    this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-    this.rateLimitFilter = rateLimitFilter;
-    this.customOAuth2UserService = customOAuth2UserService;
-    this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
-    this.oAuth2LoginFailureHandler = oAuth2LoginFailureHandler;
-    this.authorizationRequestRepository = authorizationRequestRepository;
-    this.oAuth2Properties = oAuth2Properties;
-  }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {

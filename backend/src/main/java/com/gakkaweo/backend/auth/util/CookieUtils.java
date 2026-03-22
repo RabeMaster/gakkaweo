@@ -2,19 +2,16 @@ package com.gakkaweo.backend.auth.util;
 
 import com.gakkaweo.backend.auth.config.CookieProperties;
 import com.gakkaweo.backend.auth.config.JwtProperties;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class CookieUtils {
 
   private final JwtProperties jwtProperties;
   private final CookieProperties cookieProperties;
-
-  public CookieUtils(JwtProperties jwtProperties, CookieProperties cookieProperties) {
-    this.jwtProperties = jwtProperties;
-    this.cookieProperties = cookieProperties;
-  }
 
   public ResponseCookie createAccessTokenCookie(String token) {
     return ResponseCookie.from("access_token", token)

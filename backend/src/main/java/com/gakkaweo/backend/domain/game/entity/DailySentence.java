@@ -43,6 +43,7 @@ public class DailySentence {
   @Column(length = 20)
   private DailySentenceStatus status = DailySentenceStatus.ACTIVE;
 
+  @Column(nullable = true)
   private Integer totalPlayers;
 
   private Instant createdAt;

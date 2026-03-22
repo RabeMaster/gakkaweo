@@ -10,12 +10,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class SseEventListener {
 
   private static final long DEBOUNCE_MILLIS = 100;
@@ -30,12 +32,6 @@ public class SseEventListener {
             return t;
           });
   private volatile ScheduledFuture<?> pendingBroadcast;
-
-  public SseEventListener(
-      RankingService rankingService, SseConnectionManager sseConnectionManager) {
-    this.rankingService = rankingService;
-    this.sseConnectionManager = sseConnectionManager;
-  }
 
   @PreDestroy
   void shutdown() {
@@ -64,7 +60,7 @@ public class SseEventListener {
       sseConnectionManager.broadcast(SseEventType.RANKING_UPDATE, ranking);
       log.debug("RANKING_UPDATE 브로드캐스트: totalPlayers={}", ranking.totalPlayers());
     } catch (Exception e) {
-      log.error("RANKING_UPDATE 브로드캐스트 실패: {}", e.getMessage());
+      log.error("RANKING_UPDATE 브로드캐스트 실패", e);
     }
   }
 }
