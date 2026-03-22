@@ -1,6 +1,6 @@
 package com.gakkaweo.backend.auth.jwt;
 
-import static com.gakkaweo.backend.auth.service.AuthService.BLACKLIST_PREFIX;
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.BLACKLIST_PREFIX;
 
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import io.jsonwebtoken.Claims;
@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,15 +19,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtProvider jwtProvider;
   private final StringRedisTemplate redisTemplate;
-
-  public JwtAuthenticationFilter(JwtProvider jwtProvider, StringRedisTemplate redisTemplate) {
-    this.jwtProvider = jwtProvider;
-    this.redisTemplate = redisTemplate;
-  }
 
   @Override
   protected void doFilterInternal(

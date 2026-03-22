@@ -6,6 +6,7 @@ import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.auth.service.AccountService;
 import com.gakkaweo.backend.auth.service.AuthService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,18 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
   private final AuthService authService;
   private final AccountService accountService;
   private final CookieUtils cookieUtils;
-
-  public AuthController(
-      AuthService authService, AccountService accountService, CookieUtils cookieUtils) {
-    this.authService = authService;
-    this.accountService = accountService;
-    this.cookieUtils = cookieUtils;
-  }
 
   @PostMapping("/refresh")
   public ResponseEntity<Void> refresh(@CookieValue("refresh_token") String refreshToken) {

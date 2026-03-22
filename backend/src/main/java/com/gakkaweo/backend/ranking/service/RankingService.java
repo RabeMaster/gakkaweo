@@ -1,5 +1,9 @@
 package com.gakkaweo.backend.ranking.service;
 
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
+
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
@@ -15,32 +19,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RankingService {
 
   private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-  private static final String RANKING_KEY_PREFIX = "ranking:";
-  private static final String DETAIL_KEY_PREFIX = "ranking_detail:";
-  private static final String MEMBER_PREFIX = "member:";
   private static final int TOP_RANKING_SIZE = 10;
   private static final Duration EXPIRE_TTL = Duration.ofHours(1);
 
   private final StringRedisTemplate redisTemplate;
 
-  public RankingService(StringRedisTemplate redisTemplate) {
-    this.redisTemplate = redisTemplate;
-  }
-
   public Integer updateRanking(GameSession session, Member member) {
     try {
       LocalDate today = LocalDate.now(KST);
       String rankingKey = buildRankingKey(today);
-      String memberKey = MEMBER_PREFIX + member.getPublicId();
+      String memberKey = RANKING_MEMBER_PREFIX + member.getPublicId();
       String detailKey = buildDetailKey(today, member.getPublicId());
 
       long elapsedSeconds = calculateElapsedSeconds();
@@ -63,8 +63,8 @@ public class RankingService {
         return rank.intValue() + 1;
       }
       return null;
-    } catch (Exception e) {
-      log.warn("랭킹 갱신 실패: memberId={}, {}", member.getPublicId(), e.getMessage());
+    } catch (DataAccessException e) {
+      log.warn("랭킹 갱신 실패: memberId={}", member.getPublicId(), e);
       return null;
     }
   }
@@ -89,7 +89,7 @@ public class RankingService {
       List<RankingEntry> entries = new ArrayList<>();
       long rank = 1;
       for (String memberKey : topMembers) {
-        String publicIdStr = memberKey.substring(MEMBER_PREFIX.length());
+        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
         String detailKey = buildDetailKey(today, UUID.fromString(publicIdStr));
 
         Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
@@ -108,8 +108,8 @@ public class RankingService {
       }
 
       return new RankingResponse(entries, totalPlayers);
-    } catch (Exception e) {
-      log.warn("랭킹 목록 조회 실패: {}", e.getMessage());
+    } catch (DataAccessException e) {
+      log.warn("랭킹 목록 조회 실패: {}", e.getMessage(), e);
       return new RankingResponse(List.of(), 0);
     }
   }
@@ -130,13 +130,13 @@ public class RankingService {
       List<RankingSnapshot.MemberRank> memberRanks = new ArrayList<>();
       int rank = 1;
       for (String memberKey : allMembers) {
-        UUID publicId = UUID.fromString(memberKey.substring(MEMBER_PREFIX.length()));
+        UUID publicId = UUID.fromString(memberKey.substring(RANKING_MEMBER_PREFIX.length()));
         memberRanks.add(new RankingSnapshot.MemberRank(publicId, rank++));
       }
 
       return new RankingSnapshot(memberRanks, totalPlayers.intValue());
-    } catch (Exception e) {
-      log.warn("랭킹 스냅샷 조회 실패: date={}, {}", date, e.getMessage());
+    } catch (DataAccessException e) {
+      log.warn("랭킹 스냅샷 조회 실패: date={}", date, e);
       return new RankingSnapshot(List.of(), 0);
     }
   }
@@ -148,7 +148,7 @@ public class RankingService {
     int detailCount = 0;
     if (members != null) {
       for (String memberKey : members) {
-        String publicIdStr = memberKey.substring(MEMBER_PREFIX.length());
+        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
         String detailKey = buildDetailKey(date, UUID.fromString(publicIdStr));
         redisTemplate.expire(detailKey, EXPIRE_TTL);
         detailCount++;
@@ -177,6 +177,6 @@ public class RankingService {
   }
 
   private String buildDetailKey(LocalDate date, UUID memberPublicId) {
-    return DETAIL_KEY_PREFIX + date + ":" + MEMBER_PREFIX + memberPublicId;
+    return RANKING_DETAIL_PREFIX + date + ":" + RANKING_MEMBER_PREFIX + memberPublicId;
   }
 }

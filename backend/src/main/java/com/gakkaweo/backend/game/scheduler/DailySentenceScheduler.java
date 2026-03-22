@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -25,6 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class DailySentenceScheduler {
 
   private static final ZoneId KST = ZoneId.of("Asia/Seoul");
@@ -34,19 +36,6 @@ public class DailySentenceScheduler {
   private final RankingService rankingService;
   private final TransactionTemplate transactionTemplate;
   private final ApplicationEventPublisher eventPublisher;
-
-  public DailySentenceScheduler(
-      DailySentenceRepository dailySentenceRepository,
-      GameSessionRepository gameSessionRepository,
-      RankingService rankingService,
-      TransactionTemplate transactionTemplate,
-      ApplicationEventPublisher eventPublisher) {
-    this.dailySentenceRepository = dailySentenceRepository;
-    this.gameSessionRepository = gameSessionRepository;
-    this.rankingService = rankingService;
-    this.transactionTemplate = transactionTemplate;
-    this.eventPublisher = eventPublisher;
-  }
 
   @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
   public void executeMidnightJob() {

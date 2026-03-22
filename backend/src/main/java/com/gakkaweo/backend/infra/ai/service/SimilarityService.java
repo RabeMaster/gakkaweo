@@ -1,5 +1,7 @@
 package com.gakkaweo.backend.infra.ai.service;
 
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.SIMILARITY_CACHE_PREFIX;
+
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.infra.ai.client.AiServiceClient;
@@ -12,14 +14,13 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class SimilarityService {
-
-  private static final String CACHE_KEY_PREFIX = "similarity:";
 
   private final AiServiceClient aiServiceClient;
   private final TextNormalizer textNormalizer;
@@ -64,17 +65,17 @@ public class SimilarityService {
             return BigDecimal.valueOf(response.score()).setScale(1, RoundingMode.HALF_UP);
           });
     } catch (CallNotPermittedException e) {
-      log.warn("서킷 브레이커 OPEN 상태: {}", e.getMessage());
+      log.warn("서킷 브레이커 OPEN 상태: {}", e.getMessage(), e);
       throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
     } catch (AiServiceException e) {
-      log.warn("AI 서비스 호출 실패: {}", e.getMessage());
+      log.warn("AI 서비스 호출 실패: {}", e.getMessage(), e);
       throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
     }
   }
 
   private String buildCacheKey(Long sentenceId, String normalizedText) {
     String hash = textNormalizer.hashForCache(normalizedText);
-    return CACHE_KEY_PREFIX + sentenceId + ":" + hash;
+    return SIMILARITY_CACHE_PREFIX + sentenceId + ":" + hash;
   }
 
   private BigDecimal getFromCache(String cacheKey) {
@@ -83,8 +84,8 @@ public class SimilarityService {
       if (value != null) {
         return new BigDecimal(value);
       }
-    } catch (Exception e) {
-      log.warn("Redis 캐시 조회 실패: {}", e.getMessage());
+    } catch (DataAccessException e) {
+      log.warn("Redis 캐시 조회 실패: {}", e.getMessage(), e);
     }
     return null;
   }
@@ -92,8 +93,8 @@ public class SimilarityService {
   private void saveToCache(String cacheKey, BigDecimal score, Duration ttl) {
     try {
       redisTemplate.opsForValue().set(cacheKey, score.toPlainString(), ttl);
-    } catch (Exception e) {
-      log.warn("Redis 캐시 저장 실패: {}", e.getMessage());
+    } catch (DataAccessException e) {
+      log.warn("Redis 캐시 저장 실패: {}", e.getMessage(), e);
     }
   }
 }

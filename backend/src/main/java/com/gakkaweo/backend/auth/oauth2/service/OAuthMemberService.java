@@ -7,26 +7,19 @@ import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.domain.member.service.NicknameGenerator;
 import java.util.Objects;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class OAuthMemberService {
 
   private final SocialAccountRepository socialAccountRepository;
   private final MemberRepository memberRepository;
   private final NicknameGenerator nicknameGenerator;
-
-  public OAuthMemberService(
-      SocialAccountRepository socialAccountRepository,
-      MemberRepository memberRepository,
-      NicknameGenerator nicknameGenerator) {
-    this.socialAccountRepository = socialAccountRepository;
-    this.memberRepository = memberRepository;
-    this.nicknameGenerator = nicknameGenerator;
-  }
 
   @Transactional
   public Member findOrCreateMember(OAuthAttributes attributes) {

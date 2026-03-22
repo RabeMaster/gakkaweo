@@ -28,6 +28,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -36,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class DailyGameService {
 
   private static final ZoneId KST = ZoneId.of("Asia/Seoul");
@@ -49,27 +51,6 @@ public class DailyGameService {
   private final HintMaskGenerator hintMaskGenerator;
   private final GameProperties gameProperties;
   private final ApplicationEventPublisher eventPublisher;
-
-  public DailyGameService(
-      DailySentenceRepository dailySentenceRepository,
-      GameSessionRepository gameSessionRepository,
-      GuessHistoryRepository guessHistoryRepository,
-      MemberRepository memberRepository,
-      SimilarityService similarityService,
-      RankingService rankingService,
-      HintMaskGenerator hintMaskGenerator,
-      GameProperties gameProperties,
-      ApplicationEventPublisher eventPublisher) {
-    this.dailySentenceRepository = dailySentenceRepository;
-    this.gameSessionRepository = gameSessionRepository;
-    this.guessHistoryRepository = guessHistoryRepository;
-    this.memberRepository = memberRepository;
-    this.similarityService = similarityService;
-    this.rankingService = rankingService;
-    this.hintMaskGenerator = hintMaskGenerator;
-    this.gameProperties = gameProperties;
-    this.eventPublisher = eventPublisher;
-  }
 
   @Transactional(readOnly = true)
   public TodayResponse getToday() {

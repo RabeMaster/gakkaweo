@@ -3,6 +3,7 @@ package com.gakkaweo.backend.ranking.controller;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import com.gakkaweo.backend.ranking.sse.SseConnectionManager;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,16 +13,11 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @RestController
 @RequestMapping("/ranking")
+@RequiredArgsConstructor
 public class RankingController {
 
   private final RankingService rankingService;
   private final SseConnectionManager sseConnectionManager;
-
-  public RankingController(
-      RankingService rankingService, SseConnectionManager sseConnectionManager) {
-    this.rankingService = rankingService;
-    this.sseConnectionManager = sseConnectionManager;
-  }
 
   @GetMapping("/today")
   public ResponseEntity<RankingResponse> getTodayRanking() {

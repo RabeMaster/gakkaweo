@@ -2,6 +2,7 @@ package com.gakkaweo.backend.ratelimit.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
+import com.gakkaweo.backend.common.exception.ErrorBody;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
@@ -11,8 +12,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -22,20 +23,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class RateLimitFilter extends OncePerRequestFilter {
 
   private final EndpointGroupResolver endpointGroupResolver;
   private final BucketStore bucketStore;
   private final ObjectMapper objectMapper;
-
-  public RateLimitFilter(
-      EndpointGroupResolver endpointGroupResolver,
-      BucketStore bucketStore,
-      ObjectMapper objectMapper) {
-    this.endpointGroupResolver = endpointGroupResolver;
-    this.bucketStore = bucketStore;
-    this.objectMapper = objectMapper;
-  }
 
   @Override
   protected void doFilterInternal(
@@ -64,12 +57,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
     log.warn("Rate limit 초과: group={}, key={}, retryAfter={}s", group, key, retryAfterSeconds);
 
     ErrorCode errorCode = ErrorCode.RATE_LIMIT_EXCEEDED;
-    Map<String, Object> body =
-        Map.of(
-            "status", errorCode.getStatus().value(),
-            "code", errorCode.name(),
-            "message", errorCode.getMessage(),
-            "timestamp", Instant.now().toString());
+    ErrorBody body =
+        new ErrorBody(
+            errorCode.getStatus().value(),
+            errorCode.name(),
+            errorCode.getMessage(),
+            Instant.now().toString());
 
     response.setStatus(errorCode.getStatus().value());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);

@@ -1,5 +1,9 @@
 package com.gakkaweo.backend.auth.service;
 
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
+import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
+
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
@@ -11,6 +15,7 @@ import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -18,12 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class AccountService {
 
   private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-  private static final String RANKING_KEY_PREFIX = "ranking:";
-  private static final String DETAIL_KEY_PREFIX = "ranking_detail:";
-  private static final String MEMBER_PREFIX = "member:";
 
   private final MemberRepository memberRepository;
   private final GameSessionRepository gameSessionRepository;
@@ -32,23 +35,6 @@ public class AccountService {
   private final RefreshTokenRepository refreshTokenRepository;
   private final AuthService authService;
   private final StringRedisTemplate redisTemplate;
-
-  public AccountService(
-      MemberRepository memberRepository,
-      GameSessionRepository gameSessionRepository,
-      SentenceUploadRepository sentenceUploadRepository,
-      SocialAccountRepository socialAccountRepository,
-      RefreshTokenRepository refreshTokenRepository,
-      AuthService authService,
-      StringRedisTemplate redisTemplate) {
-    this.memberRepository = memberRepository;
-    this.gameSessionRepository = gameSessionRepository;
-    this.sentenceUploadRepository = sentenceUploadRepository;
-    this.socialAccountRepository = socialAccountRepository;
-    this.refreshTokenRepository = refreshTokenRepository;
-    this.authService = authService;
-    this.redisTemplate = redisTemplate;
-  }
 
   @Transactional
   public void deleteAccount(UUID publicId) {
@@ -79,15 +65,15 @@ public class AccountService {
 
       LocalDate today = LocalDate.now(KST);
       String rankingKey = RANKING_KEY_PREFIX + today;
-      String memberKey = MEMBER_PREFIX + publicId;
-      String detailKey = DETAIL_KEY_PREFIX + today + ":" + MEMBER_PREFIX + publicId;
+      String memberKey = RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
 
       redisTemplate.opsForZSet().remove(rankingKey, memberKey);
       redisTemplate.delete(detailKey);
 
       log.info("탈퇴 회원 Redis 정리 완료: publicId={}", publicId);
     } catch (Exception e) {
-      log.warn("탈퇴 회원 Redis 정리 실패: publicId={}, {}", publicId, e.getMessage());
+      log.warn("탈퇴 회원 Redis 정리 실패: publicId={}", publicId, e);
     }
   }
 }

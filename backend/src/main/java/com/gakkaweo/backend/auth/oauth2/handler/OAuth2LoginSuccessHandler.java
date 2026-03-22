@@ -9,6 +9,7 @@ import com.gakkaweo.backend.auth.util.CookieUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
@@ -17,23 +18,13 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
   private final AuthService authService;
   private final CookieUtils cookieUtils;
   private final OAuth2Properties oAuth2Properties;
   private final CookieAuthorizationRequestRepository authorizationRequestRepository;
-
-  public OAuth2LoginSuccessHandler(
-      AuthService authService,
-      CookieUtils cookieUtils,
-      OAuth2Properties oAuth2Properties,
-      CookieAuthorizationRequestRepository authorizationRequestRepository) {
-    this.authService = authService;
-    this.cookieUtils = cookieUtils;
-    this.oAuth2Properties = oAuth2Properties;
-    this.authorizationRequestRepository = authorizationRequestRepository;
-  }
 
   @Override
   public void onAuthenticationSuccess(
