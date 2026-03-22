@@ -108,7 +108,7 @@ public class RankingService {
       }
 
       return new RankingResponse(entries, totalPlayers);
-    } catch (DataAccessException e) {
+    } catch (Exception e) {
       log.warn("랭킹 목록 조회 실패: {}", e.getMessage(), e);
       return new RankingResponse(List.of(), 0);
     }
@@ -135,7 +135,7 @@ public class RankingService {
       }
 
       return new RankingSnapshot(memberRanks, totalPlayers.intValue());
-    } catch (DataAccessException e) {
+    } catch (Exception e) {
       log.warn("랭킹 스냅샷 조회 실패: date={}", date, e);
       return new RankingSnapshot(List.of(), 0);
     }

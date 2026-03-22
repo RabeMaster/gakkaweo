@@ -51,7 +51,7 @@ public class SseConnectionManager {
     emitters.clear();
   }
 
-  public SseEmitter register() {
+  public synchronized SseEmitter register() {
     if (emitters.size() >= MAX_CONNECTIONS) {
       throw new BusinessException(ErrorCode.SSE_MAX_CONNECTIONS);
     }
