@@ -17,5 +17,7 @@
     "editor.codeActionsOnSave": {
       "source.organizeImports.ruff": "explicit"
     }
-  }
+  },
+  "css.customData": [],
+  "css.lint.unknownAtRules": "ignore"
 }

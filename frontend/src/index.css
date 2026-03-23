@@ -1,0 +1,26 @@
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Pretendard Variable", "Pretendard", system-ui, sans-serif;
+
+  --shadow-brutal: 6px 6px 0px 0px rgba(var(--shadow-color), 1);
+  --shadow-brutal-sm: 3px 3px 0px 0px rgba(var(--shadow-color), 1);
+  --shadow-brutal-hover: 2px 2px 0px 0px rgba(var(--shadow-color), 1);
+}
+
+:root {
+  --shadow-color: 0, 0, 0;
+}
+
+.dark {
+  --shadow-color: 255, 255, 255;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
