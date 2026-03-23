@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { apiFetch } from "@/api/client";
-import type { MeResponse } from "@/api/types";
+import { apiFetch } from "@/shared/api/client";
+import type { MeResponse } from "@/shared/api/types";
 
 interface AuthState {
   user: MeResponse | null;

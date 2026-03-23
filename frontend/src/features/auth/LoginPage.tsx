@@ -1,4 +1,4 @@
-import { Card } from "@/components/ui/Card";
+import { Card } from "@/shared/ui/Card";
 
 export function LoginPage() {
   return (

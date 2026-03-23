@@ -1,6 +1,10 @@
-import type { ErrorBody } from "./types";
+import type { ErrorBody } from "@/shared/api/types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+if (!API_BASE) {
+  throw new Error("VITE_API_BASE_URL 환경변수가 설정되지 않았습니다. .env.development 파일을 확인하세요.");
+}
 
 export class ApiError extends Error {
   status: number;
@@ -32,7 +36,8 @@ async function refreshToken(): Promise<boolean> {
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.ok) {
-    if (res.status === 204 || res.headers.get("content-length") === "0") {
+    const contentType = res.headers.get("content-type");
+    if (res.status === 204 || !contentType || !contentType.includes("application/json")) {
       return undefined as T;
     }
     return res.json();
@@ -50,11 +55,19 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${path}`;
+  const method = options.method?.toUpperCase() ?? "GET";
+  const hasBody = method !== "GET" && method !== "HEAD";
+
+  const headers: Record<string, string> = {};
+  if (hasBody) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const config: RequestInit = {
     ...options,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...headers,
       ...options.headers,
     },
   };

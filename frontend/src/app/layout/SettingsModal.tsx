@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useThemeStore } from "@/stores/useThemeStore";
+import { useThemeStore } from "@/shared/stores/useThemeStore";
 
 type Theme = "light" | "dark" | "system";
 
@@ -57,7 +57,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true">
       <div
         ref={modalRef}
         className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-sm"
@@ -66,7 +66,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <h2 className="text-xl font-black">설정</h2>
           <button
             onClick={onClose}
-            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-black dark:text-white px-3 py-1 font-black text-lg transition-all duration-100 shadow-brutal-sm hover:shadow-brutal-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.75 active:translate-y-0.75"
+            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-black dark:text-white px-3 py-1 font-black text-lg transition-all duration-100 shadow-brutal-sm hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5"
             aria-label="설정 닫기"
           >
             ✕
@@ -87,7 +87,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     "flex-1 border-4 border-black dark:border-white px-3 py-2.5 font-bold text-sm transition-all duration-100",
                     theme === value
                       ? "bg-black text-white dark:bg-white dark:text-black shadow-none translate-x-0 translate-y-0"
-                      : "bg-white dark:bg-gray-900 text-black dark:text-white shadow-brutal-sm hover:shadow-brutal-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.75 active:translate-y-0.75",
+                      : "bg-white dark:bg-gray-900 text-black dark:text-white shadow-brutal-sm hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
                   ].join(" ")}
                 >
                   <span className="block text-lg">{icon}</span>

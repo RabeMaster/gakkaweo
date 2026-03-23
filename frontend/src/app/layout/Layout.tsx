@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { useToastStore } from "@/stores/useToastStore";
+import { Header } from "@/app/layout/Header";
+import { useToastStore } from "@/shared/stores/useToastStore";
 
 const TOAST_COLORS = {
   success: "bg-green-400 border-black text-black",
@@ -25,7 +25,7 @@ export function Layout() {
             <button
               key={toast.id}
               onClick={() => removeToast(toast.id)}
-              className={`border-4 ${TOAST_COLORS[toast.type]} shadow-brutal-sm px-5 py-3 font-bold text-sm transition-all duration-100 hover:shadow-brutal-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-0.75 active:translate-y-0.75`}
+              className={`border-4 ${TOAST_COLORS[toast.type]} shadow-brutal-sm px-5 py-3 font-bold text-sm transition-all duration-100 hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5`}
             >
               {toast.message}
             </button>
