@@ -11,6 +11,11 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       TZ: UTC
     command: postgres -c timezone=UTC
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d gakkaweo"]
       interval: 10s
@@ -31,14 +36,45 @@ services:
       --maxmemory 512mb
       --maxmemory-policy volatile-lru
       --requirepass ${REDIS_PASSWORD}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  ai-service:
+    build: ./ai-service
+    ports:
+      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
+    volumes:
+      - hf-model-cache:/root/.cache/huggingface
+    environment:
+      TZ: UTC
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
 volumes:
   pgdata:
     name: gakkaweo-postgresql
   redisdata:
     name: gakkaweo-redis
+  hf-model-cache:
+    name: gakkaweo-hf-model-cache
