@@ -1,0 +1,78 @@
+import type { ErrorBody } from "./types";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+export class ApiError extends Error {
+  status: number;
+  code: string;
+  body: ErrorBody;
+
+  constructor(status: number, code: string, body: ErrorBody) {
+    super(body.message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+    this.body = body;
+  }
+}
+
+let refreshPromise: Promise<boolean> | null = null;
+
+async function refreshToken(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  if (res.ok) {
+    if (res.status === 204 || res.headers.get("content-length") === "0") {
+      return undefined as T;
+    }
+    return res.json();
+  }
+
+  const body: ErrorBody = await res.json().catch(() => ({
+    status: res.status,
+    code: "UNKNOWN",
+    message: res.statusText,
+    timestamp: new Date().toISOString(),
+  }));
+
+  throw new ApiError(res.status, body.code, body);
+}
+
+export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE}${path}`;
+  const config: RequestInit = {
+    ...options,
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  };
+
+  let res = await fetch(url, config);
+
+  if (res.status === 401) {
+    if (!refreshPromise) {
+      refreshPromise = refreshToken().finally(() => {
+        refreshPromise = null;
+      });
+    }
+
+    const refreshed = await refreshPromise;
+    if (refreshed) {
+      res = await fetch(url, config);
+    }
+  }
+
+  return handleResponse<T>(res);
+}
