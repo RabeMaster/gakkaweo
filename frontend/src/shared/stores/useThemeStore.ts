@@ -2,9 +2,15 @@ import { create } from "zustand";
 
 type Theme = "light" | "dark" | "system";
 
+const VALID_THEMES: Theme[] = ["light", "dark", "system"];
+
 interface ThemeState {
   theme: Theme;
   setTheme: (theme: Theme) => void;
+}
+
+function isValidTheme(value: string | null): value is Theme {
+  return value !== null && VALID_THEMES.includes(value as Theme);
 }
 
 function getSystemTheme(): "light" | "dark" {
@@ -16,11 +22,20 @@ function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", resolved === "dark");
 }
 
-const stored = (localStorage.getItem("theme") as Theme) || "system";
-applyTheme(stored);
+function loadTheme(): Theme {
+  const stored = localStorage.getItem("theme");
+  if (isValidTheme(stored)) {
+    return stored;
+  }
+  localStorage.removeItem("theme");
+  return "system";
+}
+
+const initialTheme = loadTheme();
+applyTheme(initialTheme);
 
 export const useThemeStore = create<ThemeState>((set) => ({
-  theme: stored,
+  theme: initialTheme,
   setTheme: (theme) => {
     localStorage.setItem("theme", theme);
     applyTheme(theme);

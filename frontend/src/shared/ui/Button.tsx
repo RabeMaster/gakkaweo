@@ -34,6 +34,7 @@ export function Button({
 
   return (
     <button
+      type="button"
       disabled={isDisabled}
       className={[
         "border-4 border-black dark:border-white rounded-none font-bold transition-all duration-100",

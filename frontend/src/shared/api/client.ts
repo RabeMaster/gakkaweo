@@ -63,8 +63,14 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     headers["Content-Type"] = "application/json";
   }
 
+  const body =
+    hasBody && options.body && typeof options.body === "object" && !(options.body instanceof FormData)
+      ? JSON.stringify(options.body)
+      : options.body;
+
   const config: RequestInit = {
     ...options,
+    body,
     credentials: "include",
     headers: {
       ...headers,
