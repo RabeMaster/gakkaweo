@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.ruff_cache/
+*.egg-info/
+.env
+.gitignore
