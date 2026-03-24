@@ -1,3 +1,4 @@
+import type { CSSProperties, ReactNode } from "react";
 import { Card } from "@/shared/ui/Card";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
@@ -12,7 +13,7 @@ interface ProviderConfig {
   bg: string;
   text: string;
   hoverBg: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 const KakaoIcon = () => (
@@ -128,7 +129,7 @@ export function LoginPage() {
             key={id}
             type="button"
             onClick={() => handleLogin(id)}
-            style={{ "--shadow-color": "0, 0, 0" } as React.CSSProperties}
+            style={{ "--shadow-color": "0, 0, 0" } as CSSProperties}
             className={[
               "w-full border-4 border-black rounded-none font-bold text-base px-6 py-4",
               "shadow-brutal transition-all duration-100",

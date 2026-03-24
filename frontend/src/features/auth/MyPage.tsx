@@ -34,10 +34,10 @@ export function MyPage() {
     setIsDeleting(true);
     try {
       await deleteAccount();
+      navigate("/");
       clearUser();
       addToast("회원 탈퇴가 완료되었습니다", "success");
       setIsConfirmOpen(false);
-      navigate("/");
     } catch {
       addToast("회원 탈퇴에 실패했습니다. 다시 시도해주세요.", "error");
       setIsDeleting(false);

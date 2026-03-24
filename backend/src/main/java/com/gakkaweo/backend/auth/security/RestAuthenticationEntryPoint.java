@@ -2,12 +2,12 @@ package com.gakkaweo.backend.auth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gakkaweo.backend.common.exception.ErrorBody;
+import com.gakkaweo.backend.common.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -25,11 +25,15 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
       HttpServletResponse response,
       AuthenticationException authException)
       throws IOException {
+    ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
     ErrorBody body =
         new ErrorBody(
-            HttpStatus.UNAUTHORIZED.value(), "UNAUTHORIZED", "인증이 필요합니다", Instant.now().toString());
+            errorCode.getStatus().value(),
+            errorCode.name(),
+            errorCode.getMessage(),
+            Instant.now().toString());
 
-    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+    response.setStatus(errorCode.getStatus().value());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     response.setCharacterEncoding("UTF-8");
     objectMapper.writeValue(response.getWriter(), body);

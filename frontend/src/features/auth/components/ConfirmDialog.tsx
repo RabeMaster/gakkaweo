@@ -28,7 +28,7 @@ export function ConfirmDialog({
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !isLoading) {
         onClose();
       }
     };
@@ -37,7 +37,7 @@ export function ConfirmDialog({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, isLoading, onClose]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -45,7 +45,7 @@ export function ConfirmDialog({
     }
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
+      if (!isLoading && dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
         onClose();
       }
     };
@@ -54,7 +54,7 @@ export function ConfirmDialog({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, isLoading, onClose]);
 
   if (!isOpen) {
     return null;

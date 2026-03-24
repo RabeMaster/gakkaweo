@@ -27,7 +27,7 @@ export function App() {
     if (!error) {
       return;
     }
-    addToast(`로그인에 실패했습니다: ${decodeURIComponent(error)}`, "error");
+    addToast(`로그인에 실패했습니다: ${error}`, "error");
     window.history.replaceState({}, "", window.location.pathname);
   }, [addToast]);
 
