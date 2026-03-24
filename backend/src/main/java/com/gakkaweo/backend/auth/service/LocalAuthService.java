@@ -24,9 +24,8 @@ public class LocalAuthService {
   private final NicknameGenerator nicknameGenerator;
   private final PasswordEncoder passwordEncoder;
 
-  @Transactional
   public Member register(String username, String password) {
-    if (username.length() < 4) {
+    if (username.length() < 4 || password.length() < 8) {
       throw new BusinessException(ErrorCode.VALIDATION_FAILED);
     }
 
@@ -34,9 +33,14 @@ public class LocalAuthService {
       throw new BusinessException(ErrorCode.DUPLICATE_USERNAME);
     }
 
+    String passwordHash = passwordEncoder.encode(password);
+    return createLocalAccount(username, passwordHash);
+  }
+
+  @Transactional
+  protected Member createLocalAccount(String username, String passwordHash) {
     String nickname = nicknameGenerator.generate();
     Member member = memberRepository.save(new Member(nickname));
-    String passwordHash = passwordEncoder.encode(password);
 
     try {
       localAccountRepository.save(new LocalAccount(member, username, passwordHash));

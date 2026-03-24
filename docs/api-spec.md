@@ -439,4 +439,3 @@
 
 - 성공 시: `X-Rate-Limit-Remaining: <남은 토큰>`
 - 429 시: `Retry-After: <대기 초>`
--

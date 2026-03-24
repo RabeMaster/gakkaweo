@@ -14,6 +14,7 @@ import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -38,45 +39,13 @@ public class AuthController {
   @PostMapping("/register")
   public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
     Member member = localAuthService.register(request.username(), request.password());
-    TokenPair tokenPair = authService.issueTokens(member);
-
-    AuthResponse response =
-        new AuthResponse(
-            member.getPublicId(),
-            member.getNickname(),
-            member.getProfileUrl(),
-            member.getRole().name());
-
-    return ResponseEntity.status(201)
-        .header(
-            HttpHeaders.SET_COOKIE,
-            cookieUtils.createAccessTokenCookie(tokenPair.accessToken()).toString())
-        .header(
-            HttpHeaders.SET_COOKIE,
-            cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
-        .body(response);
+    return issueTokensAndRespond(member, HttpStatus.CREATED);
   }
 
   @PostMapping("/login")
   public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
     Member member = localAuthService.authenticate(request.username(), request.password());
-    TokenPair tokenPair = authService.issueTokens(member);
-
-    AuthResponse response =
-        new AuthResponse(
-            member.getPublicId(),
-            member.getNickname(),
-            member.getProfileUrl(),
-            member.getRole().name());
-
-    return ResponseEntity.ok()
-        .header(
-            HttpHeaders.SET_COOKIE,
-            cookieUtils.createAccessTokenCookie(tokenPair.accessToken()).toString())
-        .header(
-            HttpHeaders.SET_COOKIE,
-            cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
-        .body(response);
+    return issueTokensAndRespond(member, HttpStatus.OK);
   }
 
   @PostMapping("/refresh")
@@ -132,5 +101,25 @@ public class AuthController {
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteAccessTokenCookie().toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteRefreshTokenCookie().toString())
         .build();
+  }
+
+  private ResponseEntity<AuthResponse> issueTokensAndRespond(Member member, HttpStatus status) {
+    TokenPair tokenPair = authService.issueTokens(member);
+
+    AuthResponse response =
+        new AuthResponse(
+            member.getPublicId(),
+            member.getNickname(),
+            member.getProfileUrl(),
+            member.getRole().name());
+
+    return ResponseEntity.status(status)
+        .header(
+            HttpHeaders.SET_COOKIE,
+            cookieUtils.createAccessTokenCookie(tokenPair.accessToken()).toString())
+        .header(
+            HttpHeaders.SET_COOKIE,
+            cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
+        .body(response);
   }
 }

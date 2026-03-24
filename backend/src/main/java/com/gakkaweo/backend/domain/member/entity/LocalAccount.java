@@ -30,7 +30,7 @@ public class LocalAccount {
   @JoinColumn(name = "member_id", nullable = false, unique = true)
   private Member member;
 
-  @Column(nullable = false, length = 30, unique = true)
+  @Column(nullable = false, length = 20, unique = true)
   private String username;
 
   @Column(nullable = false, length = 72)
