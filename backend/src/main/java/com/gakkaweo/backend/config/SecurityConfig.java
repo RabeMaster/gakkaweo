@@ -8,6 +8,7 @@ import com.gakkaweo.backend.auth.oauth2.CookieAuthorizationRequestRepository;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginFailureHandler;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import com.gakkaweo.backend.auth.oauth2.service.CustomOAuth2UserService;
+import com.gakkaweo.backend.auth.security.RestAuthenticationEntryPoint;
 import com.gakkaweo.backend.ratelimit.filter.RateLimitFilter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class SecurityConfig {
   private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
   private final CookieAuthorizationRequestRepository authorizationRequestRepository;
   private final OAuth2Properties oAuth2Properties;
+  private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,10 +61,10 @@ public class SecurityConfig {
                     .authenticated()
                     .anyRequest()
                     .authenticated())
+        .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
         .oauth2Login(
             oauth2 ->
                 oauth2
-                    // TODO: 프론트엔드 구현 시 .loginPage() 설정하여 기본 로그인 페이지(/login) 비활성화
                     .authorizationEndpoint(
                         e -> e.authorizationRequestRepository(authorizationRequestRepository))
                     .userInfoEndpoint(u -> u.userService(customOAuth2UserService))

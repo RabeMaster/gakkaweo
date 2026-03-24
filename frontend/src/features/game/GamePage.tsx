@@ -35,7 +35,9 @@ export function GamePage() {
   const [localCleared, setLocalCleared] = useState(false);
   const retryRef = useRef(false);
 
-  const isCleared = status?.gameStatus === "CLEARED" || anonState.isCleared || localCleared;
+  const isCleared = isAuthenticated
+    ? status?.gameStatus === "CLEARED" || localCleared
+    : anonState.isCleared || localCleared;
 
   const displayGuesses = isAuthenticated ? (history?.guesses ?? []) : anonState.guesses;
 
@@ -191,9 +193,7 @@ export function GamePage() {
         <HintMask hintMask={today.hintMask} charCounts={today.charCounts} />
       </Card>
 
-      {isCleared && (
-        <GameClearedCard attemptCount={attemptCount} bestSimilarity={bestSimilarity} />
-      )}
+      {isCleared && <GameClearedCard attemptCount={attemptCount} bestSimilarity={bestSimilarity} />}
 
       <GuessInput
         onSubmit={handleSubmit}

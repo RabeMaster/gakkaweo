@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 import { Layout } from "@/app/layout/Layout";
+import { RequireAuth, RedirectIfAuth } from "@/app/guards";
 import { GamePage } from "@/features/game/GamePage";
 import { RankingPage } from "@/features/ranking/RankingPage";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -12,8 +13,22 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <GamePage /> },
       { path: "ranking", element: <RankingPage /> },
-      { path: "login", element: <LoginPage /> },
-      { path: "mypage", element: <MyPage /> },
+      {
+        path: "login",
+        element: (
+          <RedirectIfAuth>
+            <LoginPage />
+          </RedirectIfAuth>
+        ),
+      },
+      {
+        path: "mypage",
+        element: (
+          <RequireAuth>
+            <MyPage />
+          </RequireAuth>
+        ),
+      },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
