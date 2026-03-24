@@ -15,7 +15,7 @@ export function useGameStatus(sentenceId: string | undefined) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return useQuery({
-    queryKey: ["game", "status"],
+    queryKey: ["game", "status", sentenceId],
     queryFn: getStatus,
     staleTime: 30_000,
     enabled: isAuthenticated && !!sentenceId,

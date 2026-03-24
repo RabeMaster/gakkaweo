@@ -55,7 +55,7 @@ export function GamePage() {
         },
       ],
     }));
-    queryClient.invalidateQueries({ queryKey: ["game", "status"] });
+    queryClient.invalidateQueries({ queryKey: ["game", "status", sentenceId] });
   }
 
   function handleGuessError(err: unknown, sentenceId: string, guessText: string) {

@@ -24,7 +24,7 @@ export function GuessHistory({ guesses }: GuessHistoryProps) {
       <div className="space-y-3">
         {sorted.map((guess, i) => (
           <div
-            key={i}
+            key={`${guess.attemptNumber ?? total - i}-${guess.guessText}`}
             className="flex items-center justify-between border-4 border-black dark:border-white shadow-brutal bg-white dark:bg-gray-900 p-3"
           >
             <div className="flex items-center gap-3">

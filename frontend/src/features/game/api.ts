@@ -8,7 +8,7 @@ export function getToday() {
 export function submitGuess(body: GuessRequest) {
   return apiFetch<GuessResponse>("/daily/guess", {
     method: "POST",
-    body: body as unknown as BodyInit,
+    body: body,
   });
 }
 
