@@ -1,12 +1,16 @@
 package com.gakkaweo.backend.auth.controller;
 
 import com.gakkaweo.backend.auth.dto.AuthResponse;
+import com.gakkaweo.backend.auth.dto.LoginRequest;
 import com.gakkaweo.backend.auth.dto.NicknameUpdateRequest;
+import com.gakkaweo.backend.auth.dto.RegisterRequest;
 import com.gakkaweo.backend.auth.dto.TokenPair;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.auth.service.AccountService;
 import com.gakkaweo.backend.auth.service.AuthService;
+import com.gakkaweo.backend.auth.service.LocalAuthService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
+import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -27,8 +31,53 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
   private final AuthService authService;
+  private final LocalAuthService localAuthService;
   private final AccountService accountService;
   private final CookieUtils cookieUtils;
+
+  @PostMapping("/register")
+  public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    Member member = localAuthService.register(request.username(), request.password());
+    TokenPair tokenPair = authService.issueTokens(member);
+
+    AuthResponse response =
+        new AuthResponse(
+            member.getPublicId(),
+            member.getNickname(),
+            member.getProfileUrl(),
+            member.getRole().name());
+
+    return ResponseEntity.status(201)
+        .header(
+            HttpHeaders.SET_COOKIE,
+            cookieUtils.createAccessTokenCookie(tokenPair.accessToken()).toString())
+        .header(
+            HttpHeaders.SET_COOKIE,
+            cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
+        .body(response);
+  }
+
+  @PostMapping("/login")
+  public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+    Member member = localAuthService.authenticate(request.username(), request.password());
+    TokenPair tokenPair = authService.issueTokens(member);
+
+    AuthResponse response =
+        new AuthResponse(
+            member.getPublicId(),
+            member.getNickname(),
+            member.getProfileUrl(),
+            member.getRole().name());
+
+    return ResponseEntity.ok()
+        .header(
+            HttpHeaders.SET_COOKIE,
+            cookieUtils.createAccessTokenCookie(tokenPair.accessToken()).toString())
+        .header(
+            HttpHeaders.SET_COOKIE,
+            cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
+        .body(response);
+  }
 
   @PostMapping("/refresh")
   public ResponseEntity<Void> refresh(@CookieValue("refresh_token") String refreshToken) {
