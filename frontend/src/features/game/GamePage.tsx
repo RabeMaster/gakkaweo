@@ -28,7 +28,7 @@ export function GamePage() {
   const { state: anonState, addGuess: addAnonGuess } = useAnonymousGame(sentenceId);
 
   const guessMutation = useGuess();
-  const { formatted: countdown } = useCountdown(today?.expiresAt);
+  const { formatted: countdown, isExpired } = useCountdown(today?.expiresAt);
 
   const [inputError, setInputError] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
@@ -44,6 +44,13 @@ export function GamePage() {
   const attemptCount = isAuthenticated ? (status?.attemptCount ?? 0) : anonState.attemptCount;
 
   const bestSimilarity = isAuthenticated ? (status?.bestSimilarity ?? 0) : anonState.bestSimilarity;
+
+  useEffect(() => {
+    if (!isExpired || !today?.expiresAt) {
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ["game", "today"] });
+  }, [isExpired, today?.expiresAt, queryClient]);
 
   useEffect(() => {
     if (!localCleared) {
@@ -182,7 +189,13 @@ export function GamePage() {
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-black">오늘의 문장</h1>
         <span className="text-sm font-bold text-gray-600 dark:text-gray-400">
-          다음 문장까지: <span className="tabular-nums">{countdown}</span>
+          {isExpired ? (
+            "새 문장 준비 중..."
+          ) : (
+            <>
+              다음 문장까지: <span className="tabular-nums">{countdown}</span>
+            </>
+          )}
         </span>
       </div>
 
