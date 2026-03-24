@@ -31,9 +31,10 @@ export function GamePage() {
 
   const [inputError, setInputError] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
+  const [localCleared, setLocalCleared] = useState(false);
   const retryRef = useRef(false);
 
-  const isCleared = isAuthenticated ? status?.gameStatus === "CLEARED" : anonState.isCleared;
+  const isCleared = status?.gameStatus === "CLEARED" || anonState.isCleared || localCleared;
 
   const displayGuesses = isAuthenticated ? (history?.guesses ?? []) : anonState.guesses;
 
@@ -89,6 +90,9 @@ export function GamePage() {
                 } else {
                   addAnonGuess(guessText, res.similarity, res.isCorrect);
                 }
+                if (res.isCorrect) {
+                  setLocalCleared(true);
+                }
               },
               onError: () => {
                 retryRef.current = false;
@@ -126,6 +130,9 @@ export function GamePage() {
             appendGuessToCache(text, res);
           } else {
             addAnonGuess(text, res.similarity, res.isCorrect);
+          }
+          if (res.isCorrect) {
+            setLocalCleared(true);
           }
         },
         onError: (err) => handleGuessError(err, sentenceId, text),

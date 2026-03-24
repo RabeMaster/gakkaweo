@@ -17,7 +17,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   fetchUser: async () => {
     try {
       const user = await apiFetch<MeResponse>("/auth/me");
-      set({ user, isAuthenticated: true, isLoading: false });
+      if (user?.publicId) {
+        set({ user, isAuthenticated: true, isLoading: false });
+      } else {
+        set({ user: null, isAuthenticated: false, isLoading: false });
+      }
     } catch {
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
