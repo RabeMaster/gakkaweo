@@ -57,6 +57,13 @@ export interface RankingEntry {
   rank: number;
   publicId: string;
   nickname: string;
+  profileUrl: string | null;
+  similarity: number;
+  attemptCount: number;
+}
+
+export interface MyRank {
+  rank: number;
   similarity: number;
   attemptCount: number;
 }
@@ -64,6 +71,9 @@ export interface RankingEntry {
 export interface RankingResponse {
   rankings: RankingEntry[];
   totalPlayers: number;
+  myRank: MyRank | null;
+  yesterdayRank: number | null;
+  yesterdayTotalPlayers: number | null;
 }
 
 // --- Error ---

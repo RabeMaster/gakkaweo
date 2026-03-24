@@ -4,9 +4,14 @@ import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
 
+import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
+import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
+import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
+import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
+import com.gakkaweo.backend.ranking.dto.RankingResponse.MyRank;
 import com.gakkaweo.backend.ranking.dto.RankingResponse.RankingEntry;
 import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
 import java.math.BigDecimal;
@@ -17,6 +22,8 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -35,6 +43,9 @@ public class RankingService {
   private static final Duration EXPIRE_TTL = Duration.ofHours(1);
 
   private final StringRedisTemplate redisTemplate;
+  private final DailySentenceRepository dailySentenceRepository;
+  private final GameSessionRepository gameSessionRepository;
+  private final MemberRepository memberRepository;
 
   public Integer updateRanking(GameSession session, Member member) {
     try {
@@ -53,6 +64,7 @@ public class RankingService {
           Map.of(
               "publicId", member.getPublicId().toString(),
               "nickname", member.getNickname(),
+              "profileUrl", Objects.toString(member.getProfileUrl(), ""),
               "similarity", session.getBestSimilarity().toPlainString(),
               "attemptCount", String.valueOf(session.getAttemptCount()),
               "elapsedSeconds", String.valueOf(elapsedSeconds));
@@ -72,46 +84,109 @@ public class RankingService {
   public RankingResponse getRankings() {
     try {
       LocalDate today = LocalDate.now(KST);
-      String rankingKey = buildRankingKey(today);
-
-      Set<String> topMembers =
-          redisTemplate.opsForZSet().reverseRange(rankingKey, 0, TOP_RANKING_SIZE - 1);
-
-      Long totalPlayers = redisTemplate.opsForZSet().zCard(rankingKey);
-      if (totalPlayers == null) {
-        totalPlayers = 0L;
-      }
-
-      if (topMembers == null || topMembers.isEmpty()) {
-        return new RankingResponse(List.of(), totalPlayers);
-      }
-
-      List<RankingEntry> entries = new ArrayList<>();
-      long rank = 1;
-      for (String memberKey : topMembers) {
-        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
-        String detailKey = buildDetailKey(today, UUID.fromString(publicIdStr));
-
-        Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
-        if (detail.isEmpty()) {
-          continue;
-        }
-
-        entries.add(
-            new RankingEntry(
-                rank,
-                UUID.fromString((String) detail.get("publicId")),
-                (String) detail.get("nickname"),
-                new BigDecimal((String) detail.get("similarity")),
-                Integer.parseInt((String) detail.get("attemptCount"))));
-        rank++;
-      }
-
-      return new RankingResponse(entries, totalPlayers);
+      return getRankingsForDate(today);
     } catch (Exception e) {
       log.warn("랭킹 목록 조회 실패: {}", e.getMessage(), e);
       return new RankingResponse(List.of(), 0);
     }
+  }
+
+  @Transactional(readOnly = true)
+  public RankingResponse getRankingsForUser(UUID memberPublicId) {
+    try {
+      LocalDate today = LocalDate.now(KST);
+      RankingResponse base = getRankingsForDate(today);
+
+      MyRank myRank = lookupMyRank(today, memberPublicId);
+
+      LocalDate yesterday = today.minusDays(1);
+      Integer yesterdayRank = null;
+      Integer yesterdayTotalPlayers = null;
+
+      Optional<DailySentence> yesterdaySentence = dailySentenceRepository.findByUsedAt(yesterday);
+      if (yesterdaySentence.isPresent()) {
+        DailySentence ys = yesterdaySentence.get();
+        yesterdayTotalPlayers = ys.getTotalPlayers();
+
+        Optional<Member> member = memberRepository.findByPublicId(memberPublicId);
+        if (member.isPresent()) {
+          yesterdayRank =
+              gameSessionRepository
+                  .findByMemberAndSentence(member.get(), ys)
+                  .map(GameSession::getFinalRank)
+                  .orElse(null);
+        }
+      }
+
+      return new RankingResponse(
+          base.rankings(), base.totalPlayers(), myRank, yesterdayRank, yesterdayTotalPlayers);
+    } catch (Exception e) {
+      log.warn("사용자 랭킹 조회 실패: memberPublicId={}", memberPublicId, e);
+      return new RankingResponse(List.of(), 0);
+    }
+  }
+
+  private RankingResponse getRankingsForDate(LocalDate date) {
+    String rankingKey = buildRankingKey(date);
+
+    Set<String> topMembers =
+        redisTemplate.opsForZSet().reverseRange(rankingKey, 0, TOP_RANKING_SIZE - 1);
+
+    Long totalPlayers = redisTemplate.opsForZSet().zCard(rankingKey);
+    if (totalPlayers == null) {
+      totalPlayers = 0L;
+    }
+
+    if (topMembers == null || topMembers.isEmpty()) {
+      return new RankingResponse(List.of(), totalPlayers);
+    }
+
+    List<RankingEntry> entries = new ArrayList<>();
+    long rank = 1;
+    for (String memberKey : topMembers) {
+      String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
+      String detailKey = buildDetailKey(date, UUID.fromString(publicIdStr));
+
+      Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
+      if (detail.isEmpty()) {
+        continue;
+      }
+
+      String profileUrl = (String) detail.get("profileUrl");
+
+      entries.add(
+          new RankingEntry(
+              rank,
+              UUID.fromString((String) detail.get("publicId")),
+              (String) detail.get("nickname"),
+              profileUrl == null || profileUrl.isEmpty() ? null : profileUrl,
+              new BigDecimal((String) detail.get("similarity")),
+              Integer.parseInt((String) detail.get("attemptCount"))));
+      rank++;
+    }
+
+    return new RankingResponse(entries, totalPlayers);
+  }
+
+  private MyRank lookupMyRank(LocalDate date, UUID memberPublicId) {
+    String rankingKey = buildRankingKey(date);
+    String memberKey = RANKING_MEMBER_PREFIX + memberPublicId;
+
+    Long rank = redisTemplate.opsForZSet().reverseRank(rankingKey, memberKey);
+    if (rank == null) {
+      return null;
+    }
+
+    String detailKey = buildDetailKey(date, memberPublicId);
+    Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
+    if (detail.isEmpty()) {
+      return null;
+    }
+
+    return new MyRank(
+        rank + 1,
+        new BigDecimal((String) detail.get("similarity")),
+        Integer.parseInt((String) detail.get("attemptCount")));
   }
 
   public RankingSnapshot getAllRankingsForDate(LocalDate date) {

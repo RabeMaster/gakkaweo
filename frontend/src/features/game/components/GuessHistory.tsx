@@ -1,4 +1,4 @@
-import { SimilarityBadge } from "@/features/game/components/SimilarityBadge";
+import { SimilarityBadge } from "@/shared/ui/SimilarityBadge";
 
 interface GuessItem {
   guessText: string;

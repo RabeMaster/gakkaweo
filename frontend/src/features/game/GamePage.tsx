@@ -66,6 +66,7 @@ export function GamePage() {
       ],
     }));
     queryClient.invalidateQueries({ queryKey: ["game", "status", sentenceId] });
+    queryClient.invalidateQueries({ queryKey: ["ranking"] });
   }
 
   function handleGuessError(err: unknown, sentenceId: string, guessText: string) {
@@ -151,7 +152,7 @@ export function GamePage() {
 
   if (todayLoading || authLoading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl flex-1 min-w-0 space-y-6">
         <div className="h-10 w-48 bg-gray-200 dark:bg-gray-800 animate-pulse" />
         <div className="border-4 border-gray-200 dark:border-gray-800 p-6">
           <div className="h-8 w-full bg-gray-200 dark:bg-gray-800 animate-pulse" />
@@ -163,7 +164,7 @@ export function GamePage() {
   if (todayError) {
     const message = todayError instanceof ApiError ? todayError.message : "문제를 불러올 수 없습니다.";
     return (
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-2xl flex-1 min-w-0 space-y-6">
         <h1 className="text-4xl font-black">오늘의 문장</h1>
         <Card>
           <p className="text-lg font-bold text-red-500">{message}</p>
@@ -177,7 +178,7 @@ export function GamePage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl flex-1 min-w-0 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-black">오늘의 문장</h1>
         <span className="text-sm font-bold text-gray-600 dark:text-gray-400">
