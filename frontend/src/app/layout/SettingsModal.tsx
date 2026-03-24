@@ -65,8 +65,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <div className="flex items-center justify-between border-b-4 border-black dark:border-white px-6 py-4">
           <h2 className="text-xl font-black">설정</h2>
           <button
+            type="button"
             onClick={onClose}
-            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-black dark:text-white px-3 py-1 font-black text-lg transition-all duration-100 shadow-brutal-sm hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5"
+            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-black dark:text-white px-3 py-1 font-black text-lg transition-all duration-100 shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]"
             aria-label="설정 닫기"
           >
             ✕
@@ -81,13 +82,14 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <div className="flex gap-2">
               {THEME_OPTIONS.map(({ value, label, icon }) => (
                 <button
+                  type="button"
                   key={value}
                   onClick={() => setTheme(value)}
                   className={[
                     "flex-1 border-4 border-black dark:border-white px-3 py-2.5 font-bold text-sm transition-all duration-100",
                     theme === value
                       ? "bg-black text-white dark:bg-white dark:text-black shadow-none translate-x-0 translate-y-0"
-                      : "bg-white dark:bg-gray-900 text-black dark:text-white shadow-brutal-sm hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
+                      : "bg-white dark:bg-gray-900 text-black dark:text-white shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
                   ].join(" ")}
                 >
                   <span className="block text-lg">{icon}</span>

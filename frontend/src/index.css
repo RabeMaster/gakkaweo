@@ -9,6 +9,7 @@
   --shadow-brutal: 6px 6px 0px 0px rgba(var(--shadow-color), 1);
   --shadow-brutal-sm: 3px 3px 0px 0px rgba(var(--shadow-color), 1);
   --shadow-brutal-hover: 2px 2px 0px 0px rgba(var(--shadow-color), 1);
+  --shadow-brutal-sm-hover: 1px 1px 0px 0px rgba(var(--shadow-color), 1);
 }
 
 :root {
@@ -23,4 +24,26 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toast-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
 }

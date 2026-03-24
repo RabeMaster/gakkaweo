@@ -21,6 +21,24 @@ const SIZE_CLASSES: Record<Size, string> = {
   lg: "px-8 py-4 text-lg",
 };
 
+const INTERACTION_CLASSES: Record<Size, { base: string; hover: string; active: string }> = {
+  sm: {
+    base: "shadow-brutal-sm",
+    hover: "hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5",
+    active: "active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
+  },
+  md: {
+    base: "shadow-brutal",
+    hover: "hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1",
+    active: "active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
+  },
+  lg: {
+    base: "shadow-brutal",
+    hover: "hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1",
+    active: "active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
+  },
+};
+
 export function Button({
   variant = "primary",
   size = "md",
@@ -41,9 +59,10 @@ export function Button({
         VARIANT_CLASSES[variant],
         SIZE_CLASSES[size],
         isLoading
-          ? "opacity-70 cursor-wait shadow-brutal animate-pulse"
-          : "shadow-brutal hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
-        "disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0",
+          ? `opacity-70 cursor-wait ${INTERACTION_CLASSES[size].base} animate-pulse`
+          : isDisabled
+            ? `opacity-50 cursor-not-allowed ${INTERACTION_CLASSES[size].base}`
+            : `${INTERACTION_CLASSES[size].base} ${INTERACTION_CLASSES[size].hover} ${INTERACTION_CLASSES[size].active}`,
         className,
       ].join(" ")}
       {...rest}
