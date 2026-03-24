@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { getLastProvider, PROVIDER_COLORS } from "@/shared/config/providers";
-import { KakaoIcon, GoogleIcon, NaverIcon } from "@/shared/config/providerIcons";
+import { KakaoIcon, GoogleIcon, NaverIcon, GakkaweoIcon } from "@/shared/config/providerIcons";
 import { SettingsModal } from "@/app/layout/SettingsModal";
 
 export function Header() {
@@ -10,7 +10,9 @@ export function Header() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const provider = getLastProvider();
   const providerColors = provider ? PROVIDER_COLORS[provider] : null;
-  const ProviderIcon = provider ? { kakao: KakaoIcon, google: GoogleIcon, naver: NaverIcon }[provider] : null;
+  const ProviderIcon = provider
+    ? { kakao: KakaoIcon, google: GoogleIcon, naver: NaverIcon, local: GakkaweoIcon }[provider]
+    : null;
 
   return (
     <>

@@ -36,3 +36,18 @@ export function NaverIcon({ size = 20 }: { size?: number }) {
     </svg>
   );
 }
+
+export function GakkaweoIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 1.8a8.2 8.2 0 110 16.4 8.2 8.2 0 010-16.4z"
+      />
+      <path d="M7 8.5h3v4.5H8.5V10H7z" />
+      <path d="M12.5 8.5h2v4.5h-1V10h-1zm2.5 0h2v4.5h-1V10h-1z" />
+      <circle cx="12" cy="16" r="1.6" />
+    </svg>
+  );
+}

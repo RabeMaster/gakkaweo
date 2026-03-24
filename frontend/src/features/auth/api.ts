@@ -15,3 +15,11 @@ export function changeNickname(nickname: string) {
     body: { nickname },
   });
 }
+
+export function register(username: string, password: string) {
+  return apiFetch<MeResponse>("/auth/register", { method: "POST", body: { username, password } });
+}
+
+export function login(username: string, password: string) {
+  return apiFetch<MeResponse>("/auth/login", { method: "POST", body: { username, password } });
+}
