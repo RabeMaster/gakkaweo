@@ -1,0 +1,74 @@
+import { useState } from "react";
+import type { RankingEntry } from "@/shared/api/types";
+import { SimilarityBadge } from "@/shared/ui/SimilarityBadge";
+
+interface RankingEntryRowProps {
+  entry: RankingEntry;
+  isMe: boolean;
+}
+
+const RANK_BADGE_COLORS: Record<number, string> = {
+  1: "bg-yellow-400",
+  2: "bg-gray-300",
+  3: "bg-orange-300",
+};
+
+const RANK_ROW_COLORS: Record<number, string> = {
+  1: "bg-yellow-50 dark:bg-yellow-900/20",
+  2: "bg-gray-50 dark:bg-gray-800/30",
+  3: "bg-orange-50 dark:bg-orange-900/20",
+};
+
+function DefaultAvatar() {
+  return (
+    <div className="w-7 h-7 border-2 border-black dark:border-white bg-gray-200 dark:bg-gray-800 flex items-center justify-center shrink-0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400 dark:text-gray-500">
+        <circle cx="12" cy="9" r="3.5" />
+        <path d="M12 14c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" />
+      </svg>
+    </div>
+  );
+}
+
+export function RankingEntryRow({ entry, isMe }: RankingEntryRowProps) {
+  const [imgError, setImgError] = useState(false);
+  const badgeColor = RANK_BADGE_COLORS[entry.rank] ?? "bg-white dark:bg-gray-900";
+  const rowColor = RANK_ROW_COLORS[entry.rank] ?? "";
+
+  return (
+    <div
+      className={[
+        "flex items-center gap-2 px-2.5 py-1.5 border-2 border-black dark:border-white transition-all duration-100",
+        rowColor,
+        isMe ? "ring-2 ring-indigo-500 dark:ring-indigo-400" : "",
+      ].join(" ")}
+    >
+      <span
+        className={[
+          "w-6 h-6 border-2 border-black dark:border-white flex items-center justify-center text-xs font-black shrink-0",
+          badgeColor,
+        ].join(" ")}
+      >
+        {entry.rank}
+      </span>
+
+      {entry.profileUrl && !imgError ? (
+        <img
+          src={entry.profileUrl}
+          alt=""
+          className="w-7 h-7 border-2 border-black dark:border-white object-cover shrink-0"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <DefaultAvatar />
+      )}
+
+      <span className="text-sm font-bold truncate min-w-0 flex-1">{entry.nickname}</span>
+
+      <div className="flex items-center gap-1.5 shrink-0">
+        <SimilarityBadge similarity={entry.similarity} />
+        <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums">{entry.attemptCount}회</span>
+      </div>
+    </div>
+  );
+}
