@@ -12,11 +12,13 @@ import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
+import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +37,7 @@ public class AccountService {
   private final RefreshTokenRepository refreshTokenRepository;
   private final AuthService authService;
   private final StringRedisTemplate redisTemplate;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public void deleteAccount(UUID publicId) {
@@ -68,8 +71,12 @@ public class AccountService {
       String memberKey = RANKING_MEMBER_PREFIX + publicId;
       String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
 
-      redisTemplate.opsForZSet().remove(rankingKey, memberKey);
+      Long removed = redisTemplate.opsForZSet().remove(rankingKey, memberKey);
       redisTemplate.delete(detailKey);
+
+      if (removed != null && removed > 0) {
+        eventPublisher.publishEvent(new RankingUpdateEvent());
+      }
 
       log.info("탈퇴 회원 Redis 정리 완료: publicId={}", publicId);
     } catch (Exception e) {
