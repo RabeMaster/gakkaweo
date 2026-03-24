@@ -34,6 +34,11 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
   const [isPaused, setIsPaused] = useState(false);
   const [itemHeight, setItemHeight] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+  const entriesRef = useRef(entries);
+
+  useEffect(() => {
+    entriesRef.current = entries;
+  }, [entries]);
 
   useEffect(() => {
     if (!listRef.current?.firstElementChild) {
@@ -52,9 +57,12 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
     return () => clearInterval(id);
   }, [shouldAnimate, isPaused, itemHeight]);
 
-  const handleTransitionEnd = () => {
+  const handleTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) {
+      return;
+    }
     setIsSliding(false);
-    setOffset((o) => (o + 1) % entries.length);
+    setOffset((o) => (o + 1) % entriesRef.current.length);
   };
 
   const visibleEntries = shouldAnimate ? getCircularSlice(entries, offset, isSliding ? VISIBLE + 1 : VISIBLE) : entries;

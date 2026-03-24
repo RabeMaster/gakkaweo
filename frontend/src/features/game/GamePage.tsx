@@ -46,11 +46,11 @@ export function GamePage() {
   const bestSimilarity = isAuthenticated ? (status?.bestSimilarity ?? 0) : anonState.bestSimilarity;
 
   useEffect(() => {
-    if (!isExpired) {
+    if (!isExpired || !today?.expiresAt) {
       return;
     }
     queryClient.invalidateQueries({ queryKey: ["game", "today"] });
-  }, [isExpired, queryClient]);
+  }, [isExpired, today?.expiresAt, queryClient]);
 
   useEffect(() => {
     if (!localCleared) {
