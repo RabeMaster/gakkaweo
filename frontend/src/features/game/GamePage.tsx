@@ -63,9 +63,7 @@ export function GamePage() {
 
   useEffect(
     () => () => {
-      if (rateLimitTimerRef.current) {
-        clearTimeout(rateLimitTimerRef.current);
-      }
+      clearTimeout(rateLimitTimerRef.current ?? undefined);
     },
     [],
   );
@@ -96,9 +94,7 @@ export function GamePage() {
       case "RATE_LIMIT_EXCEEDED": {
         const seconds = err.retryAfter ?? 5;
         setRateLimited(true);
-        if (rateLimitTimerRef.current) {
-          clearTimeout(rateLimitTimerRef.current);
-        }
+        clearTimeout(rateLimitTimerRef.current ?? undefined);
         rateLimitTimerRef.current = setTimeout(() => {
           setRateLimited(false);
           rateLimitTimerRef.current = null;

@@ -72,9 +72,9 @@ public class AccountService {
       String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
 
       Long removed = redisTemplate.opsForZSet().remove(rankingKey, memberKey);
-      redisTemplate.delete(detailKey);
 
       if (removed != null && removed > 0) {
+        redisTemplate.delete(detailKey);
         eventPublisher.publishEvent(new RankingUpdateEvent());
       }
 
