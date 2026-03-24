@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import confetti from "canvas-confetti";
 import { ApiError } from "@/shared/api/client";
 import type { GuessResponse, HistoryResponse } from "@/shared/api/types";
 import { Card } from "@/shared/ui/Card";
@@ -42,7 +43,13 @@ export function GamePage() {
 
   const bestSimilarity = isAuthenticated ? (status?.bestSimilarity ?? 0) : anonState.bestSimilarity;
 
-  const similarities = displayGuesses.map((g) => g.similarity);
+  useEffect(() => {
+    if (!localCleared) {
+      return;
+    }
+    confetti({ particleCount: 80, spread: 70, origin: { x: 0.3, y: 0.5 } });
+    confetti({ particleCount: 80, spread: 70, origin: { x: 0.7, y: 0.5 } });
+  }, [localCleared]);
 
   function appendGuessToCache(guessText: string, res: GuessResponse) {
     queryClient.setQueryData<HistoryResponse>(["game", "history", sentenceId], (old) => ({
@@ -90,7 +97,7 @@ export function GamePage() {
                 } else {
                   addAnonGuess(guessText, res.similarity, res.isCorrect);
                 }
-                if (res.isCorrect) {
+                if (res.isCorrect && !isCleared) {
                   setLocalCleared(true);
                 }
               },
@@ -131,7 +138,7 @@ export function GamePage() {
           } else {
             addAnonGuess(text, res.similarity, res.isCorrect);
           }
-          if (res.isCorrect) {
+          if (res.isCorrect && !isCleared) {
             setLocalCleared(true);
           }
         },
@@ -185,7 +192,7 @@ export function GamePage() {
       </Card>
 
       {isCleared && (
-        <GameClearedCard attemptCount={attemptCount} bestSimilarity={bestSimilarity} similarities={similarities} />
+        <GameClearedCard attemptCount={attemptCount} bestSimilarity={bestSimilarity} />
       )}
 
       <GuessInput
