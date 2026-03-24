@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -124,7 +125,7 @@ public class AuthService {
       throw new BusinessException(ErrorCode.VALIDATION_FAILED);
     }
 
-    String stripped = nickname.toLowerCase().replaceAll("[\\s_]+", "");
+    String stripped = nickname.toLowerCase(Locale.ROOT).replaceAll("[\\s_]+", "");
     if (FORBIDDEN_WORDS.stream().anyMatch(stripped::contains)) {
       throw new BusinessException(ErrorCode.NICKNAME_FORBIDDEN);
     }

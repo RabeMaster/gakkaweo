@@ -6,6 +6,6 @@ import jakarta.validation.constraints.Size;
 
 public record NicknameUpdateRequest(
     @NotBlank
-        @Size(min = 2, max = 12)
+        @Size(max = 12)
         @Pattern(regexp = "^[가-힣a-zA-Z0-9_ ]+$", message = "한글, 영문, 숫자, 밑줄, 공백만 사용 가능합니다")
         String nickname) {}
