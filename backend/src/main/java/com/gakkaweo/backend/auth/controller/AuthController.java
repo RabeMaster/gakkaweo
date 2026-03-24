@@ -1,11 +1,13 @@
 package com.gakkaweo.backend.auth.controller;
 
 import com.gakkaweo.backend.auth.dto.AuthResponse;
+import com.gakkaweo.backend.auth.dto.NicknameUpdateRequest;
 import com.gakkaweo.backend.auth.dto.TokenPair;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.auth.service.AccountService;
 import com.gakkaweo.backend.auth.service.AuthService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -13,7 +15,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -56,6 +60,15 @@ public class AuthController {
   @GetMapping("/me")
   public ResponseEntity<AuthResponse> me(@AuthenticationPrincipal CustomUserDetails userDetails) {
     AuthResponse response = authService.getCurrentUser(userDetails.publicId());
+    return ResponseEntity.ok(response);
+  }
+
+  @PatchMapping("/nickname")
+  public ResponseEntity<AuthResponse> changeNickname(
+      @Valid @RequestBody NicknameUpdateRequest request,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+    AuthResponse response = authService.changeNickname(userDetails.publicId(), request.nickname());
+    authService.syncNicknameToRedis(userDetails.publicId(), response.nickname());
     return ResponseEntity.ok(response);
   }
 
