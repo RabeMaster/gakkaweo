@@ -1,6 +1,13 @@
+import { useState } from "react";
+import { ApiError } from "@/shared/api/client";
+import { Button } from "@/shared/ui/Button";
 import { Card } from "@/shared/ui/Card";
+import { Input } from "@/shared/ui/Input";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { type Provider, PROVIDER_COLORS, getLastProvider, saveLastProvider } from "@/shared/config/providers";
 import { KakaoIcon, GoogleIcon, NaverIcon } from "@/shared/config/providerIcons";
+import { login } from "@/features/auth/api";
+import { RegisterDialog } from "@/features/auth/components/RegisterDialog";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -10,13 +17,50 @@ const PROVIDERS: { id: Provider; loginLabel: string; icon: typeof KakaoIcon }[] 
   { id: "naver", loginLabel: "네이버 로그인", icon: NaverIcon },
 ];
 
-function handleLogin(provider: Provider) {
+function handleOAuthLogin(provider: Provider) {
   saveLastProvider(provider);
   window.location.href = `${API_BASE}/oauth2/authorization/${provider}`;
 }
 
 export function LoginPage() {
   const lastProvider = getLastProvider();
+  const { fetchUser } = useAuthStore();
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+
+  const canSubmit = !isSubmitting && username.length > 0 && password.length > 0;
+
+  const handleLogin = async () => {
+    if (!canSubmit) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      await login(username, password);
+      saveLastProvider("local");
+      await fetchUser();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("로그인에 실패했습니다");
+      }
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRegisterSuccess = async () => {
+    setIsRegisterOpen(false);
+    saveLastProvider("local");
+    await fetchUser();
+  };
 
   return (
     <div className="max-w-md mx-auto space-y-6">
@@ -38,7 +82,7 @@ export function LoginPage() {
             <button
               key={id}
               type="button"
-              onClick={() => handleLogin(id)}
+              onClick={() => handleOAuthLogin(id)}
               className={[
                 "w-full border-4 border-black dark:border-white rounded-none font-bold text-base px-6 py-4",
                 "shadow-brutal transition-all duration-100",
@@ -59,9 +103,70 @@ export function LoginPage() {
         })}
       </Card>
 
+      <div className="flex items-center gap-4">
+        <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-700" />
+        <span className="text-sm font-bold text-gray-400">또는</span>
+        <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-700" />
+      </div>
+
+      <Card className="space-y-4">
+        <div className="space-y-3">
+          <Input
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value);
+              setError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canSubmit) {
+                handleLogin();
+              }
+            }}
+            placeholder="아이디"
+            disabled={isSubmitting}
+            autoComplete="username"
+          />
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canSubmit) {
+                handleLogin();
+              }
+            }}
+            placeholder="비밀번호"
+            disabled={isSubmitting}
+            autoComplete="current-password"
+          />
+        </div>
+
+        {error && <p className="text-sm font-medium text-red-500">{error}</p>}
+
+        <Button className="w-full" onClick={handleLogin} isLoading={isSubmitting} disabled={!canSubmit}>
+          로그인
+        </Button>
+
+        <p className="text-sm font-medium text-center text-gray-600 dark:text-gray-400">
+          계정이 없으신가요?{" "}
+          <button
+            type="button"
+            onClick={() => setIsRegisterOpen(true)}
+            className="font-bold text-black dark:text-white underline underline-offset-2"
+          >
+            회원가입
+          </button>
+        </p>
+      </Card>
+
       <p className="text-xs text-gray-400 font-medium text-center">
         로그인 시 게임 기록이 저장되고 랭킹에 참여할 수 있습니다
       </p>
+
+      {isRegisterOpen && <RegisterDialog onClose={() => setIsRegisterOpen(false)} onSuccess={handleRegisterSuccess} />}
     </div>
   );
 }

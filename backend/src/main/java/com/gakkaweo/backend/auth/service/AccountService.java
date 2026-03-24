@@ -10,6 +10,7 @@ import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
 import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
+import com.gakkaweo.backend.domain.member.repository.LocalAccountRepository;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
@@ -33,6 +34,7 @@ public class AccountService {
   private final MemberRepository memberRepository;
   private final GameSessionRepository gameSessionRepository;
   private final SentenceUploadRepository sentenceUploadRepository;
+  private final LocalAccountRepository localAccountRepository;
   private final SocialAccountRepository socialAccountRepository;
   private final RefreshTokenRepository refreshTokenRepository;
   private final AuthService authService;
@@ -49,6 +51,7 @@ public class AccountService {
     int anonymizedSessions = gameSessionRepository.anonymizeByMember(member);
     int anonymizedUploads = sentenceUploadRepository.anonymizeByAdmin(member);
 
+    localAccountRepository.deleteByMember(member);
     socialAccountRepository.deleteByMember(member);
     refreshTokenRepository.deleteByMemberId(member.getId());
     memberRepository.delete(member);

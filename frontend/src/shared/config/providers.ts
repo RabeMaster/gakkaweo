@@ -1,11 +1,11 @@
-export type Provider = "kakao" | "google" | "naver";
+export type Provider = "kakao" | "google" | "naver" | "local";
 
 const STORAGE_KEY = "gakkaweo-last-provider";
 
 export function getLastProvider(): Provider | null {
   try {
     const value = localStorage.getItem(STORAGE_KEY);
-    if (value === "kakao" || value === "google" || value === "naver") {
+    if (value === "kakao" || value === "google" || value === "naver" || value === "local") {
       return value;
     }
   } catch {
@@ -43,5 +43,10 @@ export const PROVIDER_COLORS: Record<Provider, ProviderColors> = {
     bg: "bg-[#03C75A]",
     text: "text-white",
     label: "네이버",
+  },
+  local: {
+    bg: "bg-gray-200 dark:bg-gray-700",
+    text: "text-black dark:text-white",
+    label: "가까워",
   },
 };
