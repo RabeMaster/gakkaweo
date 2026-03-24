@@ -1,19 +1,28 @@
 import { useState } from "react";
+import type { MeResponse } from "@/shared/api/types";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { Card } from "@/shared/ui/Card";
 import { Button } from "@/shared/ui/Button";
 import { logout, deleteAccount } from "@/features/auth/api";
 import { ConfirmDialog } from "@/features/auth/components/ConfirmDialog";
+import { NicknameEditDialog } from "@/features/auth/components/NicknameEditDialog";
 
 export function MyPage() {
-  const { user, clearUser } = useAuthStore();
+  const { user, clearUser, updateUser } = useAuthStore();
   const addToast = useToastStore((s) => s.addToast);
 
+  const [isNicknameEditOpen, setIsNicknameEditOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleNicknameSuccess = (updatedUser: MeResponse) => {
+    updateUser({ nickname: updatedUser.nickname });
+    addToast("닉네임이 변경되었습니다", "success");
+    setIsNicknameEditOpen(false);
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -72,7 +81,12 @@ export function MyPage() {
           <p className="text-sm font-extrabold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">
             닉네임
           </p>
-          <p className="text-2xl font-black">{user?.nickname}</p>
+          <div className="flex items-center justify-center gap-2">
+            <p className="text-2xl font-black">{user?.nickname}</p>
+            <Button variant="secondary" size="sm" onClick={() => setIsNicknameEditOpen(true)}>
+              변경
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -90,6 +104,14 @@ export function MyPage() {
           회원 탈퇴
         </Button>
       </div>
+
+      {isNicknameEditOpen && (
+        <NicknameEditDialog
+          onClose={() => setIsNicknameEditOpen(false)}
+          currentNickname={user?.nickname ?? ""}
+          onSuccess={handleNicknameSuccess}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={isLogoutConfirmOpen}

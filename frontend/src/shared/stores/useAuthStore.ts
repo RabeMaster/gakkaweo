@@ -8,6 +8,7 @@ interface AuthState {
   isLoading: boolean;
   fetchUser: () => Promise<void>;
   clearUser: () => void;
+  updateUser: (patch: Partial<MeResponse>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -28,5 +29,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   clearUser: () => {
     set({ user: null, isAuthenticated: false, isLoading: false });
+  },
+  updateUser: (patch) => {
+    set((state) => {
+      if (!state.user) {
+        return state;
+      }
+      return { user: { ...state.user, ...patch } };
+    });
   },
 }));
