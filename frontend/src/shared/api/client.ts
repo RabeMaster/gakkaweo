@@ -10,13 +10,15 @@ export class ApiError extends Error {
   status: number;
   code: string;
   body: ErrorBody;
+  retryAfter: number | null;
 
-  constructor(status: number, code: string, body: ErrorBody) {
+  constructor(status: number, code: string, body: ErrorBody, retryAfter: number | null = null) {
     super(body.message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
     this.body = body;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -50,7 +52,10 @@ async function handleResponse<T>(res: Response): Promise<T> {
     timestamp: new Date().toISOString(),
   }));
 
-  throw new ApiError(res.status, body.code, body);
+  const retryAfterHeader = res.headers.get("Retry-After");
+  const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : null;
+
+  throw new ApiError(res.status, body.code, body, Number.isNaN(retryAfter) ? null : retryAfter);
 }
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
