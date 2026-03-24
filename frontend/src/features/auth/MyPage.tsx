@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { Card } from "@/shared/ui/Card";
@@ -10,9 +9,9 @@ import { ConfirmDialog } from "@/features/auth/components/ConfirmDialog";
 export function MyPage() {
   const { user, clearUser } = useAuthStore();
   const addToast = useToastStore((s) => s.addToast);
-  const navigate = useNavigate();
 
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -26,7 +25,7 @@ export function MyPage() {
     } finally {
       clearUser();
       setIsLoggingOut(false);
-      navigate("/");
+      setIsLogoutConfirmOpen(false);
     }
   };
 
@@ -34,10 +33,9 @@ export function MyPage() {
     setIsDeleting(true);
     try {
       await deleteAccount();
-      navigate("/");
       clearUser();
       addToast("회원 탈퇴가 완료되었습니다", "success");
-      setIsConfirmOpen(false);
+      setIsDeleteConfirmOpen(false);
     } catch {
       addToast("회원 탈퇴에 실패했습니다. 다시 시도해주세요.", "error");
       setIsDeleting(false);
@@ -79,18 +77,33 @@ export function MyPage() {
       </Card>
 
       <div className="space-y-3">
-        <Button variant="secondary" className="w-full" onClick={handleLogout} isLoading={isLoggingOut}>
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => setIsLogoutConfirmOpen(true)}
+          disabled={isLoggingOut}
+        >
           로그아웃
         </Button>
 
-        <Button variant="danger" className="w-full" onClick={() => setIsConfirmOpen(true)} disabled={isDeleting}>
+        <Button variant="danger" className="w-full" onClick={() => setIsDeleteConfirmOpen(true)} disabled={isDeleting}>
           회원 탈퇴
         </Button>
       </div>
 
       <ConfirmDialog
-        isOpen={isConfirmOpen}
-        onClose={() => setIsConfirmOpen(false)}
+        isOpen={isLogoutConfirmOpen}
+        onClose={() => setIsLogoutConfirmOpen(false)}
+        onConfirm={handleLogout}
+        title="로그아웃"
+        message="로그아웃하시겠습니까?"
+        confirmLabel="로그아웃"
+        isLoading={isLoggingOut}
+      />
+
+      <ConfirmDialog
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
         onConfirm={handleDeleteAccount}
         title="회원 탈퇴"
         message="탈퇴 시 게임 기록이 익명 처리되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?"
