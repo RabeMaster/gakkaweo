@@ -12,6 +12,10 @@ public class EndpointGroupResolver {
       return EndpointGroup.NONE;
     }
 
+    if ("GET".equals(method) && uri.equals("/auth/me")) {
+      return EndpointGroup.READ;
+    }
+
     if (uri.startsWith("/auth")) {
       return EndpointGroup.AUTH;
     }
