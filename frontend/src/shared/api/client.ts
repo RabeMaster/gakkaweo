@@ -10,13 +10,15 @@ export class ApiError extends Error {
   status: number;
   code: string;
   body: ErrorBody;
+  retryAfter: number | null;
 
-  constructor(status: number, code: string, body: ErrorBody) {
+  constructor(status: number, code: string, body: ErrorBody, retryAfter: number | null = null) {
     super(body.message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
     this.body = body;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -50,12 +52,17 @@ async function handleResponse<T>(res: Response): Promise<T> {
     timestamp: new Date().toISOString(),
   }));
 
-  throw new ApiError(res.status, body.code, body);
+  const retryAfterHeader = res.headers.get("Retry-After");
+  const retryAfter = retryAfterHeader ? parseInt(retryAfterHeader, 10) : null;
+
+  throw new ApiError(res.status, body.code, body, Number.isNaN(retryAfter) ? null : retryAfter);
 }
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+type ApiFetchOptions = Omit<RequestInit, "body"> & { body?: BodyInit | object | null };
+
+export async function apiFetch<T>(path: string, { body: rawBody, ...restOptions }: ApiFetchOptions = {}): Promise<T> {
   const url = `${API_BASE}${path}`;
-  const method = options.method?.toUpperCase() ?? "GET";
+  const method = restOptions.method?.toUpperCase() ?? "GET";
   const hasBody = method !== "GET" && method !== "HEAD";
 
   const headers: Record<string, string> = {};
@@ -63,18 +70,18 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     headers["Content-Type"] = "application/json";
   }
 
-  const body =
-    hasBody && options.body && typeof options.body === "object" && !(options.body instanceof FormData)
-      ? JSON.stringify(options.body)
-      : options.body;
+  const body: BodyInit | null | undefined =
+    hasBody && rawBody && typeof rawBody === "object" && !(rawBody instanceof FormData)
+      ? JSON.stringify(rawBody)
+      : (rawBody as BodyInit | null | undefined);
 
   const config: RequestInit = {
-    ...options,
+    ...restOptions,
     body,
     credentials: "include",
     headers: {
       ...headers,
-      ...options.headers,
+      ...restOptions.headers,
     },
   };
 

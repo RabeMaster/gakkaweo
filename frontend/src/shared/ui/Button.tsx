@@ -43,7 +43,7 @@ export function Button({
         isLoading
           ? "opacity-70 cursor-wait shadow-brutal animate-pulse"
           : "shadow-brutal hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1 active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
-        "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0",
+        "disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0",
         className,
       ].join(" ")}
       {...rest}

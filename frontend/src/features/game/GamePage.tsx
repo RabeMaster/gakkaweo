@@ -1,12 +1,208 @@
+import { useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import confetti from "canvas-confetti";
+import { ApiError } from "@/shared/api/client";
+import type { GuessResponse, HistoryResponse } from "@/shared/api/types";
 import { Card } from "@/shared/ui/Card";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useToastStore } from "@/shared/stores/useToastStore";
+import { useToday, useGameStatus, useGameHistory, useGuess } from "@/features/game/hooks/useGameQueries";
+import { useCountdown } from "@/features/game/hooks/useCountdown";
+import { useAnonymousGame } from "@/features/game/hooks/useAnonymousGame";
+import { HintMask } from "@/features/game/components/HintMask";
+import { GuessInput } from "@/features/game/components/GuessInput";
+import { GuessHistory } from "@/features/game/components/GuessHistory";
+import { GameClearedCard } from "@/features/game/components/GameClearedCard";
+import { YesterdayAnswer } from "@/features/game/components/YesterdayAnswer";
 
 export function GamePage() {
+  const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+
+  const { data: today, isLoading: todayLoading, error: todayError } = useToday();
+  const sentenceId = today?.sentenceId;
+
+  const { data: status } = useGameStatus(sentenceId);
+  const { data: history } = useGameHistory(sentenceId);
+  const { state: anonState, addGuess: addAnonGuess } = useAnonymousGame(sentenceId);
+
+  const guessMutation = useGuess();
+  const { formatted: countdown } = useCountdown(today?.expiresAt);
+
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [rateLimited, setRateLimited] = useState(false);
+  const [localCleared, setLocalCleared] = useState(false);
+  const retryRef = useRef(false);
+
+  const isCleared = status?.gameStatus === "CLEARED" || anonState.isCleared || localCleared;
+
+  const displayGuesses = isAuthenticated ? (history?.guesses ?? []) : anonState.guesses;
+
+  const attemptCount = isAuthenticated ? (status?.attemptCount ?? 0) : anonState.attemptCount;
+
+  const bestSimilarity = isAuthenticated ? (status?.bestSimilarity ?? 0) : anonState.bestSimilarity;
+
+  useEffect(() => {
+    if (!localCleared) {
+      return;
+    }
+    confetti({ particleCount: 80, spread: 70, origin: { x: 0.3, y: 0.5 } });
+    confetti({ particleCount: 80, spread: 70, origin: { x: 0.7, y: 0.5 } });
+  }, [localCleared]);
+
+  function appendGuessToCache(guessText: string, res: GuessResponse) {
+    queryClient.setQueryData<HistoryResponse>(["game", "history", sentenceId], (old) => ({
+      guesses: [
+        ...(old?.guesses ?? []),
+        {
+          guessText,
+          similarity: res.similarity,
+          attemptNumber: res.attemptNumber ?? (old?.guesses?.length ?? 0) + 1,
+          createdAt: res.timestamp,
+        },
+      ],
+    }));
+    queryClient.invalidateQueries({ queryKey: ["game", "status", sentenceId] });
+  }
+
+  function handleGuessError(err: unknown, sentenceId: string, guessText: string) {
+    if (!(err instanceof ApiError)) {
+      addToast("알 수 없는 오류가 발생했습니다.", "error");
+      return;
+    }
+
+    switch (err.code) {
+      case "RATE_LIMIT_EXCEEDED": {
+        const seconds = err.retryAfter ?? 5;
+        setRateLimited(true);
+        setTimeout(() => setRateLimited(false), seconds * 1000);
+        addToast(`요청이 너무 많습니다. ${seconds}초 후 다시 시도해주세요.`, "error");
+        break;
+      }
+      case "GAME_EXPIRED":
+        addToast("게임이 만료되었습니다. 새로운 문제를 불러옵니다.", "info");
+        queryClient.invalidateQueries({ queryKey: ["game", "today"] });
+        break;
+      case "CONCURRENT_MODIFICATION":
+        if (!retryRef.current) {
+          retryRef.current = true;
+          guessMutation.mutate(
+            { sentenceId, guessText },
+            {
+              onSuccess: (res) => {
+                retryRef.current = false;
+                if (isAuthenticated) {
+                  appendGuessToCache(guessText, res);
+                } else {
+                  addAnonGuess(guessText, res.similarity, res.isCorrect);
+                }
+                if (res.isCorrect && !isCleared) {
+                  setLocalCleared(true);
+                }
+              },
+              onError: () => {
+                retryRef.current = false;
+                addToast("다시 시도해주세요.", "error");
+              },
+            },
+          );
+        } else {
+          retryRef.current = false;
+          addToast("다시 시도해주세요.", "error");
+        }
+        break;
+      case "AI_SERVICE_UNAVAILABLE":
+        addToast("AI 서버 점검 중입니다. 잠시 후 다시 시도해주세요.", "error");
+        break;
+      case "INVALID_GUESS_TEXT":
+        setInputError(err.message);
+        break;
+      default:
+        addToast(err.message, "error");
+    }
+  }
+
+  function handleSubmit(text: string) {
+    if (!sentenceId) {
+      return;
+    }
+    setInputError(null);
+
+    guessMutation.mutate(
+      { sentenceId, guessText: text },
+      {
+        onSuccess: (res) => {
+          if (isAuthenticated) {
+            appendGuessToCache(text, res);
+          } else {
+            addAnonGuess(text, res.similarity, res.isCorrect);
+          }
+          if (res.isCorrect && !isCleared) {
+            setLocalCleared(true);
+          }
+        },
+        onError: (err) => handleGuessError(err, sentenceId, text),
+      },
+    );
+  }
+
+  if (todayLoading || authLoading) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="h-10 w-48 bg-gray-200 dark:bg-gray-800 animate-pulse" />
+        <div className="border-4 border-gray-200 dark:border-gray-800 p-6">
+          <div className="h-8 w-full bg-gray-200 dark:bg-gray-800 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  if (todayError) {
+    const message = todayError instanceof ApiError ? todayError.message : "문제를 불러올 수 없습니다.";
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <h1 className="text-4xl font-black">오늘의 문장</h1>
+        <Card>
+          <p className="text-lg font-bold text-red-500">{message}</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!today) {
+    return null;
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-4xl font-black">오늘의 문장</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-4xl font-black">오늘의 문장</h1>
+        <span className="text-sm font-bold text-gray-600 dark:text-gray-400">
+          다음 문장까지: <span className="tabular-nums">{countdown}</span>
+        </span>
+      </div>
+
+      {today.yesterdaySentence && today.yesterdayDate && (
+        <YesterdayAnswer sentence={today.yesterdaySentence} date={today.yesterdayDate} />
+      )}
+
       <Card>
-        <p className="text-lg font-medium text-gray-600 dark:text-gray-400">게임 페이지 — Issue B에서 구현 예정</p>
+        <HintMask hintMask={today.hintMask} charCounts={today.charCounts} />
       </Card>
+
+      {isCleared && (
+        <GameClearedCard attemptCount={attemptCount} bestSimilarity={bestSimilarity} />
+      )}
+
+      <GuessInput
+        onSubmit={handleSubmit}
+        isLoading={guessMutation.isPending}
+        disabled={rateLimited}
+        error={inputError}
+      />
+
+      <GuessHistory guesses={displayGuesses} />
     </div>
   );
 }
