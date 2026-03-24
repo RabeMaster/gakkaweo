@@ -34,6 +34,7 @@ export function GamePage() {
   const [rateLimited, setRateLimited] = useState(false);
   const [localCleared, setLocalCleared] = useState(false);
   const retryRef = useRef(false);
+  const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isCleared = isAuthenticated
     ? status?.gameStatus === "CLEARED" || localCleared
@@ -59,6 +60,15 @@ export function GamePage() {
     confetti({ particleCount: 80, spread: 70, origin: { x: 0.3, y: 0.5 } });
     confetti({ particleCount: 80, spread: 70, origin: { x: 0.7, y: 0.5 } });
   }, [localCleared]);
+
+  useEffect(
+    () => () => {
+      if (rateLimitTimerRef.current) {
+        clearTimeout(rateLimitTimerRef.current);
+      }
+    },
+    [],
+  );
 
   function appendGuessToCache(guessText: string, res: GuessResponse) {
     queryClient.setQueryData<HistoryResponse>(["game", "history", sentenceId], (old) => ({
@@ -86,7 +96,13 @@ export function GamePage() {
       case "RATE_LIMIT_EXCEEDED": {
         const seconds = err.retryAfter ?? 5;
         setRateLimited(true);
-        setTimeout(() => setRateLimited(false), seconds * 1000);
+        if (rateLimitTimerRef.current) {
+          clearTimeout(rateLimitTimerRef.current);
+        }
+        rateLimitTimerRef.current = setTimeout(() => {
+          setRateLimited(false);
+          rateLimitTimerRef.current = null;
+        }, seconds * 1000);
         addToast(`요청이 너무 많습니다. ${seconds}초 후 다시 시도해주세요.`, "error");
         break;
       }
