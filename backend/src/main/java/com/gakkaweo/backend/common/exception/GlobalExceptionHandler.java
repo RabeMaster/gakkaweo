@@ -14,6 +14,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @Slf4j
@@ -38,6 +39,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<?> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
     log.warn("낙관적 락 충돌 발생: entity={}, id={}", e.getPersistentClassName(), e.getIdentifier());
     ErrorCode errorCode = ErrorCode.CONCURRENT_MODIFICATION;
+    ErrorBody body =
+        new ErrorBody(
+            errorCode.getStatus().value(),
+            errorCode.name(),
+            errorCode.getMessage(),
+            Instant.now().toString());
+    return ResponseEntity.status(errorCode.getStatus()).body(body);
+  }
+
+  @Override
+  protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+      MaxUploadSizeExceededException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    log.warn("파일 크기 초과: {}", ex.getMessage());
+    ErrorCode errorCode = ErrorCode.FILE_TOO_LARGE;
     ErrorBody body =
         new ErrorBody(
             errorCode.getStatus().value(),

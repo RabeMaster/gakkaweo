@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { RankingEntry } from "@/shared/api/types";
 import { getSimilarityColor } from "@/shared/utils/similarity";
+import { resolveProfileUrl } from "@/shared/utils/url";
 
 interface RankingEntryRowProps {
   entry: RankingEntry;
@@ -54,7 +55,7 @@ export function RankingEntryRow({ entry }: RankingEntryRowProps) {
 
         {entry.profileUrl && !imgError ? (
           <img
-            src={entry.profileUrl}
+            src={resolveProfileUrl(entry.profileUrl) ?? ""}
             alt=""
             className="w-7 h-7 border-2 border-black dark:border-white object-cover shrink-0"
             onError={() => setImgError(true)}
