@@ -74,8 +74,8 @@ public class ProfileImageService {
     }
 
     try (InputStream is = file.getInputStream()) {
-      byte[] header = new byte[12];
-      if (is.read(header) < 12) {
+      byte[] header = is.readNBytes(12);
+      if (header.length < 12) {
         throw new BusinessException(ErrorCode.INVALID_FILE_TYPE);
       }
 

@@ -3,7 +3,7 @@
 export interface MeResponse {
   publicId: string;
   nickname: string;
-  profileUrl: string;
+  profileUrl: string | null;
   role: "ROLE_USER" | "ROLE_ADMIN";
 }
 
