@@ -1,18 +1,27 @@
 import { useEffect, useRef } from "react";
+import type { RefObject } from "react";
 
 interface ProfileImagePopoverProps {
   hasImage: boolean;
+  triggerRef: RefObject<HTMLButtonElement | null>;
   onChangeClick: () => void;
   onDeleteClick: () => void;
   onClose: () => void;
 }
 
-export function ProfileImagePopover({ hasImage, onChangeClick, onDeleteClick, onClose }: ProfileImagePopoverProps) {
+export function ProfileImagePopover({
+  hasImage,
+  triggerRef,
+  onChangeClick,
+  onDeleteClick,
+  onClose,
+}: ProfileImagePopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (popoverRef.current && !popoverRef.current.contains(target) && !triggerRef.current?.contains(target)) {
         onClose();
       }
     };
@@ -21,7 +30,7 @@ export function ProfileImagePopover({ hasImage, onChangeClick, onDeleteClick, on
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [onClose]);
+  }, [onClose, triggerRef]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

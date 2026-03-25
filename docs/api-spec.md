@@ -428,7 +428,7 @@
 | `DUPLICATE_USERNAME`           | 409  | 이미 사용 중인 아이디             |
 | `INVALID_CREDENTIALS`          | 401  | 아이디 또는 비밀번호 불일치       |
 | `INVALID_FILE_TYPE`            | 400  | 지원하지 않는 파일 형식           |
-| `FILE_TOO_LARGE`               | 400  | 파일 크기 제한 초과               |
+| `FILE_TOO_LARGE`               | 413  | 파일 크기 제한 초과               |
 | `FILE_UPLOAD_FAILED`           | 500  | 파일 업로드 실패                  |
 | `OAUTH_PROVIDER_NOT_SUPPORTED` | 400  | 지원하지 않는 OAuth 프로바이더    |
 | `VALIDATION_FAILED`            | 400  | 요청 검증 실패                    |
