@@ -9,6 +9,7 @@ import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.auth.service.AccountService;
 import com.gakkaweo.backend.auth.service.AuthService;
 import com.gakkaweo.backend.auth.service.LocalAuthService;
+import com.gakkaweo.backend.auth.service.ProfileImageService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.validation.Valid;
@@ -24,7 +25,9 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/auth")
@@ -34,6 +37,7 @@ public class AuthController {
   private final AuthService authService;
   private final LocalAuthService localAuthService;
   private final AccountService accountService;
+  private final ProfileImageService profileImageService;
   private final CookieUtils cookieUtils;
 
   @PostMapping("/register")
@@ -90,11 +94,31 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
+  @PatchMapping("/profile-image")
+  public ResponseEntity<AuthResponse> uploadProfileImage(
+      @RequestParam("file") MultipartFile file,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+    String profileUrl = profileImageService.save(userDetails.publicId(), file);
+    AuthResponse response = authService.updateProfileUrl(userDetails.publicId(), profileUrl);
+    authService.syncProfileUrlToRedis(userDetails.publicId(), response.profileUrl());
+    return ResponseEntity.ok(response);
+  }
+
+  @DeleteMapping("/profile-image")
+  public ResponseEntity<AuthResponse> deleteProfileImage(
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+    AuthResponse response = authService.updateProfileUrl(userDetails.publicId(), null);
+    profileImageService.delete(userDetails.publicId());
+    authService.syncProfileUrlToRedis(userDetails.publicId(), null);
+    return ResponseEntity.ok(response);
+  }
+
   @DeleteMapping("/account")
   public ResponseEntity<Void> deleteAccount(
       @AuthenticationPrincipal CustomUserDetails userDetails,
       @CookieValue(value = "access_token", required = false) String accessToken) {
     accountService.deleteAccount(userDetails.publicId());
+    profileImageService.delete(userDetails.publicId());
     accountService.cleanupRedis(userDetails.publicId(), accessToken);
 
     return ResponseEntity.ok()
