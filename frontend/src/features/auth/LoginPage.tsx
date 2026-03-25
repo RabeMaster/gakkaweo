@@ -63,104 +63,125 @@ export function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6">
       <div className="space-y-2">
         <h1 className="text-4xl font-black">로그인</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">소셜 계정으로 간편하게 시작하세요</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">소셜 또는 가까워 계정으로 시작하세요</p>
       </div>
 
-      <Card className="space-y-3">
-        {lastProvider && (
-          <p className="text-sm font-bold text-gray-600 dark:text-gray-400 pb-1">
-            최근에 <span className="text-black dark:text-white">{PROVIDER_COLORS[lastProvider].label}</span>(으)로
-            로그인했습니다
+      <div className="flex gap-6 items-stretch">
+        <Card className="flex-1 space-y-4">
+          <h2 className="text-lg font-extrabold">소셜 로그인</h2>
+          <p
+            className={[
+              "text-sm font-bold text-gray-600 dark:text-gray-400",
+              lastProvider && lastProvider !== "local" ? "" : "invisible",
+            ].join(" ")}
+          >
+            최근에{" "}
+            <span className="text-black dark:text-white">
+              {lastProvider && lastProvider !== "local" ? PROVIDER_COLORS[lastProvider].label : ""}
+            </span>
+            (으)로 로그인했습니다
           </p>
-        )}
-        {PROVIDERS.map(({ id, loginLabel, icon: Icon }) => {
-          const { bg, text } = PROVIDER_COLORS[id];
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => handleOAuthLogin(id)}
-              className={[
-                "w-full border-4 border-black dark:border-white rounded-none font-bold text-base px-6 py-4",
-                "shadow-brutal transition-all duration-100",
-                "hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1",
-                "active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
-                bg,
-                text,
-              ].join(" ")}
-            >
-              <span className="inline-flex items-center gap-3 w-44">
-                <span className="w-5 flex items-center justify-center shrink-0">
-                  <Icon />
-                </span>
-                <span>{loginLabel}</span>
-              </span>
-            </button>
-          );
-        })}
-      </Card>
+          <div className="space-y-3">
+            {PROVIDERS.map(({ id, loginLabel, icon: Icon }) => {
+              const { bg, text } = PROVIDER_COLORS[id];
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => handleOAuthLogin(id)}
+                  className={[
+                    "w-full border-4 border-black dark:border-white rounded-none font-bold text-base px-4 py-3",
+                    "shadow-brutal transition-all duration-100",
+                    "hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1",
+                    "active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
+                    bg,
+                    text,
+                  ].join(" ")}
+                >
+                  <span className="inline-flex items-center gap-3 w-44">
+                    <span className="w-5 flex items-center justify-center shrink-0">
+                      <Icon />
+                    </span>
+                    <span>{loginLabel}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
 
-      <div className="flex items-center gap-4">
-        <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-700" />
-        <span className="text-sm font-bold text-gray-400">또는</span>
-        <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-700" />
-      </div>
-
-      <Card className="space-y-4">
-        <div className="space-y-3">
-          <Input
-            value={username}
-            onChange={(e) => {
-              setUsername(e.target.value);
-              setError(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && canSubmit) {
-                handleLogin();
-              }
-            }}
-            placeholder="아이디"
-            disabled={isSubmitting}
-            autoComplete="username"
-          />
-          <Input
-            type="password"
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && canSubmit) {
-                handleLogin();
-              }
-            }}
-            placeholder="비밀번호"
-            disabled={isSubmitting}
-            autoComplete="current-password"
-          />
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex-1 border-l-2 border-gray-300 dark:border-gray-700" />
+          <span className="text-sm font-bold text-gray-400">또는</span>
+          <div className="flex-1 border-l-2 border-gray-300 dark:border-gray-700" />
         </div>
 
-        {error && <p className="text-sm font-medium text-red-500">{error}</p>}
-
-        <Button className="w-full" onClick={handleLogin} isLoading={isSubmitting} disabled={!canSubmit}>
-          로그인
-        </Button>
-
-        <p className="text-sm font-medium text-center text-gray-600 dark:text-gray-400">
-          계정이 없으신가요?{" "}
-          <button
-            type="button"
-            onClick={() => setIsRegisterOpen(true)}
-            className="font-bold text-black dark:text-white underline underline-offset-2"
+        <Card className="flex-1 space-y-4">
+          <h2 className="text-lg font-extrabold">가까워 로그인</h2>
+          <p
+            className={[
+              "text-sm font-bold text-gray-600 dark:text-gray-400",
+              lastProvider === "local" ? "" : "invisible",
+            ].join(" ")}
           >
-            회원가입
-          </button>
-        </p>
-      </Card>
+            최근에 <span className="text-black dark:text-white">{PROVIDER_COLORS.local.label}</span>(으)로
+            로그인했습니다
+          </p>
+          <div className="space-y-3">
+            <Input
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && canSubmit) {
+                  handleLogin();
+                }
+              }}
+              placeholder="아이디"
+              disabled={isSubmitting}
+              autoComplete="username"
+            />
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && canSubmit) {
+                  handleLogin();
+                }
+              }}
+              placeholder="비밀번호"
+              disabled={isSubmitting}
+              autoComplete="current-password"
+            />
+          </div>
+
+          {error && <p className="text-sm font-medium text-red-500">{error}</p>}
+
+          <Button className="w-full" onClick={handleLogin} isLoading={isSubmitting} disabled={!canSubmit}>
+            로그인
+          </Button>
+
+          <p className="text-sm font-medium text-center text-gray-600 dark:text-gray-400">
+            계정이 없으신가요?{" "}
+            <button
+              type="button"
+              onClick={() => setIsRegisterOpen(true)}
+              className="font-bold text-black dark:text-white underline underline-offset-2 cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              회원가입
+            </button>
+          </p>
+        </Card>
+      </div>
 
       <p className="text-xs text-gray-400 font-medium text-center">
         로그인 시 게임 기록이 저장되고 랭킹에 참여할 수 있습니다
