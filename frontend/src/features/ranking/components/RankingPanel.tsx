@@ -32,6 +32,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
   const [offset, setOffset] = useState(0);
   const [isSliding, setIsSliding] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [itemHeight, setItemHeight] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const entriesRef = useRef(entries);
@@ -48,14 +49,14 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
   }, [entries.length, isLoading]);
 
   useEffect(() => {
-    if (!shouldAnimate || isPaused || itemHeight === 0) {
+    if (!shouldAnimate || isPaused || isHovered || itemHeight === 0) {
       return;
     }
     const id = setInterval(() => {
       setIsSliding(true);
     }, ROTATE_MS);
     return () => clearInterval(id);
-  }, [shouldAnimate, isPaused, itemHeight]);
+  }, [shouldAnimate, isPaused, isHovered, itemHeight]);
 
   const handleTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) {
@@ -70,8 +71,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
   const stride = itemHeight + GAP_PX;
   const containerHeight = shouldAnimate && itemHeight > 0 ? VISIBLE * itemHeight + (VISIBLE - 1) * GAP_PX : undefined;
 
-  const isInTop10 = ranking?.rankings.some((r) => r.publicId === user?.publicId) ?? false;
-  const showMyRank = isAuthenticated && ranking?.myRank && !isInTop10;
+  const showMySection = isAuthenticated && ranking && entries.length > 0;
 
   return (
     <Card className="w-72 shrink-0 self-start sticky top-24 !p-4 space-y-3">
@@ -103,8 +103,8 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
         <div
           className="overflow-hidden"
           style={containerHeight ? { height: containerHeight } : undefined}
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           <div
             ref={listRef}
@@ -117,26 +117,31 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
             onTransitionEnd={handleTransitionEnd}
           >
             {visibleEntries.map((entry) => (
-              <RankingEntryRow key={entry.publicId} entry={entry} isMe={entry.publicId === user?.publicId} />
+              <RankingEntryRow key={entry.publicId} entry={entry} />
             ))}
           </div>
         </div>
       )}
 
-      {showMyRank && ranking?.myRank && user && (
+      {showMySection && (
         <>
           <div className="border-t-2 border-dashed border-gray-300 dark:border-gray-700" />
-          <RankingEntryRow
-            entry={{
-              rank: ranking.myRank.rank,
-              publicId: user.publicId,
-              nickname: user.nickname,
-              profileUrl: user.profileUrl,
-              similarity: ranking.myRank.similarity,
-              attemptCount: ranking.myRank.attemptCount,
-            }}
-            isMe
-          />
+          {ranking.myRank && user ? (
+            <RankingEntryRow
+              entry={{
+                rank: ranking.myRank.rank,
+                publicId: user.publicId,
+                nickname: user.nickname,
+                profileUrl: user.profileUrl,
+                similarity: ranking.myRank.similarity,
+                attemptCount: ranking.myRank.attemptCount,
+              }}
+            />
+          ) : (
+            <p className="text-sm font-bold text-gray-500 dark:text-gray-400 text-center py-2">
+              추측해서 랭킹에 참여하세요
+            </p>
+          )}
         </>
       )}
 
