@@ -23,6 +23,10 @@ spring:
       host: localhost
       port: ${REDIS_PORT}
       password: ${REDIS_PASSWORD}
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 2MB
   security:
     oauth2:
       client:
@@ -82,6 +86,8 @@ app:
     timeout: ${AI_SERVICE_TIMEOUT:3s}
   game:
     similarity-threshold: ${SIMILARITY_THRESHOLD:95.0}
+  upload:
+    profile-dir: ${UPLOAD_PROFILE_DIR:./uploads/profiles}
   rate-limit:
     guess-per-minute: ${RATE_LIMIT_GUESS:40}
     read-per-minute: ${RATE_LIMIT_READ:60}
