@@ -101,10 +101,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       HttpStatusCode status,
       WebRequest request) {
     log.warn("필수 파라미터 누락: {}", ex.getMessage());
+    ErrorCode errorCode = ErrorCode.MISSING_PARAMETER;
     ErrorBody body =
         new ErrorBody(
-            status.value(), "MISSING_PARAMETER", ex.getMessage(), Instant.now().toString());
-    return ResponseEntity.status(status).body(body);
+            errorCode.getStatus().value(),
+            errorCode.name(),
+            ex.getMessage(),
+            Instant.now().toString());
+    return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
   @Override
@@ -114,10 +118,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
       HttpStatusCode status,
       WebRequest request) {
     log.warn("지원하지 않는 HTTP 메서드: {}", ex.getMessage());
+    ErrorCode errorCode = ErrorCode.METHOD_NOT_ALLOWED;
     ErrorBody body =
         new ErrorBody(
-            status.value(), "METHOD_NOT_ALLOWED", ex.getMessage(), Instant.now().toString());
-    return ResponseEntity.status(status).body(body);
+            errorCode.getStatus().value(),
+            errorCode.name(),
+            ex.getMessage(),
+            Instant.now().toString());
+    return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
   @Override
