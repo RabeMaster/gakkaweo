@@ -81,12 +81,19 @@ export function MyPage() {
           <p className="text-sm font-extrabold uppercase tracking-wider text-gray-600 dark:text-gray-400 mb-1">
             닉네임
           </p>
-          <div className="flex items-center justify-center gap-2">
-            <p className="text-2xl font-black">{user?.nickname}</p>
-            <Button variant="secondary" size="sm" onClick={() => setIsNicknameEditOpen(true)}>
-              변경
-            </Button>
-          </div>
+          <p className="text-2xl font-black">
+            <span className="relative">
+              {user?.nickname}
+              <button
+                type="button"
+                onClick={() => setIsNicknameEditOpen(true)}
+                className="absolute left-full top-1/2 -translate-y-1/2 ml-1.5 text-base leading-none cursor-pointer hover:scale-110 transition-transform"
+                aria-label="닉네임 변경"
+              >
+                ✏️
+              </button>
+            </span>
+          </p>
         </div>
       </Card>
 
