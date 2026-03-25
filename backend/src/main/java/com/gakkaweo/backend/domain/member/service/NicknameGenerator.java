@@ -40,7 +40,7 @@ public class NicknameGenerator {
       }
     }
 
-    return createRandomNickname(random) + "_" + random.nextInt(1000, 10000);
+    return createRandomNickname(random) + "_" + random.nextInt(10, 100);
   }
 
   private String createRandomNickname(ThreadLocalRandom random) {
