@@ -6,6 +6,7 @@ import { Input } from "@/shared/ui/Input";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { type Provider, PROVIDER_COLORS, getLastProvider, saveLastProvider } from "@/shared/config/providers";
 import { KakaoIcon, GoogleIcon, NaverIcon } from "@/shared/config/providerIcons";
+import { queryClient } from "@/shared/api/queryClient";
 import { login } from "@/features/auth/api";
 import { RegisterDialog } from "@/features/auth/components/RegisterDialog";
 
@@ -46,6 +47,7 @@ export function LoginPage() {
       await login(username, password);
       saveLastProvider("local");
       await fetchUser();
+      queryClient.invalidateQueries({ queryKey: ["ranking"] });
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -60,6 +62,7 @@ export function LoginPage() {
     setIsRegisterOpen(false);
     saveLastProvider("local");
     await fetchUser();
+    queryClient.invalidateQueries({ queryKey: ["ranking"] });
   };
 
   return (
