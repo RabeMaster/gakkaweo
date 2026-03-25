@@ -144,7 +144,7 @@ hue = (similarity / 100) × 120
 | 게임       | `/`        | 추측 입력, 유사도 결과, 히스토리, 힌트 마스크 |
 | 랭킹       | `/ranking` | 실시간 순위 (SSE)                             |
 | 로그인     | `/login`   | 소셜 로그인 + 로컬 로그인 2컬럼 + 회원가입 다이얼로그 |
-| 마이페이지 | `/mypage`  | 닉네임 확인 (✏️ 편집), 회원 탈퇴              |
+| 마이페이지 | `/mypage`  | 프로필 이미지 업로드/삭제, 닉네임 확인 (✏️ 편집), 회원 탈퇴 |
 
 ## 9. 로그인 프로바이더 색상
 
@@ -190,3 +190,12 @@ placeholder:text-gray-400
 border-4 border-black dark:border-white rounded-none shadow-brutal
 dark:shadow-brutal-dark bg-white dark:bg-gray-900 p-6
 ```
+
+### 프로필 이미지 (마이페이지)
+
+- **프로필 이미지 클릭** → 팝오버(변경/삭제) 표시
+- **변경**: hidden `<input type="file" accept="image/*">` → 크롭 모달 → 256×256 WebP 리사이징 → 서버 업로드
+- **삭제**: ConfirmDialog 확인 후 서버 삭제 → 기본 아바타 복원
+- **크롭 모달**: `react-easy-crop` — `aspect={1}`, `cropShape="rect"` (직각, 네오브루탈리즘). 줌 슬라이더 1.0~3.0
+- **팝오버**: `border-4 shadow-brutal-sm`, click-outside/Escape 닫기
+- **hover 오버레이**: `bg-black/40` + 편집 아이콘 (프로필 이미지 위)

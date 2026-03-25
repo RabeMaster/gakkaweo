@@ -21,6 +21,8 @@
 | POST   | `/auth/logout`               | 필수   | AUTH 10/min  | 로그아웃          |
 | GET    | `/auth/me`                   | 필수   | READ 60/min  | 내 정보 조회      |
 | PATCH  | `/auth/nickname`             | 필수   | AUTH 10/min  | 닉네임 변경       |
+| PATCH  | `/auth/profile-image`        | 필수   | AUTH 10/min  | 프로필 이미지 업로드 |
+| DELETE | `/auth/profile-image`        | 필수   | AUTH 10/min  | 프로필 이미지 삭제   |
 | DELETE | `/auth/account`              | 필수   | AUTH 10/min  | 회원 탈퇴         |
 | GET    | `/oauth2/authorization/{id}` | 불필요 | 없음         | OAuth 로그인 시작 |
 | GET    | `/daily/today`               | 불필요 | READ 60/min  | 오늘 문제 조회    |
@@ -143,12 +145,50 @@
 - **동작**: 닉네임 변경 + 오늘 랭킹 참여자인 경우 Redis Hash 닉네임 갱신 + SSE RANKING_UPDATE 브로드캐스트
 - **에러**: `NICKNAME_DUPLICATED`(409), `NICKNAME_UNCHANGED`(400), `NICKNAME_FORBIDDEN`(400), `VALIDATION_FAILED`(400), `MEMBER_NOT_FOUND`(404)
 
+### `PATCH /auth/profile-image` — 프로필 이미지 업로드
+
+- **인증**: 필수
+- **Rate Limit**: AUTH (10/min, IP 기준)
+- **Content-Type**: `multipart/form-data`
+- **요청**: `file` (필수, 이미지 파일, WebP, 최대 1MB)
+- **응답**: `200 OK`
+
+```json
+{
+  "publicId": "UUID",
+  "nickname": "String",
+  "profileUrl": "/uploads/profiles/{publicId}.webp?v={timestamp}",
+  "role": "ROLE_USER | ROLE_ADMIN"
+}
+```
+
+- **동작**: 파일 검증 (content-type + WebP magic bytes) → `{profileDir}/{publicId}.webp` 덮어쓰기 → DB profileUrl 갱신 → Redis Hash profileUrl 갱신 + SSE RANKING_UPDATE 브로드캐스트
+- **에러**: `INVALID_FILE_TYPE`(400), `FILE_TOO_LARGE`(400), `FILE_UPLOAD_FAILED`(500), `MEMBER_NOT_FOUND`(404)
+
+### `DELETE /auth/profile-image` — 프로필 이미지 삭제
+
+- **인증**: 필수
+- **Rate Limit**: AUTH (10/min, IP 기준)
+- **응답**: `200 OK`
+
+```json
+{
+  "publicId": "UUID",
+  "nickname": "String",
+  "profileUrl": null,
+  "role": "ROLE_USER | ROLE_ADMIN"
+}
+```
+
+- **동작**: DB profileUrl null 설정 → 파일 삭제 → Redis Hash profileUrl 갱신 + SSE RANKING_UPDATE 브로드캐스트
+- **에러**: `MEMBER_NOT_FOUND`(404)
+
 ### `DELETE /auth/account` — 회원 탈퇴
 
 - **인증**: 필수
 - **Rate Limit**: AUTH (10/min)
 - **응답**: `200 OK` (본문 없음, 쿠키 삭제)
-- **동작**: 게임 기록 익명화, 인증 데이터 삭제, Redis 정리
+- **동작**: 게임 기록 익명화, 인증 데이터 삭제, 프로필 이미지 파일 삭제, Redis 정리
 
 ---
 
@@ -387,6 +427,9 @@
 | `NICKNAME_FORBIDDEN`           | 400  | 사용할 수 없는 닉네임 (금칙어)    |
 | `DUPLICATE_USERNAME`           | 409  | 이미 사용 중인 아이디             |
 | `INVALID_CREDENTIALS`          | 401  | 아이디 또는 비밀번호 불일치       |
+| `INVALID_FILE_TYPE`            | 400  | 지원하지 않는 파일 형식           |
+| `FILE_TOO_LARGE`               | 400  | 파일 크기 제한 초과               |
+| `FILE_UPLOAD_FAILED`           | 500  | 파일 업로드 실패                  |
 | `OAUTH_PROVIDER_NOT_SUPPORTED` | 400  | 지원하지 않는 OAuth 프로바이더    |
 | `VALIDATION_FAILED`            | 400  | 요청 검증 실패                    |
 | `MISSING_PARAMETER`            | 400  | 필수 파라미터 누락                |

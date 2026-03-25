@@ -57,8 +57,12 @@ export function GamePage() {
     if (!localCleared) {
       return;
     }
-    confetti({ particleCount: 80, spread: 70, origin: { x: 0.3, y: 0.5 } });
-    confetti({ particleCount: 80, spread: 70, origin: { x: 0.7, y: 0.5 } });
+    const opts = { particleCount: 200, spread: 360, origin: { y: 0.5 } };
+    confetti({ ...opts, origin: { x: 0.2, y: 0.5 } });
+    confetti({ ...opts, origin: { x: 0.35, y: 0.5 } });
+    confetti({ ...opts, origin: { x: 0.5, y: 0.5 } });
+    confetti({ ...opts, origin: { x: 0.65, y: 0.5 } });
+    confetti({ ...opts, origin: { x: 0.8, y: 0.5 } });
   }, [localCleared]);
 
   useEffect(

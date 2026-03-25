@@ -49,6 +49,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/health", "/auth/refresh", "/auth/register", "/auth/login")
                     .permitAll()
+                    .requestMatchers("/uploads/**")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/daily/today")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/daily/guess")

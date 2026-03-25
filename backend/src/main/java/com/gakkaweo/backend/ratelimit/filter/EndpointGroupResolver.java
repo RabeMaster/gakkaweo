@@ -7,6 +7,7 @@ public class EndpointGroupResolver {
 
   public EndpointGroup resolve(String method, String uri) {
     if (uri.equals("/health")
+        || uri.startsWith("/uploads/")
         || uri.startsWith("/login/oauth2/")
         || uri.startsWith("/oauth2/authorization/")) {
       return EndpointGroup.NONE;

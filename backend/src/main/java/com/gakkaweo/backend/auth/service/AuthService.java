@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -156,6 +157,36 @@ public class AuthService {
         member.getNickname(),
         member.getProfileUrl(),
         member.getRole().name());
+  }
+
+  @Transactional
+  public AuthResponse updateProfileUrl(UUID publicId, String profileUrl) {
+    Member member =
+        memberRepository
+            .findByPublicId(publicId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+
+    member.setProfileUrl(profileUrl);
+
+    return new AuthResponse(
+        member.getPublicId(),
+        member.getNickname(),
+        member.getProfileUrl(),
+        member.getRole().name());
+  }
+
+  public void syncProfileUrlToRedis(UUID publicId, String profileUrl) {
+    try {
+      LocalDate today = LocalDate.now(KST);
+      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+
+      if (redisTemplate.hasKey(detailKey)) {
+        redisTemplate.opsForHash().put(detailKey, "profileUrl", Objects.toString(profileUrl, ""));
+        eventPublisher.publishEvent(new RankingUpdateEvent());
+      }
+    } catch (Exception e) {
+      log.warn("프로필 URL Redis 동기화 실패: publicId={}", publicId, e);
+    }
   }
 
   public void syncNicknameToRedis(UUID publicId, String nickname) {
