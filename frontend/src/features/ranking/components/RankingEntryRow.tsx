@@ -4,7 +4,6 @@ import { getSimilarityColor } from "@/shared/utils/similarity";
 
 interface RankingEntryRowProps {
   entry: RankingEntry;
-  isMe: boolean;
 }
 
 const RANK_BADGE_COLORS: Record<number, string> = {
@@ -30,7 +29,7 @@ function DefaultAvatar() {
   );
 }
 
-export function RankingEntryRow({ entry, isMe }: RankingEntryRowProps) {
+export function RankingEntryRow({ entry }: RankingEntryRowProps) {
   const [imgError, setImgError] = useState(false);
   const badgeColor = RANK_BADGE_COLORS[entry.rank] ?? "bg-white dark:bg-gray-900";
   const rowColor = RANK_ROW_COLORS[entry.rank] ?? "";
@@ -41,13 +40,12 @@ export function RankingEntryRow({ entry, isMe }: RankingEntryRowProps) {
       className={[
         "px-2.5 py-1.5 border-2 border-black dark:border-white transition-all duration-100 space-y-1",
         rowColor,
-        isMe ? "ring-2 ring-indigo-500 dark:ring-indigo-400" : "",
       ].join(" ")}
     >
       <div className="flex items-center gap-2">
         <span
           className={[
-            "w-6 h-6 border-2 border-black dark:border-white flex items-center justify-center text-xs font-black shrink-0",
+            "min-w-6 h-6 px-1 border-2 border-black dark:border-white flex items-center justify-center text-xs font-black shrink-0",
             badgeColor,
           ].join(" ")}
         >

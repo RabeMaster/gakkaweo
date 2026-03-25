@@ -143,8 +143,8 @@ hue = (similarity / 100) × 120
 | ---------- | ---------- | --------------------------------------------- |
 | 게임       | `/`        | 추측 입력, 유사도 결과, 히스토리, 힌트 마스크 |
 | 랭킹       | `/ranking` | 실시간 순위 (SSE)                             |
-| 로그인     | `/login`   | 소셜 로그인 + 로컬 로그인 폼 + 회원가입 다이얼로그 |
-| 마이페이지 | `/mypage`  | 닉네임 확인, 회원 탈퇴                        |
+| 로그인     | `/login`   | 소셜 로그인 + 로컬 로그인 2컬럼 + 회원가입 다이얼로그 |
+| 마이페이지 | `/mypage`  | 닉네임 확인 (✏️ 편집), 회원 탈퇴              |
 
 ## 9. 로그인 프로바이더 색상
 
@@ -180,7 +180,7 @@ hue = (similarity / 100) × 120
 ```
 border-4 border-black rounded-none shadow-brutal bg-white dark:bg-gray-900
 px-4 py-3 font-medium text-lg
-focus:outline-none focus:ring-0 focus:border-black
+focus:outline-none focus:ring-0 focus:border-indigo-500 dark:focus:border-indigo-400
 placeholder:text-gray-400
 ```
 
