@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { apiFetch } from "@/shared/api/client";
+import { queryClient } from "@/shared/api/queryClient";
 import type { MeResponse } from "@/shared/api/types";
 
 interface AuthState {
@@ -28,6 +29,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
   clearUser: () => {
+    queryClient.clear();
     set({ user: null, isAuthenticated: false, isLoading: false });
   },
   updateUser: (patch) => {

@@ -235,7 +235,7 @@
 - **인증**: 필수
 - **Rate Limit**: READ (60/min)
 - **쿼리 파라미터**: `sentenceId` (필수, UUID)
-- **응답**:
+- **응답 (세션 존재)**:
 
 ```json
 {
@@ -250,7 +250,15 @@
 }
 ```
 
-- **에러**: `SENTENCE_NOT_FOUND`(404), `SESSION_NOT_FOUND`(404)
+- **응답 (세션 미존재)**: 오늘 게임을 시작하지 않은 경우. 빈 guesses 배열 반환
+
+```json
+{
+  "guesses": []
+}
+```
+
+- **에러**: `SENTENCE_NOT_FOUND`(404)
 
 ### `GET /daily/status` — 게임 상태 조회
 

@@ -146,26 +146,25 @@ public class DailyGameService {
     DailySentence sentence = findTodaySentenceByPublicId(sentenceId);
     Member member = findMember(memberPublicId);
 
-    GameSession session =
-        gameSessionRepository
-            .findByMemberAndSentence(member, sentence)
-            .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
-
-    List<GuessHistory> guesses =
-        guessHistoryRepository.findBySessionOrderByAttemptNumberAsc(session);
-
-    List<GuessHistoryResponse.GuessEntry> entries =
-        guesses.stream()
-            .map(
-                g ->
-                    new GuessHistoryResponse.GuessEntry(
-                        g.getGuessText(),
-                        g.getSimilarity(),
-                        g.getAttemptNumber(),
-                        g.getCreatedAt()))
-            .toList();
-
-    return new GuessHistoryResponse(entries);
+    return gameSessionRepository
+        .findByMemberAndSentence(member, sentence)
+        .map(
+            session -> {
+              List<GuessHistory> guesses =
+                  guessHistoryRepository.findBySessionOrderByAttemptNumberAsc(session);
+              List<GuessHistoryResponse.GuessEntry> entries =
+                  guesses.stream()
+                      .map(
+                          g ->
+                              new GuessHistoryResponse.GuessEntry(
+                                  g.getGuessText(),
+                                  g.getSimilarity(),
+                                  g.getAttemptNumber(),
+                                  g.getCreatedAt()))
+                      .toList();
+              return new GuessHistoryResponse(entries);
+            })
+        .orElse(new GuessHistoryResponse(List.of()));
   }
 
   @Transactional(readOnly = true)
