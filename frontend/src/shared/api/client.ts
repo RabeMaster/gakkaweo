@@ -66,7 +66,7 @@ export async function apiFetch<T>(path: string, { body: rawBody, ...restOptions 
   const hasBody = method !== "GET" && method !== "HEAD";
 
   const headers: Record<string, string> = {};
-  if (hasBody) {
+  if (hasBody && !(rawBody instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
