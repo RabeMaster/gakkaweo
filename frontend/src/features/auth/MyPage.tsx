@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import type { ChangeEvent } from "react";
 import type { MeResponse } from "@/shared/api/types";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useToastStore } from "@/shared/stores/useToastStore";
@@ -26,6 +27,7 @@ export function MyPage() {
   const [isDeleteImageConfirmOpen, setIsDeleteImageConfirmOpen] = useState(false);
   const [isDeletingImage, setIsDeletingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const profileBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(
     () => () => {
@@ -69,7 +71,7 @@ export function MyPage() {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) {
       return;
@@ -85,12 +87,18 @@ export function MyPage() {
       const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
-      canvas.getContext("2d")!.drawImage(img, 0, 0);
+      const ctx = canvas.getContext("2d");
       URL.revokeObjectURL(blobUrl);
+      if (!ctx) {
+        addToast("이미지 편집을 지원하지 않는 환경입니다", "error");
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
       setSelectedImageSrc(canvas.toDataURL("image/png"));
     };
     img.onerror = () => {
       URL.revokeObjectURL(blobUrl);
+      addToast("이미지를 불러올 수 없습니다", "error");
     };
     img.src = blobUrl;
 
@@ -118,8 +126,8 @@ export function MyPage() {
   const handleDeleteImage = async () => {
     setIsDeletingImage(true);
     try {
-      await deleteProfileImage();
-      updateUser({ profileUrl: null as unknown as string });
+      const response = await deleteProfileImage();
+      updateUser({ profileUrl: response.profileUrl });
       addToast("프로필 이미지가 삭제되었습니다", "success");
       setIsDeleteImageConfirmOpen(false);
     } catch {
@@ -136,6 +144,7 @@ export function MyPage() {
       <Card className="flex flex-col items-center space-y-4 py-8">
         <div className="relative">
           <button
+            ref={profileBtnRef}
             type="button"
             onClick={() => setIsPopoverOpen((prev) => !prev)}
             className="group relative cursor-pointer"
@@ -171,6 +180,7 @@ export function MyPage() {
           {isPopoverOpen && (
             <ProfileImagePopover
               hasImage={!!user?.profileUrl}
+              triggerRef={profileBtnRef}
               onChangeClick={() => {
                 setIsPopoverOpen(false);
                 fileInputRef.current?.click();
