@@ -16,14 +16,14 @@ FROM eclipse-temurin:21-jre-alpine
 RUN apk add --no-cache tzdata \
     && addgroup -S appgroup && adduser -S appuser -G appgroup
 
-ENV TZ=UTC
+ENV TZ=UTC \
+    UPLOAD_PROFILE_DIR=/data/uploads/profiles
 
 WORKDIR /app
 
 RUN mkdir -p /data/uploads/profiles && chown -R appuser:appgroup /data
 
-COPY --from=builder /build/build/libs/*.jar app.jar
-RUN chown appuser:appgroup app.jar
+COPY --from=builder --chown=appuser:appgroup /build/build/libs/*.jar app.jar
 
 USER appuser
 
