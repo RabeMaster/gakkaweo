@@ -107,7 +107,7 @@ resilience4j:
 
 logging:
   level:
-    com.gakkaweo.backend: DEBUG
+    com.gakkaweo.backend: ${LOG_LEVEL:DEBUG}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
