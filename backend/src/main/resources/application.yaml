@@ -82,7 +82,7 @@ app:
   oauth2:
     authorized-redirect-uri: ${OAUTH_REDIRECT_URI:http://localhost:3000}
   ai-service:
-    url: ${AI_SERVICE_URL:http://localhost:8000}
+    url: ${AI_SERVICE_URL:http://localhost:${AI_SERVICE_PORT:8000}}
     timeout: ${AI_SERVICE_TIMEOUT:3s}
   game:
     similarity-threshold: ${SIMILARITY_THRESHOLD:95.0}
@@ -107,7 +107,7 @@ resilience4j:
 
 logging:
   level:
-    com.gakkaweo.backend: DEBUG
+    com.gakkaweo.backend: ${LOG_LEVEL:DEBUG}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
