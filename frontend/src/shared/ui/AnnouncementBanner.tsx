@@ -53,6 +53,7 @@ function BannerItem({
       <button
         type="button"
         onClick={() => onDismiss(toDismissKey(announcement))}
+        aria-label="공지 닫기"
         className="text-lg font-black leading-none shrink-0 hover:opacity-60 transition-opacity"
       >
         &times;

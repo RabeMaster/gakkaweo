@@ -17,7 +17,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: true,
   fetchUser: async () => {
-    if (!document.cookie.includes("has_session")) {
+    if (!document.cookie.split("; ").some((c) => c.startsWith("has_session="))) {
       set({ user: null, isAuthenticated: false, isLoading: false });
       return;
     }

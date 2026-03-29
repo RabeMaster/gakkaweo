@@ -172,12 +172,14 @@ public class AdminSentenceController {
   }
 
   @PostMapping("/similarity-test")
+  @Transactional(readOnly = true)
   public ResponseEntity<SimilarityTestResponse> testSimilarity(
       @Valid @RequestBody SimilarityTestRequest request) {
     return ResponseEntity.ok(adminSentenceService.testSimilarity(request));
   }
 
   @PostMapping("/duplicate-check")
+  @Transactional(readOnly = true)
   public ResponseEntity<DuplicateCheckResponse> checkDuplicate(
       @Valid @RequestBody DuplicateCheckRequest request) {
     return ResponseEntity.ok(adminSentenceService.checkDuplicate(request));
