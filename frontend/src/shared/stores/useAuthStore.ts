@@ -17,6 +17,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isLoading: true,
   fetchUser: async () => {
+    if (!document.cookie.includes("has_session")) {
+      set({ user: null, isAuthenticated: false, isLoading: false });
+      return;
+    }
+
     try {
       const user = await apiFetch<MeResponse>("/auth/me");
       if (user?.publicId) {

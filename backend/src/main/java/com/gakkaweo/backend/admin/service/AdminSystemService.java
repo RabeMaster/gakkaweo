@@ -8,6 +8,7 @@ import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
+import com.gakkaweo.backend.admin.dto.AuditLogResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
 import com.gakkaweo.backend.common.exception.BusinessException;
@@ -25,8 +26,11 @@ import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import com.gakkaweo.backend.ranking.sse.SseConnectionManager;
 import com.gakkaweo.backend.ratelimit.filter.BucketStore;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -35,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.connection.RedisConnectionCommands;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -57,6 +63,26 @@ public class AdminSystemService {
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final TransactionTemplate transactionTemplate;
+
+  private static Specification<AuditLog> auditLogFilters(
+      String action, Instant dateFrom, Instant dateTo) {
+    return (root, query, cb) -> {
+      if (Long.class != query.getResultType()) {
+        root.fetch("admin", JoinType.LEFT);
+      }
+      List<Predicate> predicates = new ArrayList<>();
+      if (action != null && !action.isBlank()) {
+        predicates.add(cb.equal(root.get("action"), action));
+      }
+      if (dateFrom != null) {
+        predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), dateFrom));
+      }
+      if (dateTo != null) {
+        predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), dateTo));
+      }
+      return cb.and(predicates.toArray(new Predicate[0]));
+    };
+  }
 
   @Transactional(readOnly = true)
   public List<AnnouncementResponse> getAnnouncements() {
@@ -138,10 +164,11 @@ public class AdminSystemService {
     return response;
   }
 
-  @Transactional
   public void deleteAnnouncement(Long id) {
     Announcement announcement = findAnnouncement(id);
-    announcementRepository.delete(announcement);
+    transactionTemplate.executeWithoutResult(status -> announcementRepository.delete(announcement));
+    eventPublisher.publishEvent(
+        new AnnouncementEvent(id, announcement.getTitle(), null, announcement.getType()));
   }
 
   public SystemStatusResponse getSystemStatus() {
@@ -199,9 +226,13 @@ public class AdminSystemService {
   }
 
   @Transactional(readOnly = true)
-  public Page<AuditLog> getAuditLogs(
+  public Page<AuditLogResponse> getAuditLogs(
       String action, Instant dateFrom, Instant dateTo, int page, int size) {
-    return auditLogRepository.findByFilters(action, dateFrom, dateTo, PageRequest.of(page, size));
+    return auditLogRepository
+        .findAll(
+            auditLogFilters(action, dateFrom, dateTo),
+            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")))
+        .map(AuditLogResponse::from);
   }
 
   private Announcement findAnnouncement(Long id) {

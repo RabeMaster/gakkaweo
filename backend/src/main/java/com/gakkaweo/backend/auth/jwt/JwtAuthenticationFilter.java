@@ -2,12 +2,7 @@ package com.gakkaweo.backend.auth.jwt;
 
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.BLACKLIST_PREFIX;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
-import com.gakkaweo.backend.common.exception.ErrorBody;
-import com.gakkaweo.backend.common.exception.ErrorCode;
-import com.gakkaweo.backend.domain.member.entity.Member;
-import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -15,12 +10,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -32,8 +24,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtProvider jwtProvider;
   private final StringRedisTemplate redisTemplate;
-  private final MemberRepository memberRepository;
-  private final ObjectMapper objectMapper;
 
   @Override
   protected void doFilterInternal(
@@ -49,12 +39,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       if (!isBlacklisted(jti)) {
         UUID publicId = UUID.fromString(claims.getSubject());
         String role = claims.get("role", String.class);
-
-        Optional<Member> member = memberRepository.findByPublicId(publicId);
-        if (member.isPresent() && member.get().getBanned()) {
-          writeBannedResponse(response);
-          return;
-        }
 
         CustomUserDetails userDetails = new CustomUserDetails(publicId, role);
         UsernamePasswordAuthenticationToken authentication =
@@ -82,19 +66,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private boolean isBlacklisted(String jti) {
     return redisTemplate.hasKey(BLACKLIST_PREFIX + jti);
-  }
-
-  private void writeBannedResponse(HttpServletResponse response) throws IOException {
-    ErrorCode errorCode = ErrorCode.MEMBER_BANNED;
-    ErrorBody body =
-        new ErrorBody(
-            errorCode.getStatus().value(),
-            errorCode.name(),
-            errorCode.getMessage(),
-            Instant.now().toString());
-    response.setStatus(errorCode.getStatus().value());
-    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-    response.setCharacterEncoding("UTF-8");
-    objectMapper.writeValue(response.getWriter(), body);
   }
 }

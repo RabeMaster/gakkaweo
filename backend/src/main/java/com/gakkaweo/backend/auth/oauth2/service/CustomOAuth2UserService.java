@@ -27,6 +27,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     OAuthAttributes attributes = OAuthAttributes.of(registrationId, oAuth2User.getAttributes());
     Member member = oAuthMemberService.findOrCreateMember(attributes);
 
+    if (Boolean.TRUE.equals(member.getBanned())) {
+      throw new OAuth2AuthenticationException("차단된 계정입니다");
+    }
+
     return new CustomOAuth2User(member, oAuth2User.getAttributes());
   }
 }

@@ -63,6 +63,7 @@ public class AuthController {
         .header(
             HttpHeaders.SET_COOKIE,
             cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.createSessionIndicatorCookie().toString())
         .build();
   }
 
@@ -76,6 +77,7 @@ public class AuthController {
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteAccessTokenCookie().toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteRefreshTokenCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteSessionIndicatorCookie().toString())
         .build();
   }
 
@@ -124,6 +126,7 @@ public class AuthController {
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteAccessTokenCookie().toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteRefreshTokenCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteSessionIndicatorCookie().toString())
         .build();
   }
 
@@ -144,6 +147,7 @@ public class AuthController {
         .header(
             HttpHeaders.SET_COOKIE,
             cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.createSessionIndicatorCookie().toString())
         .body(response);
   }
 }

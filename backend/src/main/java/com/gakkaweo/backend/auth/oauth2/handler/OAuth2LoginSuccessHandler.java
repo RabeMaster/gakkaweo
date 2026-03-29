@@ -40,6 +40,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     response.addHeader(
         HttpHeaders.SET_COOKIE,
         cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString());
+    response.addHeader(
+        HttpHeaders.SET_COOKIE, cookieUtils.createSessionIndicatorCookie().toString());
 
     authorizationRequestRepository.deleteCookie(response);
 

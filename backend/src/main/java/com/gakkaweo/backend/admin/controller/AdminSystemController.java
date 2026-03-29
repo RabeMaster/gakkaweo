@@ -3,11 +3,11 @@ package com.gakkaweo.backend.admin.controller;
 import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
+import com.gakkaweo.backend.admin.dto.AuditLogResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.service.AdminAuditService;
 import com.gakkaweo.backend.admin.service.AdminSystemService;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
-import com.gakkaweo.backend.domain.admin.entity.AuditLog;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Instant;
@@ -18,6 +18,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -31,12 +32,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/admin/system")
 @RequiredArgsConstructor
+@Transactional
 public class AdminSystemController {
 
   private final AdminSystemService adminSystemService;
   private final AdminAuditService adminAuditService;
 
   @GetMapping("/announcements")
+  @Transactional(readOnly = true)
   public ResponseEntity<List<AnnouncementResponse>> getAnnouncements() {
     return ResponseEntity.ok(adminSystemService.getAnnouncements());
   }
@@ -92,6 +95,7 @@ public class AdminSystemController {
   }
 
   @GetMapping("/status")
+  @Transactional(readOnly = true)
   public ResponseEntity<SystemStatusResponse> getSystemStatus() {
     return ResponseEntity.ok(adminSystemService.getSystemStatus());
   }
@@ -125,7 +129,8 @@ public class AdminSystemController {
   }
 
   @GetMapping("/audit-logs")
-  public ResponseEntity<Page<AuditLog>> getAuditLogs(
+  @Transactional(readOnly = true)
+  public ResponseEntity<Page<AuditLogResponse>> getAuditLogs(
       @RequestParam(required = false) String action,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
           Instant dateFrom,

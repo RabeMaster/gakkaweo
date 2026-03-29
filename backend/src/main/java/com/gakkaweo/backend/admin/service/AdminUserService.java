@@ -28,9 +28,12 @@ import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.domain.member.validation.NicknameValidator;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
+import jakarta.persistence.criteria.Predicate;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +42,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,10 +64,26 @@ public class AdminUserService {
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
 
+  private static Specification<Member> memberFilters(String nickname, Boolean banned) {
+    return (root, query, cb) -> {
+      List<Predicate> predicates = new ArrayList<>();
+      if (nickname != null && !nickname.isBlank()) {
+        predicates.add(
+            cb.like(cb.lower(root.get("nickname")), "%" + nickname.toLowerCase(Locale.ROOT) + "%"));
+      }
+      if (banned != null) {
+        predicates.add(cb.equal(root.get("banned"), banned));
+      }
+      return cb.and(predicates.toArray(new Predicate[0]));
+    };
+  }
+
   @Transactional(readOnly = true)
   public UserListResponse getUsers(String nickname, Boolean banned, int page, int size) {
     Page<Member> members =
-        memberRepository.findByFilters(nickname, banned, PageRequest.of(page, size));
+        memberRepository.findAll(
+            memberFilters(nickname, banned),
+            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     List<AdminUserResponse> users =
         members.getContent().stream().map(this::toUserResponse).toList();
     return new UserListResponse(
@@ -85,9 +106,9 @@ public class AdminUserService {
     ActivitySummary activity =
         new ActivitySummary(totalParticipations, totalClears, avgAttemptCount, bestRank);
 
-    String provider = getProvider(member);
+    var accountInfo = getAccountInfo(member);
 
-    return UserDetailResponse.from(member, provider, activity);
+    return UserDetailResponse.from(member, accountInfo.provider(), accountInfo.email(), activity);
   }
 
   @Transactional(readOnly = true)
@@ -260,14 +281,19 @@ public class AdminUserService {
   }
 
   private AdminUserResponse toUserResponse(Member member) {
-    return AdminUserResponse.from(member, getProvider(member));
+    var accountInfo = getAccountInfo(member);
+    return AdminUserResponse.from(member, accountInfo.provider(), accountInfo.email());
   }
 
-  private String getProvider(Member member) {
+  private AccountInfo getAccountInfo(Member member) {
     return socialAccountRepository
         .findFirstByMember(member)
-        .map(SocialAccount::getProvider)
-        .map(Enum::name)
-        .orElse(localAccountRepository.existsByMember(member) ? "LOCAL" : "UNKNOWN");
+        .map(sa -> new AccountInfo(sa.getProvider().name(), sa.getEmail()))
+        .orElseGet(
+            () ->
+                new AccountInfo(
+                    localAccountRepository.existsByMember(member) ? "LOCAL" : "UNKNOWN", null));
   }
+
+  private record AccountInfo(String provider, String email) {}
 }

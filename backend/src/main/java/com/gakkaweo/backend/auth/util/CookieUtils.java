@@ -52,4 +52,24 @@ public class CookieUtils {
         .sameSite("Lax")
         .build();
   }
+
+  public ResponseCookie createSessionIndicatorCookie() {
+    return ResponseCookie.from("has_session", "1")
+        .httpOnly(false)
+        .secure(cookieProperties.isSecure())
+        .path("/")
+        .maxAge(jwtProperties.getRefreshExpiration())
+        .sameSite("Lax")
+        .build();
+  }
+
+  public ResponseCookie deleteSessionIndicatorCookie() {
+    return ResponseCookie.from("has_session", "")
+        .httpOnly(false)
+        .secure(cookieProperties.isSecure())
+        .path("/")
+        .maxAge(0)
+        .sameSite("Lax")
+        .build();
+  }
 }

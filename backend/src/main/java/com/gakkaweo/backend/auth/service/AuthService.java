@@ -55,6 +55,10 @@ public class AuthService {
     String newRawRefreshToken = refreshTokenService.rotateRefreshToken(rawRefreshToken);
 
     Member member = existing.getMember();
+    if (Boolean.TRUE.equals(member.getBanned())) {
+      throw new BusinessException(ErrorCode.MEMBER_BANNED);
+    }
+
     String accessToken =
         jwtProvider.createAccessToken(member.getPublicId(), member.getRole().name());
 

@@ -20,6 +20,7 @@ import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
+import com.gakkaweo.backend.domain.game.repository.GuessHistoryRepository;
 import com.gakkaweo.backend.infra.ai.service.SimilarityService;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import java.math.BigDecimal;
@@ -32,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +47,7 @@ public class AdminSentenceService {
 
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
+  private final GuessHistoryRepository guessHistoryRepository;
   private final SimilarityService similarityService;
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
@@ -51,17 +55,23 @@ public class AdminSentenceService {
 
   @Transactional(readOnly = true)
   public SentenceListResponse getSentences(String status, int page, int size) {
-    DailySentenceStatus statusEnum = null;
+    final DailySentenceStatus statusEnum;
     if (status != null && !status.isBlank()) {
       try {
         statusEnum = DailySentenceStatus.valueOf(status.toUpperCase());
       } catch (IllegalArgumentException e) {
         throw new BusinessException(ErrorCode.VALIDATION_FAILED);
       }
+    } else {
+      statusEnum = null;
     }
 
+    Specification<DailySentence> spec =
+        (root, query, cb) ->
+            statusEnum != null ? cb.equal(root.get("status"), statusEnum) : cb.conjunction();
     Page<DailySentence> pageResult =
-        dailySentenceRepository.findByStatusFilter(statusEnum, PageRequest.of(page, size));
+        dailySentenceRepository.findAll(
+            spec, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
 
     return new SentenceListResponse(
         pageResult.getContent().stream().map(SentenceResponse::from).toList(),
@@ -209,15 +219,21 @@ public class AdminSentenceService {
                 throw new BusinessException(ErrorCode.SENTENCE_NOT_FOUND);
               }
 
-              gameSessionRepository.expireInProgressSessions(currentSentence);
+              // 이전 문장의 추측 기록 → 세션 순서로 삭제 (비정상 종료 데이터 정리)
+              // clearAutomatically=true로 영속성 컨텍스트 초기화됨 → 삭제 후 재조회
+              guessHistoryRepository.deleteBySentence(currentSentence);
+              gameSessionRepository.deleteBySentence(currentSentence);
 
-              currentSentence.setUsedAt(null);
+              DailySentence reloadedCurrent = findByPublicIdOrThrow(currentSentence.getPublicId());
+              DailySentence reloadedNew = findByPublicIdOrThrow(newSentence.getPublicId());
+
+              reloadedCurrent.setUsedAt(null);
               if (!request.returnOldToPool()) {
-                currentSentence.setStatus(DailySentenceStatus.DISABLED);
+                reloadedCurrent.setStatus(DailySentenceStatus.DISABLED);
               }
 
-              newSentence.setUsedAt(today);
-              newSentence.setScheduledAt(null);
+              reloadedNew.setUsedAt(today);
+              reloadedNew.setScheduledAt(null);
 
               log.info(
                   "긴급 교체 완료: old={}, new={}, returnToPool={}",

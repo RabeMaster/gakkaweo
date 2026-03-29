@@ -8,12 +8,17 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface GuessHistoryRepository extends JpaRepository<GuessHistory, Long> {
 
   List<GuessHistory> findBySessionOrderByAttemptNumberAsc(GameSession session);
+
+  @Modifying(clearAutomatically = true)
+  @Query("DELETE FROM GuessHistory h WHERE h.session.sentence = :sentence")
+  int deleteBySentence(@Param("sentence") DailySentence sentence);
 
   long countBySession(GameSession session);
 

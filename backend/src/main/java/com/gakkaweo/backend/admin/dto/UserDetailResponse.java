@@ -12,10 +12,12 @@ public record UserDetailResponse(
     Boolean banned,
     Instant bannedAt,
     String provider,
+    String email,
     Instant createdAt,
     ActivitySummary activity) {
 
-  public static UserDetailResponse from(Member member, String provider, ActivitySummary activity) {
+  public static UserDetailResponse from(
+      Member member, String provider, String email, ActivitySummary activity) {
     return new UserDetailResponse(
         member.getPublicId(),
         member.getNickname(),
@@ -24,6 +26,7 @@ public record UserDetailResponse(
         member.getBanned(),
         member.getBannedAt(),
         provider,
+        email,
         member.getCreatedAt(),
         activity);
   }

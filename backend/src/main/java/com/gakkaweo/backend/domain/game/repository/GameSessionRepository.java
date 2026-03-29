@@ -24,6 +24,10 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
           + " com.gakkaweo.backend.domain.game.entity.GameSessionStatus.IN_PROGRESS")
   int expireInProgressSessions(@Param("sentence") DailySentence sentence);
 
+  @Modifying(clearAutomatically = true)
+  @Query("DELETE FROM GameSession g WHERE g.sentence = :sentence")
+  int deleteBySentence(@Param("sentence") DailySentence sentence);
+
   @Query("SELECT g FROM GameSession g JOIN FETCH g.member WHERE g.sentence = :sentence")
   List<GameSession> findAllBySentenceWithMember(@Param("sentence") DailySentence sentence);
 

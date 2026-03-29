@@ -12,9 +12,10 @@ public record AdminUserResponse(
     Boolean banned,
     Instant bannedAt,
     String provider,
+    String email,
     Instant createdAt) {
 
-  public static AdminUserResponse from(Member member, String provider) {
+  public static AdminUserResponse from(Member member, String provider, String email) {
     return new AdminUserResponse(
         member.getPublicId(),
         member.getNickname(),
@@ -23,6 +24,7 @@ public record AdminUserResponse(
         member.getBanned(),
         member.getBannedAt(),
         provider,
+        email,
         member.getCreatedAt());
   }
 }

@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -38,6 +39,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/admin/sentences")
 @RequiredArgsConstructor
+@Transactional
 public class AdminSentenceController {
 
   private final AdminSentenceService adminSentenceService;
@@ -45,6 +47,7 @@ public class AdminSentenceController {
   private final AdminAuditService adminAuditService;
 
   @GetMapping
+  @Transactional(readOnly = true)
   public ResponseEntity<SentenceListResponse> getSentences(
       @RequestParam(required = false) String status,
       @RequestParam(defaultValue = "0") int page,
@@ -69,6 +72,7 @@ public class AdminSentenceController {
   }
 
   @GetMapping("/{publicId}")
+  @Transactional(readOnly = true)
   public ResponseEntity<SentenceResponse> getSentence(@PathVariable UUID publicId) {
     return ResponseEntity.ok(adminSentenceService.getSentence(publicId));
   }
@@ -107,11 +111,13 @@ public class AdminSentenceController {
   }
 
   @GetMapping("/{publicId}/stats")
+  @Transactional(readOnly = true)
   public ResponseEntity<SentenceStatsResponse> getSentenceStats(@PathVariable UUID publicId) {
     return ResponseEntity.ok(adminSentenceService.getSentenceStats(publicId));
   }
 
   @GetMapping("/unused-count")
+  @Transactional(readOnly = true)
   public ResponseEntity<Map<String, Long>> getUnusedCount() {
     return ResponseEntity.ok(Map.of("count", adminSentenceService.getUnusedCount()));
   }

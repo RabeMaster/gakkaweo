@@ -19,7 +19,7 @@ const AUTO_DISMISS = 5000;
 export const useToastStore = create<ToastState>((set, get) => ({
   toasts: [],
   addToast: (message, type = "info") => {
-    const id = crypto.randomUUID();
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
     set((state) => ({ toasts: [...state.toasts, { id, message, type, exiting: false }] }));
     setTimeout(() => get().removeToast(id), AUTO_DISMISS);
   },
