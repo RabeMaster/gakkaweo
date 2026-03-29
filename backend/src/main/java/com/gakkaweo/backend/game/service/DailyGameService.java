@@ -1,5 +1,7 @@
 package com.gakkaweo.backend.game.service;
 
+import static com.gakkaweo.backend.common.time.TimeConstants.KST;
+
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
@@ -24,7 +26,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -39,8 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @RequiredArgsConstructor
 public class DailyGameService {
-
-  private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;

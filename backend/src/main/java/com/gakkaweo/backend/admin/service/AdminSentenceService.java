@@ -1,6 +1,7 @@
 package com.gakkaweo.backend.admin.service;
 
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
+import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.admin.dto.DuplicateCheckRequest;
 import com.gakkaweo.backend.admin.dto.DuplicateCheckResponse;
@@ -23,7 +24,6 @@ import com.gakkaweo.backend.infra.ai.service.SimilarityService;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -41,8 +41,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Slf4j
 @RequiredArgsConstructor
 public class AdminSentenceService {
-
-  private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;

@@ -1,5 +1,7 @@
 package com.gakkaweo.backend.game.scheduler;
 
+import static com.gakkaweo.backend.common.time.TimeConstants.KST;
+
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -8,7 +10,6 @@ import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +29,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Slf4j
 @RequiredArgsConstructor
 public class DailySentenceScheduler {
-
-  private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
