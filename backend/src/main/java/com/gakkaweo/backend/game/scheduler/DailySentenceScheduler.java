@@ -145,11 +145,18 @@ public class DailySentenceScheduler {
 
     DailySentence sentence =
         dailySentenceRepository
-            .findRandomUnusedSentence()
+            .findByScheduledAt(today)
+            .or(dailySentenceRepository::findRandomUnusedSentence)
             .orElseThrow(() -> new IllegalStateException("사용 가능한 문장이 없음 — 문장 추가 필요"));
 
+    boolean wasScheduled = sentence.getScheduledAt() != null;
     sentence.setUsedAt(today);
+    sentence.setScheduledAt(null);
     dailySentenceRepository.save(sentence);
-    log.info("오늘의 문장 선정: date={}, sentenceId={}", today, sentence.getPublicId());
+    log.info(
+        "오늘의 문장 선정: date={}, sentenceId={}, scheduled={}",
+        today,
+        sentence.getPublicId(),
+        wasScheduled);
   }
 }
