@@ -20,6 +20,20 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   return children;
 }
 
+export function RequireAdminAuth({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated, isLoading } = useAuthStore();
+
+  if (isLoading) {
+    return <LoadingFallback />;
+  }
+
+  if (!isAuthenticated || user?.role !== "ADMIN") {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
+
 export function RedirectIfAuth({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
 

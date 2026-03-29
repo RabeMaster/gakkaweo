@@ -1,9 +1,10 @@
 import { createBrowserRouter } from "react-router-dom";
 import { Layout } from "@/app/layout/Layout";
-import { RequireAuth, RedirectIfAuth } from "@/app/guards";
+import { RequireAuth, RequireAdminAuth, RedirectIfAuth } from "@/app/guards";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { MyPage } from "@/features/auth/MyPage";
+import { AdminPage } from "@/features/admin/AdminPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export const router = createBrowserRouter([
@@ -25,6 +26,14 @@ export const router = createBrowserRouter([
           <RequireAuth>
             <MyPage />
           </RequireAuth>
+        ),
+      },
+      {
+        path: "admin",
+        element: (
+          <RequireAdminAuth>
+            <AdminPage />
+          </RequireAdminAuth>
         ),
       },
       { path: "*", element: <NotFoundPage /> },
