@@ -35,6 +35,12 @@ public class BucketStore {
         .bucket();
   }
 
+  public void clearAllBuckets() {
+    int size = buckets.size();
+    buckets.clear();
+    log.info("Rate limit 버킷 전체 초기화: {}개 제거", size);
+  }
+
   @Scheduled(fixedDelayString = "${app.rate-limit.cleanup-interval-ms:300000}")
   public void cleanup() {
     Instant expiry = Instant.now().minusSeconds(properties.getBucketExpiryMinutes() * 60L);
