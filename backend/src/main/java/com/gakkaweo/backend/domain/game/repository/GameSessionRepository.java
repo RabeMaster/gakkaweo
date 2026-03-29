@@ -45,4 +45,35 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
 
   @Query("SELECT COALESCE(AVG(g.attemptCount), 0) FROM GameSession g WHERE g.sentence = :sentence")
   double avgAttemptCountBySentence(@Param("sentence") DailySentence sentence);
+
+  @Query("SELECT COUNT(g) FROM GameSession g WHERE g.member = :member")
+  long countByMember(@Param("member") Member member);
+
+  @Query(
+      "SELECT COUNT(g) FROM GameSession g WHERE g.member = :member"
+          + " AND g.status = com.gakkaweo.backend.domain.game.entity.GameSessionStatus.CLEARED")
+  long countClearedByMember(@Param("member") Member member);
+
+  @Query("SELECT COALESCE(AVG(g.attemptCount), 0) FROM GameSession g WHERE g.member = :member")
+  double avgAttemptCountByMember(@Param("member") Member member);
+
+  @Query(
+      "SELECT MIN(g.finalRank) FROM GameSession g WHERE g.member = :member"
+          + " AND g.finalRank IS NOT NULL")
+  Integer bestRankByMember(@Param("member") Member member);
+
+  @Query(
+      "SELECT g FROM GameSession g JOIN FETCH g.sentence WHERE g.member = :member"
+          + " ORDER BY g.createdAt DESC")
+  List<GameSession> findByMemberWithSentence(@Param("member") Member member);
+
+  @Query(
+      "SELECT COUNT(g) FROM GameSession g WHERE g.sentence = :sentence"
+          + " AND g.status = com.gakkaweo.backend.domain.game.entity.GameSessionStatus.CLEARED")
+  long countClearedBySentenceForDate(@Param("sentence") DailySentence sentence);
+
+  @Query(
+      "SELECT COUNT(DISTINCT g.member) FROM GameSession g"
+          + " WHERE g.sentence = :sentence AND g.member IS NOT NULL")
+  long countDistinctMembersBySentence(@Param("sentence") DailySentence sentence);
 }
