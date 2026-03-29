@@ -44,6 +44,12 @@ public class Member {
   @Column(length = 20)
   private MemberRole role = MemberRole.USER;
 
+  @Setter
+  @Column(nullable = false)
+  private Boolean banned = false;
+
+  @Setter private Instant bannedAt;
+
   private Instant createdAt;
 
   private Instant updatedAt;

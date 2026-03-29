@@ -63,6 +63,7 @@ public class BucketStore {
       case READ -> properties.getReadPerMinute();
       case SSE -> properties.getSsePerMinute();
       case AUTH -> properties.getAuthPerMinute();
+      case ADMIN -> properties.getAdminPerMinute();
       case NONE -> throw new IllegalArgumentException("NONE 그룹은 버킷을 생성하지 않습니다");
     };
   }

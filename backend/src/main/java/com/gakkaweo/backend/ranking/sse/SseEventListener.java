@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.ranking.sse;
 
+import com.gakkaweo.backend.admin.event.AnnouncementEvent;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
@@ -45,6 +46,12 @@ public class SseEventListener {
     }
     pendingBroadcast =
         debounceExecutor.schedule(this::broadcastRanking, DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS);
+  }
+
+  @EventListener
+  public void onAnnouncement(AnnouncementEvent event) {
+    sseConnectionManager.broadcast(SseEventType.ANNOUNCEMENT, event);
+    log.info("ANNOUNCEMENT 이벤트 브로드캐스트: id={}, title={}", event.id(), event.title());
   }
 
   @EventListener

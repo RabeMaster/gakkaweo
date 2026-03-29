@@ -35,6 +35,16 @@ public enum ErrorCode {
   FILE_TOO_LARGE(HttpStatus.PAYLOAD_TOO_LARGE, "파일 크기가 제한을 초과했습니다"),
   FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다"),
   SSE_MAX_CONNECTIONS(HttpStatus.SERVICE_UNAVAILABLE, "SSE 최대 연결 수를 초과했습니다"),
+
+  SENTENCE_DUPLICATE(HttpStatus.CONFLICT, "이미 등록된 문장입니다"),
+  SENTENCE_ALREADY_USED(HttpStatus.BAD_REQUEST, "이미 출제된 문장은 삭제할 수 없습니다"),
+  SENTENCE_ALREADY_SCHEDULED(HttpStatus.CONFLICT, "해당 날짜에 이미 스케줄된 문장이 있습니다"),
+  CSV_PARSE_ERROR(HttpStatus.BAD_REQUEST, "CSV 파일 파싱에 실패했습니다"),
+  ANNOUNCEMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "공지를 찾을 수 없습니다"),
+  MEMBER_BANNED(HttpStatus.FORBIDDEN, "차단된 계정입니다"),
+  ADMIN_SELF_ACTION(HttpStatus.BAD_REQUEST, "자기 자신에 대한 작업은 수행할 수 없습니다"),
+  ROLE_ALREADY_ASSIGNED(HttpStatus.BAD_REQUEST, "이미 동일한 역할입니다"),
+
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다");
 
   private final HttpStatus status;
