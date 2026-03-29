@@ -22,7 +22,6 @@ import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.entity.MemberRole;
-import com.gakkaweo.backend.domain.member.entity.SocialAccount;
 import com.gakkaweo.backend.domain.member.repository.LocalAccountRepository;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
@@ -147,10 +146,14 @@ public class AdminUserService {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findMember(targetPublicId);
-    member.setBanned(true);
-    member.setBannedAt(Instant.now());
+    Long memberId = member.getId();
 
-    refreshTokenRepository.deleteByMemberId(member.getId());
+    // clearAutomatically=true로 영속성 컨텍스트 초기화됨 → delete 먼저, 재조회 후 set
+    refreshTokenRepository.deleteByMemberId(memberId);
+
+    Member reloaded = findMember(targetPublicId);
+    reloaded.setBanned(true);
+    reloaded.setBannedAt(Instant.now());
 
     log.info("사용자 차단: publicId={}", targetPublicId);
   }
