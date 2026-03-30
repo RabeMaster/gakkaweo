@@ -10,6 +10,8 @@ import { SentenceTab } from "@/features/admin/components/SentenceTab";
 import { UserTab } from "@/features/admin/components/UserTab";
 import { SystemTab } from "@/features/admin/components/SystemTab";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
+import { TermsOfServicePage } from "@/pages/TermsOfServicePage";
 
 export const router = createBrowserRouter([
   {
@@ -47,6 +49,8 @@ export const router = createBrowserRouter([
           { path: "system", element: <SystemTab /> },
         ],
       },
+      { path: "privacy", element: <PrivacyPolicyPage /> },
+      { path: "terms", element: <TermsOfServicePage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
