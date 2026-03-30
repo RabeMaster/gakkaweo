@@ -39,7 +39,7 @@ export function Header() {
                 to="/admin"
                 className={[
                   "border-4 border-black dark:border-white px-3 py-1.5 text-sm font-bold shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
-                  location.pathname === "/admin" ? "bg-red-400 text-black" : "bg-red-200 text-black",
+                  location.pathname.startsWith("/admin") ? "bg-red-400 text-black" : "bg-red-200 text-black",
                 ].join(" ")}
               >
                 관리
