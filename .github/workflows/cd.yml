@@ -182,7 +182,7 @@ jobs:
           port: ${{ secrets.SERVER_SSH_PORT }}
           script: |
             cd ~/gakkaweo
-            docker compose -f docker-compose.prod.yml --env-file .env.prod pull
+            docker compose -f docker-compose.prod.yml --env-file .env.prod pull --ignore-pull-failures
             docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
             docker image prune -f
 
