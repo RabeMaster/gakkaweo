@@ -16,7 +16,7 @@ jobs:
       contents: read
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
-      ai-service: ${{ steps.filter.outputs.ai-service }}
+      ai_service: ${{ steps.filter.outputs.ai_service }}
       frontend: ${{ steps.filter.outputs.frontend }}
       nginx: ${{ steps.filter.outputs.nginx }}
       compose: ${{ steps.filter.outputs.compose }}
@@ -28,7 +28,7 @@ jobs:
           filters: |
             backend:
               - 'backend/**'
-            ai-service:
+            ai_service:
               - 'ai-service/**'
             frontend:
               - 'frontend/**'
@@ -63,7 +63,7 @@ jobs:
   build-ai-service:
     name: Build AI Service Image
     needs: changes
-    if: needs.changes.outputs.ai-service == 'true'
+    if: needs.changes.outputs.ai_service == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -122,7 +122,7 @@ jobs:
     if: >-
       always() && !failure() && !cancelled() && (
         needs.changes.outputs.backend == 'true' ||
-        needs.changes.outputs.ai-service == 'true' ||
+        needs.changes.outputs.ai_service == 'true' ||
         needs.changes.outputs.frontend == 'true' ||
         needs.changes.outputs.nginx == 'true' ||
         needs.changes.outputs.compose == 'true'
@@ -157,7 +157,7 @@ jobs:
       - name: Upload compose file
         if: >-
           needs.changes.outputs.backend == 'true' ||
-          needs.changes.outputs.ai-service == 'true' ||
+          needs.changes.outputs.ai_service == 'true' ||
           needs.changes.outputs.compose == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -172,7 +172,7 @@ jobs:
       - name: Deploy Docker services
         if: >-
           needs.changes.outputs.backend == 'true' ||
-          needs.changes.outputs.ai-service == 'true' ||
+          needs.changes.outputs.ai_service == 'true' ||
           needs.changes.outputs.compose == 'true'
         uses: appleboy/ssh-action@v1.2.2
         with:

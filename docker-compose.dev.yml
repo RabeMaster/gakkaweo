@@ -48,7 +48,7 @@ services:
   ai-service:
     build: ./ai-service
     ports:
-      - "127.0.0.1:${AI_SERVICE_PORT}:8000"
+      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
     volumes:
       - hf-model-cache:/root/.cache/huggingface
     environment:
