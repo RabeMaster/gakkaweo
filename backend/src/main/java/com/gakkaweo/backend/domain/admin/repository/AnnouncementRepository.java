@@ -17,5 +17,6 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
           + " ORDER BY a.createdAt DESC")
   List<Announcement> findActiveAnnouncements(@Param("now") Instant now);
 
-  List<Announcement> findAllByOrderByCreatedAtDesc();
+  @Query("SELECT a FROM Announcement a LEFT JOIN FETCH a.admin ORDER BY a.createdAt DESC")
+  List<Announcement> findAllWithAdmin();
 }

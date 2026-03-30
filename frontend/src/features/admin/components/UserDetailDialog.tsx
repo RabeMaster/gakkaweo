@@ -77,7 +77,12 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
       <div className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-lg my-auto">
         <div className="px-6 py-5 border-b-4 border-black dark:border-white flex items-center justify-between">
           <h2 className="text-xl font-black">사용자 상세</h2>
-          <button type="button" onClick={onClose} className="text-2xl font-black leading-none hover:text-red-500">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="text-2xl font-black leading-none hover:text-red-500"
+          >
             &times;
           </button>
         </div>

@@ -192,6 +192,6 @@ export interface AuditLogPage {
   content: AuditLog[];
   totalElements: number;
   totalPages: number;
-  number: number;
+  page: number;
   size: number;
 }

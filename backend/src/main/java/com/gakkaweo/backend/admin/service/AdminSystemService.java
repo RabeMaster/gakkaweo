@@ -8,6 +8,7 @@ import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
+import com.gakkaweo.backend.admin.dto.AuditLogListResponse;
 import com.gakkaweo.backend.admin.dto.AuditLogResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
@@ -86,7 +87,7 @@ public class AdminSystemService {
 
   @Transactional(readOnly = true)
   public List<AnnouncementResponse> getAnnouncements() {
-    return announcementRepository.findAllByOrderByCreatedAtDesc().stream()
+    return announcementRepository.findAllWithAdmin().stream()
         .map(AnnouncementResponse::from)
         .toList();
   }
@@ -226,13 +227,19 @@ public class AdminSystemService {
   }
 
   @Transactional(readOnly = true)
-  public Page<AuditLogResponse> getAuditLogs(
+  public AuditLogListResponse getAuditLogs(
       String action, Instant dateFrom, Instant dateTo, int page, int size) {
-    return auditLogRepository
-        .findAll(
+    Page<AuditLog> pageResult =
+        auditLogRepository.findAll(
             auditLogFilters(action, dateFrom, dateTo),
-            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")))
-        .map(AuditLogResponse::from);
+            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+
+    return new AuditLogListResponse(
+        pageResult.getContent().stream().map(AuditLogResponse::from).toList(),
+        pageResult.getNumber(),
+        pageResult.getSize(),
+        pageResult.getTotalElements(),
+        pageResult.getTotalPages());
   }
 
   private Announcement findAnnouncement(Long id) {

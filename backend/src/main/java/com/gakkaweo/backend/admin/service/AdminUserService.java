@@ -79,18 +79,17 @@ public class AdminUserService {
 
   @Transactional(readOnly = true)
   public UserListResponse getUsers(String nickname, Boolean banned, int page, int size) {
-    Page<Member> members =
+    Page<Member> pageResult =
         memberRepository.findAll(
             memberFilters(nickname, banned),
             PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
-    List<AdminUserResponse> users =
-        members.getContent().stream().map(this::toUserResponse).toList();
+
     return new UserListResponse(
-        users,
-        members.getNumber(),
-        members.getSize(),
-        members.getTotalElements(),
-        members.getTotalPages());
+        pageResult.getContent().stream().map(this::toUserResponse).toList(),
+        pageResult.getNumber(),
+        pageResult.getSize(),
+        pageResult.getTotalElements(),
+        pageResult.getTotalPages());
   }
 
   @Transactional(readOnly = true)

@@ -3,7 +3,7 @@ package com.gakkaweo.backend.admin.controller;
 import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
-import com.gakkaweo.backend.admin.dto.AuditLogResponse;
+import com.gakkaweo.backend.admin.dto.AuditLogListResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.service.AdminAuditService;
 import com.gakkaweo.backend.admin.service.AdminSystemService;
@@ -13,7 +13,6 @@ import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -130,7 +129,7 @@ public class AdminSystemController {
 
   @GetMapping("/audit-logs")
   @Transactional(readOnly = true)
-  public ResponseEntity<Page<AuditLogResponse>> getAuditLogs(
+  public ResponseEntity<AuditLogListResponse> getAuditLogs(
       @RequestParam(required = false) String action,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
           Instant dateFrom,
