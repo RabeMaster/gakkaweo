@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 @Slf4j
@@ -48,7 +49,7 @@ public class SseEventListener {
         debounceExecutor.schedule(this::broadcastRanking, DEBOUNCE_MILLIS, TimeUnit.MILLISECONDS);
   }
 
-  @EventListener
+  @TransactionalEventListener(fallbackExecution = true)
   public void onAnnouncement(AnnouncementEvent event) {
     sseConnectionManager.broadcast(SseEventType.ANNOUNCEMENT, event);
     log.info("ANNOUNCEMENT 이벤트 브로드캐스트: id={}, title={}", event.id(), event.title());
