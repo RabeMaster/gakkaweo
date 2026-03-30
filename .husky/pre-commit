@@ -1,0 +1,24 @@
+set -e
+
+# GitHub Desktop의 MinGW에는 gradlew가 필요시하는 cygpath가 없으므로, cygpath 명령어를 대체하게끔 설정
+if ! command -v cygpath &>/dev/null; then
+  cygpath() { echo "${@: -1}"; }
+  export -f cygpath
+fi
+
+# 프론트엔드 린트 및 포맷
+cd frontend && ./node_modules/.bin/lint-staged
+cd ..
+
+# 백엔드 및 AI 서비스 린트 및 포맷
+if git diff --cached --name-only | grep -q 'backend/.*\.java$'; then
+  cd backend && ./gradlew spotlessApply -q && cd ..
+  git add -u backend/src/
+fi
+
+# AI 서비스(파이썬) 린트 및 포맷
+if git diff --cached --name-only | grep -q 'ai-service/.*\.py$'; then
+  ./ai-service/.venv/Scripts/ruff check --fix ai-service/
+  ./ai-service/.venv/Scripts/ruff format ai-service/
+  git add -u ai-service/
+fi
