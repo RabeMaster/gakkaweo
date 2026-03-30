@@ -77,6 +77,7 @@ jwt:
 
 cookie:
   secure: ${COOKIE_SECURE:false}
+  domain: ${COOKIE_DOMAIN:}
 
 app:
   oauth2:
@@ -112,3 +113,4 @@ logging:
 
 server:
   port: ${SERVER_PORT:8080}
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}

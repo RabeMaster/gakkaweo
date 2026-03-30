@@ -1,0 +1,106 @@
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  postgresql:
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: gakkaweo
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: UTC
+    command: postgres -c timezone=UTC
+    networks:
+      - internal
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d gakkaweo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    environment:
+      TZ: UTC
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy volatile-lru
+      --requirepass ${REDIS_PASSWORD}
+    networks:
+      - internal
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  ai-service:
+    image: ghcr.io/rabemaster/gakkaweo-ai-service:latest
+    volumes:
+      - hf-model-cache:/root/.cache/huggingface
+    environment:
+      TZ: UTC
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+    logging: *logging
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/rabemaster/gakkaweo-backend:latest
+    ports:
+      - "127.0.0.1:${SERVER_PORT}:8080"
+    volumes:
+      - ./uploads:/data/uploads
+    env_file: .env.prod
+    networks:
+      - internal
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  pgdata:
+    name: gakkaweo-postgresql
+  redisdata:
+    name: gakkaweo-redis
+  hf-model-cache:
+    name: gakkaweo-hf-model-cache

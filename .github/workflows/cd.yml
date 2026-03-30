@@ -1,0 +1,223 @@
+name: CD
+
+on:
+  push:
+    branches: [dev]
+
+concurrency:
+  group: cd
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      ai_service: ${{ steps.filter.outputs.ai_service }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      nginx: ${{ steps.filter.outputs.nginx }}
+      compose: ${{ steps.filter.outputs.compose }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            ai_service:
+              - 'ai-service/**'
+            frontend:
+              - 'frontend/**'
+            nginx:
+              - 'nginx/**'
+            compose:
+              - 'docker-compose.prod.yml'
+
+  build-backend:
+    name: Build Backend Image
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/rabemaster/gakkaweo-backend:latest
+
+  build-ai-service:
+    name: Build AI Service Image
+    needs: changes
+    if: needs.changes.outputs.ai_service == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./ai-service
+          push: true
+          tags: ghcr.io/rabemaster/gakkaweo-ai-service:latest
+
+  build-frontend:
+    name: Build Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+        env:
+          VITE_API_BASE_URL: https://api.r4b2.xyz
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 1
+
+  deploy:
+    name: Deploy
+    needs: [changes, build-backend, build-ai-service, build-frontend]
+    if: >-
+      always() && !failure() && !cancelled() && (
+        needs.changes.outputs.backend == 'true' ||
+        needs.changes.outputs.ai_service == 'true' ||
+        needs.changes.outputs.frontend == 'true' ||
+        needs.changes.outputs.nginx == 'true' ||
+        needs.changes.outputs.compose == 'true'
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Frontend ---
+      - name: Download frontend artifact
+        if: needs.changes.outputs.frontend == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend-dist
+
+      - name: Deploy frontend
+        if: needs.changes.outputs.frontend == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          source: frontend-dist/
+          target: ~/gakkaweo/frontend/dist
+          strip_components: 1
+          rm: true
+          overwrite: true
+
+      # --- Docker services ---
+      - name: Upload compose file
+        if: >-
+          needs.changes.outputs.backend == 'true' ||
+          needs.changes.outputs.ai_service == 'true' ||
+          needs.changes.outputs.compose == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          source: docker-compose.prod.yml
+          target: ~/gakkaweo
+          overwrite: true
+
+      - name: Deploy Docker services
+        if: >-
+          needs.changes.outputs.backend == 'true' ||
+          needs.changes.outputs.ai_service == 'true' ||
+          needs.changes.outputs.compose == 'true'
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          script: |
+            cd ~/gakkaweo
+            docker compose -f docker-compose.prod.yml --env-file .env.prod pull
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+            docker image prune -f
+
+      # --- Nginx ---
+      - name: Upload nginx config
+        if: needs.changes.outputs.nginx == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          source: nginx/
+          target: ~/gakkaweo/nginx
+          strip_components: 1
+          overwrite: true
+
+      - name: Reload nginx
+        if: needs.changes.outputs.nginx == 'true'
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          script: sudo nginx -t && sudo systemctl reload nginx
+
+      # --- Health check ---
+      - name: Health check
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_SSH_PORT }}
+          script: |
+            sleep 5
+            curl -sf http://localhost:8080/health && echo "Backend: OK" || echo "WARNING: Backend health check failed"

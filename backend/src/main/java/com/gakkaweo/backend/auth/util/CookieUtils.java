@@ -14,62 +14,77 @@ public class CookieUtils {
   private final CookieProperties cookieProperties;
 
   public ResponseCookie createAccessTokenCookie(String token) {
-    return ResponseCookie.from("access_token", token)
-        .httpOnly(true)
-        .secure(cookieProperties.isSecure())
-        .path("/")
-        .maxAge(jwtProperties.getAccessExpiration())
-        .sameSite("Lax")
+    return applyDomain(
+            ResponseCookie.from("access_token", token)
+                .httpOnly(true)
+                .secure(cookieProperties.isSecure())
+                .path("/")
+                .maxAge(jwtProperties.getAccessExpiration())
+                .sameSite("Lax"))
         .build();
   }
 
   public ResponseCookie createRefreshTokenCookie(String token) {
-    return ResponseCookie.from("refresh_token", token)
-        .httpOnly(true)
-        .secure(cookieProperties.isSecure())
-        .path("/auth/refresh")
-        .maxAge(jwtProperties.getRefreshExpiration())
-        .sameSite("Lax")
+    return applyDomain(
+            ResponseCookie.from("refresh_token", token)
+                .httpOnly(true)
+                .secure(cookieProperties.isSecure())
+                .path("/auth/refresh")
+                .maxAge(jwtProperties.getRefreshExpiration())
+                .sameSite("Lax"))
         .build();
   }
 
   public ResponseCookie deleteAccessTokenCookie() {
-    return ResponseCookie.from("access_token", "")
-        .httpOnly(true)
-        .secure(cookieProperties.isSecure())
-        .path("/")
-        .maxAge(0)
-        .sameSite("Lax")
+    return applyDomain(
+            ResponseCookie.from("access_token", "")
+                .httpOnly(true)
+                .secure(cookieProperties.isSecure())
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax"))
         .build();
   }
 
   public ResponseCookie deleteRefreshTokenCookie() {
-    return ResponseCookie.from("refresh_token", "")
-        .httpOnly(true)
-        .secure(cookieProperties.isSecure())
-        .path("/auth/refresh")
-        .maxAge(0)
-        .sameSite("Lax")
+    return applyDomain(
+            ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(cookieProperties.isSecure())
+                .path("/auth/refresh")
+                .maxAge(0)
+                .sameSite("Lax"))
         .build();
   }
 
   public ResponseCookie createSessionIndicatorCookie() {
-    return ResponseCookie.from("has_session", "1")
-        .httpOnly(false)
-        .secure(cookieProperties.isSecure())
-        .path("/")
-        .maxAge(jwtProperties.getRefreshExpiration())
-        .sameSite("Lax")
+    return applyDomain(
+            ResponseCookie.from("has_session", "1")
+                .httpOnly(false)
+                .secure(cookieProperties.isSecure())
+                .path("/")
+                .maxAge(jwtProperties.getRefreshExpiration())
+                .sameSite("Lax"))
         .build();
   }
 
   public ResponseCookie deleteSessionIndicatorCookie() {
-    return ResponseCookie.from("has_session", "")
-        .httpOnly(false)
-        .secure(cookieProperties.isSecure())
-        .path("/")
-        .maxAge(0)
-        .sameSite("Lax")
+    return applyDomain(
+            ResponseCookie.from("has_session", "")
+                .httpOnly(false)
+                .secure(cookieProperties.isSecure())
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax"))
         .build();
+  }
+
+  private ResponseCookie.ResponseCookieBuilder applyDomain(
+      ResponseCookie.ResponseCookieBuilder builder) {
+    String domain = cookieProperties.getDomain();
+    if (domain != null && !domain.isBlank()) {
+      builder.domain(domain);
+    }
+    return builder;
   }
 }

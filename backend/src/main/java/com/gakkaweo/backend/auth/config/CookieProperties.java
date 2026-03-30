@@ -10,4 +10,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class CookieProperties {
 
   private final boolean secure;
+  private final String domain;
 }
