@@ -4,7 +4,7 @@ export interface MeResponse {
   publicId: string;
   nickname: string;
   profileUrl: string | null;
-  role: "ROLE_USER" | "ROLE_ADMIN";
+  role: "USER" | "ADMIN";
 }
 
 // --- Daily Game ---
@@ -74,6 +74,17 @@ export interface RankingResponse {
   myRank: MyRank | null;
   yesterdayRank: number | null;
   yesterdayTotalPlayers: number | null;
+}
+
+// --- Announcement (Public) ---
+
+export interface ActiveAnnouncementResponse {
+  id: number;
+  title: string;
+  content: string | null;
+  type: "INFO" | "MAINTENANCE" | "WARNING";
+  startsAt: string;
+  endsAt: string | null;
 }
 
 // --- Error ---

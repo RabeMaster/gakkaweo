@@ -93,6 +93,7 @@ app:
     read-per-minute: ${RATE_LIMIT_READ:60}
     sse-per-minute: ${RATE_LIMIT_SSE:10}
     auth-per-minute: ${RATE_LIMIT_AUTH:10}
+    admin-per-minute: ${RATE_LIMIT_ADMIN:120}
     bucket-expiry-minutes: ${RATE_LIMIT_BUCKET_EXPIRY:10}
     cleanup-interval-ms: ${RATE_LIMIT_CLEANUP_INTERVAL_MS:300000}
 

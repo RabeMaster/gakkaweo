@@ -5,5 +5,6 @@ public enum EndpointGroup {
   READ,
   SSE,
   AUTH,
+  ADMIN,
   NONE
 }

@@ -18,4 +18,6 @@ public interface SocialAccountRepository extends JpaRepository<SocialAccount, Lo
   @Modifying(clearAutomatically = true)
   @Query("DELETE FROM SocialAccount s WHERE s.member = :member")
   int deleteByMember(@Param("member") Member member);
+
+  Optional<SocialAccount> findFirstByMember(Member member);
 }

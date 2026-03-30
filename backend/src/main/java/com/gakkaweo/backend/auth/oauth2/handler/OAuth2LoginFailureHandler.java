@@ -33,8 +33,8 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
     log.warn("OAuth2 로그인 실패: {}", exception.getMessage());
     authorizationRequestRepository.deleteCookie(response);
 
-    String errorMessage =
-        URLEncoder.encode(exception.getLocalizedMessage(), StandardCharsets.UTF_8);
+    String message = exception.getMessage() != null ? exception.getMessage() : "로그인에 실패했습니다";
+    String errorMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
     response.sendRedirect(oAuth2Properties.getAuthorizedRedirectUri() + "?error=" + errorMessage);
   }
 }

@@ -16,6 +16,8 @@ public interface LocalAccountRepository extends JpaRepository<LocalAccount, Long
 
   boolean existsByUsernameIgnoreCase(String username);
 
+  boolean existsByMember(Member member);
+
   @Modifying(clearAutomatically = true)
   @Query("DELETE FROM LocalAccount l WHERE l.member = :member")
   int deleteByMember(@Param("member") Member member);

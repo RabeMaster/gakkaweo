@@ -31,6 +31,42 @@
 | GET    | `/daily/status`              | 필수   | READ 60/min  | 게임 상태 조회    |
 | GET    | `/ranking/today`             | 불필요 | READ 60/min  | 랭킹 조회         |
 | GET    | `/ranking/stream`            | 불필요 | SSE 10/min   | 랭킹 SSE 스트림   |
+| GET    | `/announcements/active`      | 불필요 | READ 60/min  | 활성 공지 조회     |
+| GET    | `/admin/sentences`           | ADMIN  | ADMIN 120/min | 문장 목록         |
+| POST   | `/admin/sentences`           | ADMIN  | ADMIN 120/min | 문장 등록         |
+| GET    | `/admin/sentences/{id}`      | ADMIN  | ADMIN 120/min | 문장 상세         |
+| PATCH  | `/admin/sentences/{id}`      | ADMIN  | ADMIN 120/min | 문장 수정         |
+| DELETE | `/admin/sentences/{id}`      | ADMIN  | ADMIN 120/min | 문장 삭제         |
+| GET    | `/admin/sentences/{id}/stats`| ADMIN  | ADMIN 120/min | 문장 통계         |
+| GET    | `/admin/sentences/unused-count` | ADMIN | ADMIN 120/min | 미사용 문장 수   |
+| POST   | `/admin/sentences/upload`    | ADMIN  | ADMIN 120/min | CSV 업로드        |
+| POST   | `/admin/sentences/{id}/schedule` | ADMIN | ADMIN 120/min | 스케줄 지정     |
+| DELETE | `/admin/sentences/{id}/schedule` | ADMIN | ADMIN 120/min | 스케줄 해제     |
+| POST   | `/admin/sentences/similarity-test` | ADMIN | ADMIN 120/min | 유사도 테스트  |
+| POST   | `/admin/sentences/duplicate-check` | ADMIN | ADMIN 120/min | 중복 검사      |
+| POST   | `/admin/sentences/emergency-replace` | ADMIN | ADMIN 120/min | 긴급 교체    |
+| GET    | `/admin/users`               | ADMIN  | ADMIN 120/min | 사용자 목록       |
+| GET    | `/admin/users/{id}`          | ADMIN  | ADMIN 120/min | 사용자 상세       |
+| GET    | `/admin/users/{id}/history`  | ADMIN  | ADMIN 120/min | 게임 이력         |
+| PATCH  | `/admin/users/{id}/role`     | ADMIN  | ADMIN 120/min | 역할 변경         |
+| POST   | `/admin/users/{id}/ban`      | ADMIN  | ADMIN 120/min | 사용자 차단       |
+| DELETE | `/admin/users/{id}/ban`      | ADMIN  | ADMIN 120/min | 차단 해제         |
+| DELETE | `/admin/users/{id}`          | ADMIN  | ADMIN 120/min | 강제 탈퇴         |
+| PATCH  | `/admin/users/{id}/nickname` | ADMIN  | ADMIN 120/min | 닉네임 강제 변경  |
+| DELETE | `/admin/users/{id}/profile-image` | ADMIN | ADMIN 120/min | 프로필 이미지 삭제 |
+| GET    | `/admin/dashboard/today`     | ADMIN  | ADMIN 120/min | 오늘 현황         |
+| GET    | `/admin/dashboard/ranking`   | ADMIN  | ADMIN 120/min | 전체 랭킹         |
+| GET    | `/admin/dashboard/stats/{date}` | ADMIN | ADMIN 120/min | 날짜별 통계     |
+| GET    | `/admin/dashboard/trends`    | ADMIN  | ADMIN 120/min | 추이 데이터       |
+| GET    | `/admin/dashboard/guess-log` | ADMIN  | ADMIN 120/min | 추측 로그         |
+| GET    | `/admin/system/announcements`| ADMIN  | ADMIN 120/min | 공지 목록         |
+| POST   | `/admin/system/announcements`| ADMIN  | ADMIN 120/min | 공지 등록         |
+| PATCH  | `/admin/system/announcements/{id}` | ADMIN | ADMIN 120/min | 공지 수정     |
+| DELETE | `/admin/system/announcements/{id}` | ADMIN | ADMIN 120/min | 공지 삭제     |
+| GET    | `/admin/system/status`       | ADMIN  | ADMIN 120/min | 시스템 상태       |
+| POST   | `/admin/system/ranking-cache/reset` | ADMIN | ADMIN 120/min | 랭킹 캐시 리셋 |
+| POST   | `/admin/system/rate-limit/reset` | ADMIN | ADMIN 120/min | Rate Limit 초기화 |
+| GET    | `/admin/system/audit-logs`   | ADMIN  | ADMIN 120/min | 감사 로그         |
 
 ---
 
@@ -391,6 +427,7 @@
 | ---------------- | ---------------------------------- | ------------------------------------------- |
 | `RANKING_UPDATE` | 랭킹 변경 (연결 시 즉시 + 변경 시) | `{"rankings":[...],"totalPlayers":N}`       |
 | `DAY_CHANGE`     | 자정 날짜 전환                     | `{"sentenceId":"...","hintMask":"...",...}` |
+| `ANNOUNCEMENT`   | 공지 생성/수정/삭제                | `{"id":N,"title":"...","type":"INFO"}`     |
 | `HEARTBEAT`      | 연결 유지 (10초 간격)              | (빈 데이터)                                 |
 
 - 100ms 디바운스 (짧은 시간 내 다수 변경 시 한 번만 전송)
@@ -442,6 +479,13 @@
 | `AI_SERVICE_UNAVAILABLE`       | 503  | AI 서비스 불가                    |
 | `RATE_LIMIT_EXCEEDED`          | 429  | 요청 초과 (Retry-After 헤더 포함) |
 | `SSE_MAX_CONNECTIONS`          | 503  | SSE 최대 연결 초과                |
+| `MEMBER_BANNED`                | 403  | 차단된 계정                       |
+| `SENTENCE_DUPLICATE`           | 409  | 이미 존재하는 문장                |
+| `SENTENCE_ALREADY_USED`        | 409  | 이미 출제된 문장                  |
+| `CSV_PARSE_ERROR`              | 400  | CSV 파싱 오류                     |
+| `ANNOUNCEMENT_NOT_FOUND`       | 404  | 공지 미존재                       |
+| `ADMIN_SELF_ACTION`            | 400  | 본인에 대한 어드민 액션           |
+| `ROLE_ALREADY_ASSIGNED`        | 400  | 이미 동일한 역할                  |
 | `INTERNAL_SERVER_ERROR`        | 500  | 내부 서버 오류                    |
 
 ---
@@ -485,8 +529,177 @@
 | READ  | 모든 `GET` (OAuth/health 제외) | 60/min | 익명: IP, 로그인: userId |
 | SSE   | `GET /ranking/stream`          | 10/min | 익명: IP, 로그인: userId |
 | AUTH  | `/auth/**`                     | 10/min | 항상 IP                  |
+| ADMIN | `/admin/**`                    | 120/min | userId 기준             |
 
 **응답 헤더**:
 
 - 성공 시: `X-Rate-Limit-Remaining: <남은 토큰>`
 - 429 시: `Retry-After: <대기 초>`
+
+---
+
+## 9. 공지 (Public)
+
+### `GET /announcements/active` — 현재 활성 공지 조회
+
+- **Rate Limit**: READ (60/min)
+- **응답**:
+
+```json
+[
+  {
+    "id": 1,
+    "title": "서버 점검 안내",
+    "content": "내용 (nullable)",
+    "type": "INFO | MAINTENANCE | WARNING",
+    "startsAt": "2026-03-30T00:00:00Z",
+    "endsAt": "2026-03-31T00:00:00Z | null"
+  }
+]
+```
+
+---
+
+## 10. 어드민 API
+
+모든 어드민 API는 `hasRole('ADMIN')` 인증 필수. Rate Limit: ADMIN (120/min, userId 기준).
+
+### 10.1 문장 관리
+
+#### `GET /admin/sentences` — 문장 목록
+
+- **쿼리**: `status` (선택, ACTIVE/DISABLED), `page` (기본 0), `size` (기본 20)
+- **응답**: `{sentences: [...], page, size, totalElements, totalPages}`
+
+#### `POST /admin/sentences` — 문장 등록
+
+- **요청**: `{"sentence": "String (필수, 최대 500자)"}`
+- **응답**: `201 Created` + SentenceResponse
+
+#### `GET /admin/sentences/{publicId}` — 문장 상세
+
+#### `PATCH /admin/sentences/{publicId}` — 문장 수정
+
+- **요청**: `{"sentence": "String (필수, 최대 500자)"}`
+
+#### `DELETE /admin/sentences/{publicId}` — 문장 삭제
+
+- 미출제 문장만 삭제 가능
+
+#### `GET /admin/sentences/{publicId}/stats` — 문장별 통계
+
+- **응답**: `{totalSessions, clearedSessions, clearRate, avgSimilarity, avgAttemptCount}`
+
+#### `GET /admin/sentences/unused-count` — 미사용 문장 수
+
+- **응답**: `{"count": N}`
+
+#### `POST /admin/sentences/upload` — CSV 업로드
+
+- **Content-Type**: `multipart/form-data` (`file` 파라미터)
+- **응답**: `201 Created` + `{totalRows, successCount, duplicateCount}`
+
+#### `POST /admin/sentences/{publicId}/schedule` — 스케줄 지정
+
+- **요청**: `{"date": "2026-04-01"}`
+
+#### `DELETE /admin/sentences/{publicId}/schedule` — 스케줄 해제
+
+#### `POST /admin/sentences/similarity-test` — 유사도 테스트
+
+- **요청**: `{"sentence": "정답", "guessText": "추측"}`
+- **응답**: `{sentence, guessText, similarity}`
+
+#### `POST /admin/sentences/duplicate-check` — 중복 검사
+
+- **요청**: `{"sentence": "문장"}`
+- **응답**: `{hasDuplicate, similarEntries: [{sentence, similarity}]}`
+
+#### `POST /admin/sentences/emergency-replace` — 긴급 교체
+
+- **요청**: `{"newSentencePublicId": "UUID", "returnOldToPool": true}`
+- **동작**: 기존 세션+추측 기록 삭제, Redis 랭킹 초기화, DAY_CHANGE SSE 브로드캐스트
+
+### 10.2 사용자 관리
+
+#### `GET /admin/users` — 사용자 목록
+
+- **쿼리**: `nickname` (선택), `banned` (선택, true/false), `page`, `size`
+- **응답**: `{users: [{publicId, nickname, profileUrl, role, banned, bannedAt, provider, email, createdAt}], page, size, totalElements, totalPages}`
+
+#### `GET /admin/users/{publicId}` — 사용자 상세
+
+- **응답**: 사용자 정보 + `activity: {totalParticipations, totalClears, avgAttemptCount, bestRank}`
+
+#### `GET /admin/users/{publicId}/history` — 게임 이력
+
+- **응답**: `{history: [{date, sentence, gameStatus, bestSimilarity, attemptCount, finalRank, clearedAt}]}`
+
+#### `PATCH /admin/users/{publicId}/role` — 역할 변경
+
+- **요청**: `{"role": "ADMIN | USER"}`
+
+#### `POST /admin/users/{publicId}/ban` — 사용자 차단
+
+- **동작**: banned 플래그 + refresh token revoke + access token 블랙리스트
+
+#### `DELETE /admin/users/{publicId}/ban` — 차단 해제
+
+#### `DELETE /admin/users/{publicId}` — 강제 탈퇴
+
+#### `PATCH /admin/users/{publicId}/nickname` — 닉네임 강제 변경
+
+- **요청**: `{"nickname": "String (최대 12자)"}`
+
+#### `DELETE /admin/users/{publicId}/profile-image` — 프로필 이미지 삭제
+
+### 10.3 대시보드
+
+#### `GET /admin/dashboard/today` — 오늘 현황
+
+- **응답**: `{sentenceId, sentence, totalParticipants, clearedCount, inProgressCount, avgSimilarity, avgAttemptCount, unusedSentenceCount, sseConnectionCount}`
+
+#### `GET /admin/dashboard/ranking` — 전체 랭킹
+
+- **쿼리**: `date` (선택, 기본 오늘)
+- **응답**: `{rankings: [{rank, publicId, nickname, profileUrl, similarity, attemptCount}], totalPlayers}`
+
+#### `GET /admin/dashboard/stats/{date}` — 날짜별 통계
+
+- **응답**: `{date, sentence, totalParticipants, clearedCount, clearRate, avgSimilarity, avgAttemptCount}`
+
+#### `GET /admin/dashboard/trends` — 추이 데이터
+
+- **쿼리**: `days` (기본 30)
+- **응답**: `{trends: [{date, participants, clears, clearRate, newMembers}]}`
+
+#### `GET /admin/dashboard/guess-log` — 추측 로그
+
+- **쿼리**: `date` (필수), `memberPublicId` (선택)
+- **응답**: `{logs: [{memberPublicId, nickname, guessText, similarity, attemptNumber, createdAt}]}`
+
+### 10.4 시스템 관리
+
+#### `GET /admin/system/announcements` — 공지 목록
+
+#### `POST /admin/system/announcements` — 공지 등록
+
+- **요청**: `{"title": "String", "content": "String?", "type": "INFO|MAINTENANCE|WARNING", "startsAt": "ISO", "endsAt": "ISO?"}`
+- **응답**: `201 Created` + AnnouncementResponse
+
+#### `PATCH /admin/system/announcements/{id}` — 공지 수정
+
+#### `DELETE /admin/system/announcements/{id}` — 공지 삭제
+
+#### `GET /admin/system/status` — 시스템 상태
+
+- **응답**: `{sseConnectionCount, aiServiceHealthy, aiServiceResponseMs, redisHealthy, totalMembers, totalSentences, unusedSentences}`
+
+#### `POST /admin/system/ranking-cache/reset` — 랭킹 캐시 리셋
+
+#### `POST /admin/system/rate-limit/reset` — Rate Limit 초기화
+
+#### `GET /admin/system/audit-logs` — 감사 로그
+
+- **쿼리**: `action` (선택), `dateFrom`/`dateTo` (선택, ISO DateTime), `page`, `size`
+- **응답**: Spring Data `Page<AuditLogResponse>` — `{content: [{id, adminNickname, action, targetType, targetId, detail, ipAddress, createdAt}], totalElements, totalPages, number, size}`

@@ -1,5 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Header } from "@/app/layout/Header";
+import { AnnouncementBanner } from "@/shared/ui/AnnouncementBanner";
+import { useRankingSSE } from "@/features/ranking/hooks/useRankingSSE";
 import { useToastStore } from "@/shared/stores/useToastStore";
 
 const TOAST_COLORS = {
@@ -9,6 +11,7 @@ const TOAST_COLORS = {
 } as const;
 
 export function Layout() {
+  useRankingSSE();
   const { toasts, removeToast } = useToastStore();
 
   return (
@@ -16,6 +19,7 @@ export function Layout() {
       <Header />
 
       <main className="max-w-6xl mx-auto px-6 py-8">
+        <AnnouncementBanner />
         <Outlet />
       </main>
 

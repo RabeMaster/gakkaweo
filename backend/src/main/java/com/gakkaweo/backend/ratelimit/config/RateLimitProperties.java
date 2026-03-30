@@ -13,5 +13,6 @@ public class RateLimitProperties {
   private final int readPerMinute;
   private final int ssePerMinute;
   private final int authPerMinute;
+  private final int adminPerMinute;
   private final int bucketExpiryMinutes;
 }

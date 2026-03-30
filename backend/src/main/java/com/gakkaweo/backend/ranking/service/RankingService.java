@@ -3,7 +3,10 @@ package com.gakkaweo.backend.ranking.service;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
+import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
+import com.gakkaweo.backend.common.exception.BusinessException;
+import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -17,7 +20,6 @@ import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +40,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class RankingService {
 
-  private static final ZoneId KST = ZoneId.of("Asia/Seoul");
   private static final int TOP_RANKING_SIZE = 10;
   private static final Duration EXPIRE_TTL = Duration.ofHours(1);
 
@@ -122,6 +123,52 @@ public class RankingService {
           base.rankings(), base.totalPlayers(), myRank, yesterdayRank, yesterdayTotalPlayers);
     } catch (Exception e) {
       log.warn("사용자 랭킹 조회 실패: memberPublicId={}", memberPublicId, e);
+      return new RankingResponse(List.of(), 0);
+    }
+  }
+
+  public RankingResponse getFullRankingsForDate(LocalDate date) {
+    try {
+      String rankingKey = buildRankingKey(date);
+
+      Set<String> allMembers = redisTemplate.opsForZSet().reverseRange(rankingKey, 0, -1);
+
+      Long totalPlayers = redisTemplate.opsForZSet().zCard(rankingKey);
+      if (totalPlayers == null) {
+        totalPlayers = 0L;
+      }
+
+      if (allMembers == null || allMembers.isEmpty()) {
+        return new RankingResponse(List.of(), totalPlayers);
+      }
+
+      List<RankingEntry> entries = new ArrayList<>();
+      long rank = 1;
+      for (String memberKey : allMembers) {
+        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
+        String detailKey = buildDetailKey(date, UUID.fromString(publicIdStr));
+
+        Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
+        if (detail.isEmpty()) {
+          continue;
+        }
+
+        String profileUrl = (String) detail.get("profileUrl");
+
+        entries.add(
+            new RankingEntry(
+                rank,
+                UUID.fromString((String) detail.get("publicId")),
+                (String) detail.get("nickname"),
+                profileUrl == null || profileUrl.isEmpty() ? null : profileUrl,
+                new BigDecimal((String) detail.get("similarity")),
+                Integer.parseInt((String) detail.get("attemptCount"))));
+        rank++;
+      }
+
+      return new RankingResponse(entries, totalPlayers);
+    } catch (Exception e) {
+      log.warn("전체 랭킹 조회 실패: date={}", date, e);
       return new RankingResponse(List.of(), 0);
     }
   }
@@ -214,6 +261,53 @@ public class RankingService {
       log.warn("랭킹 스냅샷 조회 실패: date={}", date, e);
       return new RankingSnapshot(List.of(), 0);
     }
+  }
+
+  public int rebuildRankingCache(LocalDate date) {
+    DailySentence sentence =
+        dailySentenceRepository
+            .findByUsedAt(date)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SENTENCE_NOT_FOUND));
+
+    List<GameSession> sessions = gameSessionRepository.findAllBySentenceWithMember(sentence);
+
+    String rankingKey = buildRankingKey(date);
+    ZonedDateTime startOfDay = date.atStartOfDay(KST);
+    int count = 0;
+
+    for (GameSession session : sessions) {
+      Member member = session.getMember();
+      if (member == null) {
+        continue;
+      }
+
+      long elapsedSeconds =
+          Duration.between(startOfDay, session.getUpdatedAt().atZone(KST)).getSeconds();
+      if (elapsedSeconds < 0) {
+        elapsedSeconds = 0;
+      }
+
+      double score =
+          encodeScore(session.getBestSimilarity(), session.getAttemptCount(), elapsedSeconds);
+
+      String memberKey = RANKING_MEMBER_PREFIX + member.getPublicId();
+      redisTemplate.opsForZSet().add(rankingKey, memberKey, score);
+
+      String detailKey = buildDetailKey(date, member.getPublicId());
+      Map<String, String> detail =
+          Map.of(
+              "publicId", member.getPublicId().toString(),
+              "nickname", member.getNickname(),
+              "profileUrl", Objects.toString(member.getProfileUrl(), ""),
+              "similarity", session.getBestSimilarity().toPlainString(),
+              "attemptCount", String.valueOf(session.getAttemptCount()),
+              "elapsedSeconds", String.valueOf(elapsedSeconds));
+      redisTemplate.opsForHash().putAll(detailKey, detail);
+      count++;
+    }
+
+    log.info("랭킹 캐시 재구축: date={}, sessions={}", date, count);
+    return count;
   }
 
   public void expirePreviousDayRankingKeys(LocalDate date) {
