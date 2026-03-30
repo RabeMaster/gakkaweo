@@ -14,10 +14,9 @@ RUN ./gradlew bootJar --no-daemon -x test
 FROM eclipse-temurin:21-jre-alpine
 
 RUN apk add --no-cache tzdata \
-    && addgroup -S appgroup && adduser -S appuser -G appgroup
+    && addgroup -g 1000 -S appgroup && adduser -u 1000 -S appuser -G appgroup
 
-ENV TZ=UTC \
-    UPLOAD_PROFILE_DIR=/data/uploads/profiles
+ENV TZ=UTC
 
 WORKDIR /app
 
@@ -29,4 +28,4 @@ USER appuser
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

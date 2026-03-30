@@ -3,6 +3,7 @@
 
 ### dotenv ###
 .env
+.env.prod
 
 ### Git ###
 # Created by git for backups. To disable backups in Git:
