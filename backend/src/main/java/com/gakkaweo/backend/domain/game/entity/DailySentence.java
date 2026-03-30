@@ -31,12 +31,17 @@ public class DailySentence {
   @GeneratedValue(strategy = IDENTITY)
   private Long id;
 
+  @Setter
   @Column(nullable = false, columnDefinition = "TEXT")
   private String sentence;
 
   @Setter
   @Column(unique = true)
   private LocalDate usedAt;
+
+  @Setter
+  @Column(unique = true)
+  private LocalDate scheduledAt;
 
   @Setter
   @Enumerated(EnumType.STRING)

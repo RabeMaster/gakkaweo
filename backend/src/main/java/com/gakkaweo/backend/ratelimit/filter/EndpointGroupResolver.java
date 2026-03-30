@@ -13,6 +13,10 @@ public class EndpointGroupResolver {
       return EndpointGroup.NONE;
     }
 
+    if (uri.startsWith("/admin/")) {
+      return EndpointGroup.ADMIN;
+    }
+
     if ("GET".equals(method) && uri.equals("/auth/me")) {
       return EndpointGroup.READ;
     }

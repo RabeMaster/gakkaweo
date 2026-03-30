@@ -63,6 +63,11 @@ public class LocalAuthService {
       throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
     }
 
-    return localAccount.getMember();
+    Member member = localAccount.getMember();
+    if (Boolean.TRUE.equals(member.getBanned())) {
+      throw new BusinessException(ErrorCode.MEMBER_BANNED);
+    }
+
+    return member;
   }
 }

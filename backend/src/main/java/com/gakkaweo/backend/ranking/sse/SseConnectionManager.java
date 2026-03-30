@@ -69,6 +69,10 @@ public class SseConnectionManager {
     return emitter;
   }
 
+  public int getConnectionCount() {
+    return emitters.size();
+  }
+
   public void broadcast(SseEventType type, Object data) {
     sendToAll(emitter -> emitter.send(SseEmitter.event().name(type.name()).data(data)));
   }

@@ -1,5 +1,7 @@
 package com.gakkaweo.backend.game.scheduler;
 
+import static com.gakkaweo.backend.common.time.TimeConstants.KST;
+
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -8,7 +10,6 @@ import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +29,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Slf4j
 @RequiredArgsConstructor
 public class DailySentenceScheduler {
-
-  private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
@@ -145,11 +144,18 @@ public class DailySentenceScheduler {
 
     DailySentence sentence =
         dailySentenceRepository
-            .findRandomUnusedSentence()
+            .findByScheduledAt(today)
+            .or(dailySentenceRepository::findRandomUnusedSentence)
             .orElseThrow(() -> new IllegalStateException("사용 가능한 문장이 없음 — 문장 추가 필요"));
 
+    boolean wasScheduled = sentence.getScheduledAt() != null;
     sentence.setUsedAt(today);
+    sentence.setScheduledAt(null);
     dailySentenceRepository.save(sentence);
-    log.info("오늘의 문장 선정: date={}, sentenceId={}", today, sentence.getPublicId());
+    log.info(
+        "오늘의 문장 선정: date={}, sentenceId={}, scheduled={}",
+        today,
+        sentence.getPublicId(),
+        wasScheduled);
   }
 }

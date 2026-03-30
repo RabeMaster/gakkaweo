@@ -145,6 +145,7 @@ hue = (similarity / 100) × 120
 | 랭킹       | `/ranking` | 실시간 순위 (SSE)                             |
 | 로그인     | `/login`   | 소셜 로그인 + 로컬 로그인 2컬럼 + 회원가입 다이얼로그 |
 | 마이페이지 | `/mypage`  | 프로필 이미지 업로드/삭제, 닉네임 확인 (✏️ 편집), 회원 탈퇴 |
+| 어드민     | `/admin`   | 사이드바+탭 레이아웃 (대시보드/문장/사용자/시스템). ROLE_ADMIN만 접근 |
 
 ## 9. 로그인 프로바이더 색상
 
@@ -199,3 +200,16 @@ dark:shadow-brutal-dark bg-white dark:bg-gray-900 p-6
 - **크롭 모달**: `react-easy-crop` — `aspect={1}`, `cropShape="rect"` (직각, 네오브루탈리즘). 줌 슬라이더 1.0~10.0
 - **팝오버**: `border-4 shadow-brutal-sm`, click-outside/Escape 닫기
 - **hover 오버레이**: `bg-black/40` + 편집 아이콘 (프로필 이미지 위)
+
+### 어드민 패널 (`/admin`)
+
+- **레이아웃**: 사이드바(w-56, 고정) + 콘텐츠 영역(flex-1). `flex gap-6 items-start`
+- **사이드바**: `border-4 shadow-brutal`. 탭: 대시보드/문장/사용자/시스템. 활성 탭 `bg-yellow-300 text-black`
+- **테이블**: `border-4 shadow-brutal` 래퍼. 헤더 `border-b-4 bg-gray-100 dark:bg-gray-800`. 행 `border-b-2 border-black/20` + hover `bg-yellow-50`
+- **위젯 카드**: `border-4 shadow-brutal-sm`. 라벨 `text-xs uppercase tracking-wide`. 수치 `text-3xl font-black tabular-nums`
+- **상태 배지**: `px-2 py-0.5 text-xs font-black border-2`. ACTIVE=green, DISABLED=gray, ADMIN=red, USER=blue, 차단=gray-800
+- **다이얼로그**: `border-4 shadow-brutal max-w-lg`. 헤더 `border-b-4 px-6 py-5`. 푸터 `border-t-4`. `role="dialog" aria-modal="true"` + Escape 닫기 필수
+- **텍스트 링크 액션**: 테이블 행 내 액션은 `text-indigo-600 dark:text-indigo-400 font-black text-xs hover:underline`
+- **Pagination**: `Button sm secondary` 이전/다음 + `tabular-nums` 페이지 표시
+- **공지 유형 라벨**: 안내(blue-300), 점검(orange-300), 경고(red-400). select에서도 한글 라벨 사용
+- **공지 배너**: `shared/ui/AnnouncementBanner.tsx`. 유형별 색상 배경 + `shadow-brutal-sm`. 닫기 시 localStorage `id_startsAt` 복합 키 저장

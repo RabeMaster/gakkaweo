@@ -38,6 +38,14 @@ public class SimilarityService {
     this.circuitBreaker = circuitBreakerRegistry.circuitBreaker("aiService");
   }
 
+  public BigDecimal testSimilarity(String sentenceText, String guessText) {
+    String normalized = textNormalizer.normalize(guessText);
+    if (normalized.isEmpty()) {
+      throw new BusinessException(ErrorCode.INVALID_GUESS_TEXT);
+    }
+    return callWithCircuitBreaker(sentenceText, normalized);
+  }
+
   public BigDecimal calculateSimilarity(
       Long sentenceId, String guessText, String sentenceText, Duration cacheTtl) {
     String normalized = textNormalizer.normalize(guessText);

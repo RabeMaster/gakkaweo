@@ -39,6 +39,10 @@ export function useRankingSSE() {
         queryClient.invalidateQueries({ queryKey: ["ranking"] });
       });
 
+      es.addEventListener("ANNOUNCEMENT", () => {
+        window.dispatchEvent(new CustomEvent("sse:announcement"));
+      });
+
       es.addEventListener("HEARTBEAT", () => {});
 
       es.onerror = () => {
