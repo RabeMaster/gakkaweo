@@ -95,7 +95,7 @@ export function GamePage() {
         {
           guessText,
           similarity: res.similarity,
-          attemptNumber: res.attemptNumber ?? (old?.guesses?.length ?? 0) + 1,
+          attemptNumber: (old?.guesses?.length ?? 0) + 1,
           createdAt: res.timestamp,
         },
       ],
