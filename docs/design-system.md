@@ -61,7 +61,7 @@ boxShadow: {
 | 기본           | `shadow-brutal`                                                             |
 | Hover          | `hover:shadow-brutal-hover hover:translate-x-[4px] hover:translate-y-[4px]` |
 | Active (Click) | `active:shadow-none active:translate-x-[6px] active:translate-y-[6px]`      |
-| Disabled       | `opacity-50 cursor-not-allowed translate-x-0 translate-y-0` (그림자 유지)   |
+| Disabled       | `opacity-50 cursor-not-allowed pointer-events-none translate-x-0 translate-y-0` (그림자 유지) |
 | Loading        | `opacity-70 cursor-wait shadow-brutal animate-pulse`                        |
 
 ### sm 버튼 (shadow-brutal-sm, 3px)
@@ -71,7 +71,7 @@ boxShadow: {
 | 기본           | `shadow-brutal-sm`                                                             |
 | Hover          | `hover:shadow-brutal-sm-hover hover:translate-x-[2px] hover:translate-y-[2px]` |
 | Active (Click) | `active:shadow-none active:translate-x-[3px] active:translate-y-[3px]`         |
-| Disabled       | `opacity-50 cursor-not-allowed translate-x-0 translate-y-0` (그림자 유지)      |
+| Disabled       | `opacity-50 cursor-not-allowed pointer-events-none translate-x-0 translate-y-0` (그림자 유지) |
 | Loading        | `opacity-70 cursor-wait shadow-brutal-sm animate-pulse`                        |
 
 모든 상태 전환에는 `transition-all duration-100`을 적용하여 부드러운 전환을 준다.
@@ -174,8 +174,8 @@ hue = (similarity / 100) × 120
       px-6 py-3 transition-all duration-100
 호버: hover:shadow-brutal-hover hover:translate-x-[4px] hover:translate-y-[4px]
 클릭: active:shadow-none active:translate-x-[6px] active:translate-y-[6px]
-비활성: disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
-        disabled:translate-x-0 disabled:translate-y-0
+비활성: disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
+        disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0
 ```
 
 ### 입력창
