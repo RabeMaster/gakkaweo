@@ -60,7 +60,7 @@ export function GuessHistory({ guesses }: GuessHistoryProps) {
             type="button"
             disabled={safePage === 0}
             onClick={() => setPage(safePage - 1)}
-            className="border-2 border-black dark:border-white px-3 py-1 text-xs font-bold shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px] disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 bg-white dark:bg-gray-900"
+            className="border-2 border-black dark:border-white px-3 py-1 text-xs font-bold shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px] disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 disabled:pointer-events-none bg-white dark:bg-gray-900"
           >
             이전
           </button>
@@ -68,7 +68,7 @@ export function GuessHistory({ guesses }: GuessHistoryProps) {
             type="button"
             disabled={safePage >= totalPages - 1}
             onClick={() => setPage(safePage + 1)}
-            className="border-2 border-black dark:border-white px-3 py-1 text-xs font-bold shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px] disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 bg-white dark:bg-gray-900"
+            className="border-2 border-black dark:border-white px-3 py-1 text-xs font-bold shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px] disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 disabled:pointer-events-none bg-white dark:bg-gray-900"
           >
             다음
           </button>

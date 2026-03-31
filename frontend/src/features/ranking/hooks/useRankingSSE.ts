@@ -35,8 +35,7 @@ export function useRankingSSE() {
       });
 
       es.addEventListener("DAY_CHANGE", () => {
-        queryClient.invalidateQueries({ queryKey: ["game", "today"] });
-        queryClient.invalidateQueries({ queryKey: ["game", "status"] });
+        queryClient.removeQueries({ queryKey: ["game"] });
         queryClient.invalidateQueries({ queryKey: ["ranking"] });
       });
 
