@@ -221,7 +221,15 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - "플레이 방법" 버튼으로 언제든 재열람 (`border-2 bg-yellow-300 text-xs font-black`)
 - 섹션 간 `border-t-2 border-gray-200 dark:border-gray-800` 구분선
 - AI 유사도 설명: 의미 기반 측정, 글자 매칭 아님 (예시 포함)
-- 클리어 후 계속 플레이 가능 안내 (left-accent 콜아웃)
+- 클리어 후 계속 플레이 가능 안내 (left-accent 콜아웃, `<ul><li>` 구조)
+- 랭킹 선정 방식 안내 섹션: 유사도 > 시도 횟수 > 100% 선착순
+- 플레이 방법 번호 리스트: `<ol>` 내 노란 배지에 1~5 숫자
+
+### 설정 모달
+
+- **테마**: 라이트/다크/시스템 3버튼 토글. 활성 = `bg-black text-white`
+- **사운드 볼륨**: `input[type=range]` 슬라이더 (`accent-yellow-400`). localStorage `sound_volume` (기본 0.5, 범위 0~1). 0이면 🔇, 그 외 🔊
+- **사운드 테스트**: 런치패드 버튼 (`border-2 shadow-brutal-sm`). 색상별 구분 (클리어=green). 기존 재생 중 사운드 정지 후 새로 재생. 음소거 시 disabled
 
 ### 프로필 이미지 (마이페이지)
 

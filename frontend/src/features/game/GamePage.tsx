@@ -79,6 +79,17 @@ export function GamePage() {
     confetti({ ...opts, origin: { x: 0.5, y: 0.5 } });
     confetti({ ...opts, origin: { x: 0.65, y: 0.5 } });
     confetti({ ...opts, origin: { x: 0.8, y: 0.5 } });
+
+    try {
+      const vol = parseFloat(localStorage.getItem("sound_volume") ?? "0.5");
+      if (vol > 0) {
+        const audio = new Audio("/sounds/clear.mp3");
+        audio.volume = vol;
+        audio.play().catch(() => {});
+      }
+    } catch {
+      // 스토리지 접근 불가 또는 오디오 재생 실패 시 무시
+    }
   }, [localCleared]);
 
   useEffect(

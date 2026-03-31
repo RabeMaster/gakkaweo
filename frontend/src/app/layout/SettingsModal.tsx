@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useThemeStore } from "@/shared/stores/useThemeStore";
 
 type Theme = "light" | "dark" | "system";
@@ -14,9 +14,45 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
+const SOUND_TESTS: { label: string; file: string; color: string }[] = [
+  { label: "클리어", file: "/sounds/clear.mp3", color: "bg-green-400" },
+];
+
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { theme, setTheme } = useThemeStore();
   const modalRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [volume, setVolume] = useState(() => {
+    try {
+      const v = localStorage.getItem("sound_volume");
+      return v !== null ? parseFloat(v) : 0.7;
+    } catch {
+      return 0.7;
+    }
+  });
+
+  function handleVolumeChange(v: number) {
+    setVolume(v);
+    try {
+      localStorage.setItem("sound_volume", String(v));
+    } catch {
+      // 스토리지 접근 불가 시 무시
+    }
+    if (audioRef.current) {
+      audioRef.current.volume = v;
+    }
+  }
+
+  function playTestSound(file: string) {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    const audio = new Audio(file);
+    audio.volume = volume;
+    audio.play().catch(() => {});
+    audioRef.current = audio;
+  }
 
   useEffect(() => {
     if (!isOpen) {
@@ -103,7 +139,42 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 text-gray-600 dark:text-gray-400">
               사운드
             </h3>
-            <p className="text-sm text-gray-400 font-medium">추후 지원 예정</p>
+            <div className="flex items-center gap-3">
+              <span className="text-lg shrink-0">{volume === 0 ? "🔇" : "🔊"}</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={volume}
+                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                className="flex-1 accent-yellow-400"
+              />
+              <span className="text-sm font-bold tabular-nums w-10 text-right">{Math.round(volume * 100)}%</span>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 text-gray-600 dark:text-gray-400">
+              사운드 테스트
+            </h3>
+            <div className="flex gap-2">
+              {SOUND_TESTS.map(({ label, file, color }) => (
+                <button
+                  type="button"
+                  key={file}
+                  onClick={() => playTestSound(file)}
+                  disabled={volume === 0}
+                  className={[
+                    `border-2 border-black dark:border-white px-3 py-1.5 text-xs font-black transition-all duration-100 ${color} text-black`,
+                    "shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
+                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-brutal-sm disabled:hover:translate-x-0 disabled:hover:translate-y-0",
+                  ].join(" ")}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
