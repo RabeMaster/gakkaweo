@@ -2,6 +2,7 @@ package com.gakkaweo.backend.ranking.sse;
 
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.ranking.dto.HeartbeatResponse;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import jakarta.annotation.PostConstruct;
@@ -77,13 +78,18 @@ public class SseConnectionManager {
     sendToAll(emitter -> emitter.send(SseEmitter.event().name(type.name()).data(data)));
   }
 
+  private SseEmitter.SseEventBuilder heartbeatEvent() {
+    return SseEmitter.event()
+        .name(SseEventType.HEARTBEAT.name())
+        .data(new HeartbeatResponse(getConnectionCount()));
+  }
+
   private void sendHeartbeat() {
     try {
       if (emitters.isEmpty()) {
         return;
       }
-      sendToAll(
-          emitter -> emitter.send(SseEmitter.event().name(SseEventType.HEARTBEAT.name()).data("")));
+      sendToAll(emitter -> emitter.send(heartbeatEvent()));
     } catch (Exception e) {
       log.error("SSE heartbeat 처리 중 예외", e);
     }
@@ -91,6 +97,7 @@ public class SseConnectionManager {
 
   private void sendInitialRanking(SseEmitter emitter) {
     try {
+      emitter.send(heartbeatEvent());
       RankingResponse ranking = rankingService.getRankings();
       emitter.send(SseEmitter.event().name(SseEventType.RANKING_UPDATE.name()).data(ranking));
     } catch (Exception e) {
