@@ -30,7 +30,12 @@ export function Footer() {
 
         <nav className="flex items-center gap-4">
           {EXTERNAL_LINKS.map((link) => (
-            <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" className={linkClassName}>
+            <a
+              key={link.href}
+              href={link.href}
+              {...(!link.href.startsWith("mailto:") && { target: "_blank", rel: "noopener noreferrer" })}
+              className={linkClassName}
+            >
               {link.label}
             </a>
           ))}
