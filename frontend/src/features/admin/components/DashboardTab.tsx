@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTodayWidget, useTrends } from "@/features/admin/hooks/useAdminDashboard";
 import type { DailyTrend } from "@/features/admin/types";
 
@@ -7,6 +8,27 @@ function WidgetCard({ label, value, sub }: { label: string; value: string | numb
       <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{label}</p>
       <p className="text-3xl font-black tabular-nums mt-1">{value}</p>
       {sub && <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+function SentenceSpoiler({ sentence }: { sentence: string }) {
+  const [revealed, setRevealed] = useState(false);
+
+  return (
+    <div className="border-4 border-black dark:border-white bg-indigo-50 dark:bg-gray-900 shadow-brutal-sm p-4">
+      <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">오늘 문장</p>
+      <button
+        type="button"
+        onClick={() => setRevealed((prev) => !prev)}
+        className={`mt-1 text-left w-full transition-colors ${
+          revealed
+            ? "text-lg font-black"
+            : "text-sm font-bold text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white"
+        }`}
+      >
+        {revealed ? sentence : "클릭하여 정답 확인 (스포일러 주의)"}
+      </button>
     </div>
   );
 }
@@ -77,10 +99,7 @@ export function DashboardTab() {
             />
           </div>
 
-          <div className="border-4 border-black dark:border-white bg-indigo-50 dark:bg-gray-900 shadow-brutal-sm p-4">
-            <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">오늘 문장</p>
-            <p className="text-lg font-black mt-1">{widget.sentence}</p>
-          </div>
+          <SentenceSpoiler key={widget.sentenceId} sentence={widget.sentence} />
         </>
       )}
 
