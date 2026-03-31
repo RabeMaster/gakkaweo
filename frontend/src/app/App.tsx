@@ -8,11 +8,19 @@ import { useToastStore } from "@/shared/stores/useToastStore";
 
 export function App() {
   const fetchUser = useAuthStore((s) => s.fetchUser);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
   const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
     fetchUser();
   }, [fetchUser]);
+
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      queryClient.invalidateQueries({ queryKey: ["ranking"] });
+    }
+  }, [isAuthenticated, isLoading]);
 
   useEffect(() => {
     const error = new URLSearchParams(window.location.search).get("error");
