@@ -428,7 +428,7 @@
 | `RANKING_UPDATE` | 랭킹 변경 (연결 시 즉시 + 변경 시) | `{"rankings":[...],"totalPlayers":N}`       |
 | `DAY_CHANGE`     | 자정 날짜 전환                     | `{"sentenceId":"...","hintMask":"...",...}` |
 | `ANNOUNCEMENT`   | 공지 생성/수정/삭제                | `{"id":N,"title":"...","type":"INFO"}`     |
-| `HEARTBEAT`      | 연결 유지 (10초 간격)              | (빈 데이터)                                 |
+| `HEARTBEAT`      | 연결 유지 (10초 간격)              | `{"sseConnectionCount":N}`                  |
 
 - 100ms 디바운스 (짧은 시간 내 다수 변경 시 한 번만 전송)
 - **에러**: `SSE_MAX_CONNECTIONS`(503)

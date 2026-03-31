@@ -206,6 +206,23 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - 링크: `text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors`
 - Layout: `flex flex-col min-h-screen` + `<main>` `flex-1` (스티키 푸터)
 
+### 랭킹 패널
+
+- **1·2·3등 액센트**: `box-shadow: inset 4px 0 0 0` CSS 변수 (`--rank-1-accent`, `--rank-2-accent`, `--rank-3-accent`). 다크모드 변수 자동 전환
+- **1등 시머**: `rank-shimmer` 애니메이션 (금색 좌측 액센트 반짝임)
+- **1등 배지**: 트로피 SVG 아이콘 (`text-black`)
+- **배지 색상**: 1등=`yellow-400/300`, 2등=`slate-300/400`, 3등=`amber-600/500 text-white`. 4+등=`gray-200/700`
+- **라이브 인디케이터**: `live-pulse` 애니메이션 (초록 펄스 도트) + `sseConnectionCount` (Zustand store, HEARTBEAT 기반)
+- **재생/정지 버튼**: `border-2 shadow-brutal-sm-hover w-7 h-7`. 호버 시 `-top-7` 위치 툴팁 (재생/정지)
+
+### 플레이 방법 모달
+
+- 최초 방문 시 자동 표시 (localStorage `help_modal_shown`). 닫으면 재표시 안 함
+- "플레이 방법" 버튼으로 언제든 재열람 (`border-2 bg-yellow-300 text-xs font-black`)
+- 섹션 간 `border-t-2 border-gray-200 dark:border-gray-800` 구분선
+- AI 유사도 설명: 의미 기반 측정, 글자 매칭 아님 (예시 포함)
+- 클리어 후 계속 플레이 가능 안내 (left-accent 콜아웃)
+
 ### 프로필 이미지 (마이페이지)
 
 - **프로필 이미지 클릭** → 팝오버(변경/삭제) 표시
