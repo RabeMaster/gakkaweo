@@ -18,17 +18,17 @@ function SentenceSpoiler({ sentence }: { sentence: string }) {
   return (
     <div className="border-4 border-black dark:border-white bg-indigo-50 dark:bg-gray-900 shadow-brutal-sm p-4">
       <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">오늘 문장</p>
-      {revealed ? (
-        <p className="text-lg font-black mt-1">{sentence}</p>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setRevealed(true)}
-          className="mt-1 text-sm font-bold text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white transition-colors"
-        >
-          클릭하여 정답 확인 (스포일러 주의)
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => setRevealed((prev) => !prev)}
+        className={`mt-1 text-left w-full transition-colors ${
+          revealed
+            ? "text-lg font-black"
+            : "text-sm font-bold text-gray-400 dark:text-gray-500 hover:text-black dark:hover:text-white"
+        }`}
+      >
+        {revealed ? sentence : "클릭하여 정답 확인 (스포일러 주의)"}
+      </button>
     </div>
   );
 }
@@ -99,7 +99,7 @@ export function DashboardTab() {
             />
           </div>
 
-          <SentenceSpoiler sentence={widget.sentence} />
+          <SentenceSpoiler key={widget.sentenceId} sentence={widget.sentence} />
         </>
       )}
 
