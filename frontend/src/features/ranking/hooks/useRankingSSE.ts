@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RankingResponse } from "@/shared/api/types";
+import { useConnectionStore } from "@/shared/stores/useConnectionStore";
 
 const SSE_URL = `${import.meta.env.VITE_API_BASE_URL}/ranking/stream`;
 const INITIAL_DELAY = 2000;
@@ -26,7 +27,7 @@ export function useRankingSSE() {
         const data = JSON.parse(e.data) as Pick<RankingResponse, "rankings" | "totalPlayers">;
         queryClient.setQueryData<RankingResponse>(["ranking"], (old) => {
           if (!old) {
-            return { ...data, myRank: null, yesterdayRank: null, yesterdayTotalPlayers: null };
+            return old;
           }
           return { ...old, rankings: data.rankings, totalPlayers: data.totalPlayers };
         });
@@ -43,7 +44,19 @@ export function useRankingSSE() {
         window.dispatchEvent(new CustomEvent("sse:announcement"));
       });
 
-      es.addEventListener("HEARTBEAT", () => {});
+      es.addEventListener("HEARTBEAT", (e: MessageEvent) => {
+        if (!e.data) {
+          return;
+        }
+        try {
+          const data = JSON.parse(e.data) as { sseConnectionCount?: number };
+          if (data.sseConnectionCount != null) {
+            useConnectionStore.getState().setSseConnectionCount(data.sseConnectionCount);
+          }
+        } catch {
+          // 빈 문자열 등 파싱 실패 시 무시 (하위 호환)
+        }
+      });
 
       es.onerror = () => {
         es?.close();

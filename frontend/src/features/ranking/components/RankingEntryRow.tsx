@@ -8,16 +8,28 @@ interface RankingEntryRowProps {
 }
 
 const RANK_BADGE_COLORS: Record<number, string> = {
-  1: "bg-yellow-400",
-  2: "bg-gray-300",
-  3: "bg-orange-300",
+  1: "bg-yellow-400 dark:bg-yellow-300 text-black",
+  2: "bg-slate-300 dark:bg-slate-400 text-black",
+  3: "bg-amber-600 dark:bg-amber-500 text-white",
 };
 
-const RANK_ROW_COLORS: Record<number, string> = {
-  1: "bg-yellow-50 dark:bg-yellow-900/20",
-  2: "bg-gray-50 dark:bg-gray-800/30",
-  3: "bg-orange-50 dark:bg-orange-900/20",
+const TOP_RANK_STYLES: Record<number, { bg: string; shadowVar: string }> = {
+  1: { bg: "bg-yellow-50 dark:bg-yellow-900/25", shadowVar: "--rank-1-accent" },
+  2: { bg: "bg-slate-100 dark:bg-slate-800/40", shadowVar: "--rank-2-accent" },
+  3: { bg: "bg-amber-50 dark:bg-amber-900/25", shadowVar: "--rank-3-accent" },
 };
+
+function TrophyIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-black">
+      <path d="M5 3h14v7c0 3.9-3.1 7-7 7s-7-3.1-7-7V3z" />
+      <path d="M5 5H2.5c0 3.5 1.5 5.5 2.5 6" />
+      <path d="M19 5h2.5c0 3.5-1.5 5.5-2.5 6" />
+      <rect x="10" y="17" width="4" height="2" />
+      <rect x="7" y="19" width="10" height="2.5" />
+    </svg>
+  );
+}
 
 function DefaultAvatar() {
   return (
@@ -32,16 +44,24 @@ function DefaultAvatar() {
 
 export function RankingEntryRow({ entry }: RankingEntryRowProps) {
   const [imgError, setImgError] = useState(false);
-  const badgeColor = RANK_BADGE_COLORS[entry.rank] ?? "bg-white dark:bg-gray-900";
-  const rowColor = RANK_ROW_COLORS[entry.rank] ?? "";
+  const badgeColor = RANK_BADGE_COLORS[entry.rank] ?? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white";
+  const topStyle = TOP_RANK_STYLES[entry.rank];
+  const isFirst = entry.rank === 1;
   const { bg } = getSimilarityColor(entry.similarity);
 
   return (
     <div
       className={[
         "px-2.5 py-1.5 border-2 border-black dark:border-white transition-all duration-100 space-y-1",
-        rowColor,
+        topStyle ? topStyle.bg : "",
       ].join(" ")}
+      style={
+        isFirst
+          ? { animation: "rank-shimmer 2.5s ease-in-out infinite" }
+          : topStyle
+            ? { boxShadow: `inset 4px 0 0 0 var(${topStyle.shadowVar})` }
+            : undefined
+      }
     >
       <div className="flex items-center gap-2">
         <span
@@ -50,7 +70,7 @@ export function RankingEntryRow({ entry }: RankingEntryRowProps) {
             badgeColor,
           ].join(" ")}
         >
-          {entry.rank}
+          {isFirst ? <TrophyIcon /> : entry.rank}
         </span>
 
         {entry.profileUrl && !imgError ? (

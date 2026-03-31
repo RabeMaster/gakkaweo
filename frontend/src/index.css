@@ -14,16 +14,44 @@
 
 :root {
   --shadow-color: 0, 0, 0;
+  --rank-1-accent: #eab308;
+  --rank-1-shine: #fde047;
+  --rank-2-accent: #94a3b8;
+  --rank-3-accent: #b45309;
 }
 
 .dark {
   --shadow-color: 255, 255, 255;
+  --rank-1-accent: #facc15;
+  --rank-1-shine: #fef9c3;
+  --rank-2-accent: #cbd5e1;
+  --rank-3-accent: #f59e0b;
 }
 
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+@keyframes rank-shimmer {
+  0%,
+  100% {
+    box-shadow: inset 4px 0 0 0 var(--rank-1-accent);
+  }
+  50% {
+    box-shadow: inset 4px 0 0 0 var(--rank-1-shine);
+  }
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 @keyframes toast-enter {
