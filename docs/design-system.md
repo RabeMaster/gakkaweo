@@ -209,7 +209,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 ### 랭킹 패널
 
 - **1·2·3등 액센트**: `box-shadow: inset 4px 0 0 0` CSS 변수 (`--rank-1-accent`, `--rank-2-accent`, `--rank-3-accent`). 다크모드 변수 자동 전환
-- **1등 시머**: `rank-shimmer` 애니메이션 (금색 좌측 액센트 반짝임)
+- **1등 shine**: `rank-shine` 애니메이션 (행 전체를 훑는 반짝임, 4s linear)
 - **1등 배지**: 트로피 SVG 아이콘 (`text-black`)
 - **배지 색상**: 1등=`yellow-400/300`, 2등=`slate-300/400`, 3등=`amber-600/500 text-white`. 4+등=`gray-200/700`
 - **라이브 인디케이터**: `live-pulse` 애니메이션 (초록 펄스 도트) + `sseConnectionCount` (Zustand store, HEARTBEAT 기반)

@@ -89,7 +89,8 @@ public class SseConnectionManager {
       if (emitters.isEmpty()) {
         return;
       }
-      sendToAll(emitter -> emitter.send(heartbeatEvent()));
+      SseEmitter.SseEventBuilder event = heartbeatEvent();
+      sendToAll(emitter -> emitter.send(event));
     } catch (Exception e) {
       log.error("SSE heartbeat 처리 중 예외", e);
     }
