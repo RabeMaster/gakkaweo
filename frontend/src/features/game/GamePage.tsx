@@ -34,7 +34,13 @@ export function GamePage() {
   const [inputError, setInputError] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [localCleared, setLocalCleared] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(() => !localStorage.getItem(HELP_SHOWN_KEY));
+  const [isHelpOpen, setIsHelpOpen] = useState(() => {
+    try {
+      return !localStorage.getItem(HELP_SHOWN_KEY);
+    } catch {
+      return true;
+    }
+  });
   const retryRef = useRef(false);
   const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -249,7 +255,11 @@ export function GamePage() {
       <HelpModal
         isOpen={isHelpOpen}
         onClose={() => {
-          localStorage.setItem(HELP_SHOWN_KEY, "true");
+          try {
+            localStorage.setItem(HELP_SHOWN_KEY, "true");
+          } catch {
+            // 스토리지 접근 불가 시 무시
+          }
           setIsHelpOpen(false);
         }}
       />

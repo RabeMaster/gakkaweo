@@ -41,13 +41,20 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="help-modal-title"
+    >
       <div
         ref={modalRef}
         className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-lg max-h-[80vh] flex flex-col"
       >
         <div className="flex items-center justify-between border-b-4 border-black dark:border-white px-6 py-4 shrink-0">
-          <h2 className="text-xl font-black">게임 방법</h2>
+          <h2 id="help-modal-title" className="text-xl font-black">
+            게임 방법
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -63,17 +70,21 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <h3 className="text-base font-black text-gray-700 dark:text-gray-300 mb-2">개요</h3>
             <p className="text-sm font-medium leading-relaxed">
               <strong className="font-black">가까워</strong>는 매일 출제되는 정답 문장을 AI 유사도를 기반으로 맞추는
-              게임입니다.<br></br>정답에 가까운 <strong className="font-black">의미</strong>의 문장을 입력할수록 높은
-              유사도를 얻습니다.
+              게임입니다.
+              <br />
+              정답에 가까운 <strong className="font-black">의미</strong>의 문장을 입력할수록 높은 유사도를 얻습니다.
             </p>
           </section>
 
           <section className="border-t-2 border-gray-200 dark:border-gray-800 pt-5 pb-5">
             <h3 className="text-base font-black text-gray-700 dark:text-gray-300 mb-2">AI 유사도란?</h3>
             <p className="text-sm font-medium leading-relaxed mb-3">
-              이 게임의 유사도는 <strong className="font-black">문장의 의미적 유사성</strong>을 측정합니다.<br></br>
-              글자가 겹치거나 초성이 비슷하다고 높은 점수가 나오지 않습니다.<br></br>AI가 문장의{" "}
-              <strong className="font-black">뜻과 맥락</strong>을 분석하여 정답과 얼마나 가까운 의미인지 판단합니다.
+              이 게임의 유사도는 <strong className="font-black">문장의 의미적 유사성</strong>을 측정합니다.
+              <br />
+              글자가 겹치거나 초성이 비슷하다고 높은 점수가 나오지 않습니다.
+              <br />
+              AI가 문장의 <strong className="font-black">뜻과 맥락</strong>을 분석하여 정답과 얼마나 가까운 의미인지
+              판단합니다.
             </p>
             <div className="border-2 border-black dark:border-white bg-gray-50 dark:bg-gray-800 p-3 space-y-2 text-sm">
               <p className="font-bold text-green-700 dark:text-green-400">높은 유사도 — 의미가 비슷한 경우</p>
@@ -129,8 +140,9 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               </li>
             </ol>
             <p className="mt-3 text-sm font-medium leading-relaxed border-l-4 border-yellow-400 pl-3 bg-yellow-50 dark:bg-yellow-900/20 py-2">
-              - 정답을 맞힌 이후에도 계속 추측할 수 있습니다.<br></br>- 시도 횟수는 최초 맞춘 시점으로 고정되며, 최고
-              유사도만 업데이트됩니다.<br></br>- 다른 플레이어와 유사도를 경쟁하며 순위를 올려보세요!
+              - 정답을 맞힌 이후에도 계속 추측할 수 있습니다.
+              <br />- 시도 횟수는 최초 맞춘 시점으로 고정되며, 최고 유사도만 업데이트됩니다.
+              <br />- 다른 플레이어와 유사도를 경쟁하며 순위를 올려보세요!
             </p>
           </section>
 
