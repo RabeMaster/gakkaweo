@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { RankingResponse } from "@/shared/api/types";
 import { Card } from "@/shared/ui/Card";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { useConnectionStore } from "@/shared/stores/useConnectionStore";
 import { RankingEntryRow } from "@/features/ranking/components/RankingEntryRow";
 import { RankingEmptyState } from "@/features/ranking/components/RankingEmptyState";
 
@@ -25,6 +26,7 @@ function SkeletonRow() {
 
 export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
   const { user, isAuthenticated } = useAuthStore();
+  const sseConnectionCount = useConnectionStore((s) => s.sseConnectionCount);
 
   const entries = (ranking?.rankings ?? []).slice(0, 10);
   const shouldAnimate = entries.length > VISIBLE;
@@ -81,10 +83,13 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
           <button
             type="button"
             onClick={() => setIsPaused((p) => !p)}
-            className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors"
+            className="relative group border-2 border-black dark:border-white bg-white dark:bg-gray-900 w-7 h-7 flex items-center justify-center text-[10px] font-black transition-all duration-100 shadow-brutal-sm-hover hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px]"
             aria-label={isPaused ? "자동 순환 시작" : "자동 순환 정지"}
           >
             {isPaused ? "▶" : "❚❚"}
+            <span className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-black dark:bg-white text-white dark:text-black text-[10px] font-bold px-1.5 py-0.5 whitespace-nowrap z-50">
+              {isPaused ? "재생" : "정지"}
+            </span>
           </button>
         )}
       </div>
@@ -117,7 +122,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
             onTransitionEnd={handleTransitionEnd}
           >
             {visibleEntries.map((entry) => (
-              <RankingEntryRow key={entry.publicId} entry={entry} />
+              <RankingEntryRow key={entry.publicId} entry={entry} isPaused={isPaused} />
             ))}
           </div>
         </div>
@@ -136,6 +141,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
                 similarity: ranking.myRank.similarity,
                 attemptCount: ranking.myRank.attemptCount,
               }}
+              isPaused={isPaused}
             />
           ) : (
             <p className="text-sm font-bold text-gray-500 dark:text-gray-400 text-center py-2">
@@ -146,10 +152,21 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
       )}
 
       <div className="border-t-2 border-black dark:border-white pt-2 space-y-2">
-        <p className="text-xs font-bold text-gray-600 dark:text-gray-400">
-          <span className="text-black dark:text-white">오늘</span>{" "}
-          <span className="text-black dark:text-white tabular-nums">{ranking?.totalPlayers ?? 0}</span>명 도전 중
-        </p>
+        <div className="flex items-center justify-between text-xs font-bold text-gray-600 dark:text-gray-400">
+          <span>
+            <span
+              className="inline-block w-1.5 h-1.5 bg-green-500 dark:bg-green-400 mr-1 align-middle"
+              style={{ animation: "live-pulse 2s ease-in-out infinite" }}
+            />
+            <span className="text-black dark:text-white">오늘</span>{" "}
+            <span className="text-black dark:text-white tabular-nums">{ranking?.totalPlayers ?? 0}</span>명 도전
+          </span>
+          {sseConnectionCount != null && (
+            <span>
+              현재 <span className="text-black dark:text-white tabular-nums">{sseConnectionCount}</span>명 접속 중
+            </span>
+          )}
+        </div>
 
         {ranking?.yesterdayTotalPlayers != null && (
           <>

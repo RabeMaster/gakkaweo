@@ -14,6 +14,7 @@ import { GuessInput } from "@/features/game/components/GuessInput";
 import { GuessHistory } from "@/features/game/components/GuessHistory";
 import { GameClearedCard } from "@/features/game/components/GameClearedCard";
 import { YesterdayAnswer } from "@/features/game/components/YesterdayAnswer";
+import { HelpModal, HELP_SHOWN_KEY } from "@/features/game/components/HelpModal";
 
 export function GamePage() {
   const queryClient = useQueryClient();
@@ -33,6 +34,7 @@ export function GamePage() {
   const [inputError, setInputError] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [localCleared, setLocalCleared] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(() => !localStorage.getItem(HELP_SHOWN_KEY));
   const retryRef = useRef(false);
   const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -204,15 +206,25 @@ export function GamePage() {
     <div className="max-w-2xl flex-1 min-w-0 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-4xl font-black">오늘의 문장</h1>
-        <span className="text-sm font-bold text-gray-600 dark:text-gray-400">
-          {isExpired ? (
-            "새 문장 준비 중..."
-          ) : (
-            <>
-              다음 문장까지: <span className="tabular-nums">{countdown}</span>
-            </>
-          )}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-bold text-gray-600 dark:text-gray-400">
+            {isExpired ? (
+              "새 문장 준비 중..."
+            ) : (
+              <>
+                다음 문장까지: <span className="tabular-nums">{countdown}</span>
+              </>
+            )}
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsHelpOpen(true)}
+            className="border-2 border-black dark:border-white bg-yellow-300 text-black px-2 py-0.5 text-xs font-black shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]"
+            aria-label="플레이 방법"
+          >
+            플레이 방법
+          </button>
+        </div>
       </div>
 
       {today.yesterdaySentence && today.yesterdayDate && (
@@ -233,6 +245,14 @@ export function GamePage() {
       />
 
       <GuessHistory guesses={displayGuesses} />
+
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => {
+          localStorage.setItem(HELP_SHOWN_KEY, "true");
+          setIsHelpOpen(false);
+        }}
+      />
     </div>
   );
 }
