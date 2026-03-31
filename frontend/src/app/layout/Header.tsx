@@ -20,7 +20,11 @@ export function Header() {
     <>
       <header className="border-b-4 border-black dark:border-white bg-white dark:bg-gray-950">
         <div className="max-w-6xl mx-auto flex items-center justify-between px-6 py-4">
-          <Link to="/" className="text-2xl font-black text-black dark:text-white tracking-tight">
+          <Link
+            to="/"
+            className="flex items-center gap-2 text-2xl font-black text-black dark:text-white tracking-tight"
+          >
+            <GakkaweoIcon size={28} />
             가까워
           </Link>
 

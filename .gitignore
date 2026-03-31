@@ -187,3 +187,4 @@ node_modules/
 package-lock.json
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,linux,visualstudiocode,intellij+all,venv,dotenv,git
+.playwright-mcp/

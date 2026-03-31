@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Header } from "@/app/layout/Header";
+import { Footer } from "@/app/layout/Footer";
 import { AnnouncementBanner } from "@/shared/ui/AnnouncementBanner";
 import { useRankingSSE } from "@/features/ranking/hooks/useRankingSSE";
 import { useToastStore } from "@/shared/stores/useToastStore";
@@ -15,13 +16,15 @@ export function Layout() {
   const { toasts, removeToast } = useToastStore();
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white">
       <Header />
 
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
         <AnnouncementBanner />
         <Outlet />
       </main>
+
+      <Footer />
 
       {toasts.length > 0 && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">

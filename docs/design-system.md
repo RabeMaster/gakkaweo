@@ -194,6 +194,18 @@ border-4 border-black dark:border-white rounded-none shadow-brutal
 dark:shadow-brutal-dark bg-white dark:bg-gray-900 p-6
 ```
 
+### 푸터
+
+```
+border-t-4 border-black dark:border-white bg-white dark:bg-gray-950
+max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
+```
+
+- 좌측: `© 2026 가까워` (`text-sm font-bold text-gray-600 dark:text-gray-400`)
+- 우측: 이용약관, 개인정보처리방침 (내부 Link), GitHub, Blog (외부 `<a>` target="_blank")
+- 링크: `text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors`
+- Layout: `flex flex-col min-h-screen` + `<main>` `flex-1` (스티키 푸터)
+
 ### 프로필 이미지 (마이페이지)
 
 - **프로필 이미지 클릭** → 팝오버(변경/삭제) 표시
