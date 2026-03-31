@@ -34,13 +34,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-@keyframes rank-shimmer {
-  0%,
-  100% {
-    box-shadow: inset 4px 0 0 0 var(--rank-1-accent);
+@keyframes rank-shine {
+  0% {
+    background-position: -200% 0;
   }
-  50% {
-    box-shadow: inset 4px 0 0 0 var(--rank-1-shine);
+  100% {
+    background-position: 200% 0;
   }
 }
 

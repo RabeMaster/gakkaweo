@@ -122,7 +122,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
             onTransitionEnd={handleTransitionEnd}
           >
             {visibleEntries.map((entry) => (
-              <RankingEntryRow key={entry.publicId} entry={entry} />
+              <RankingEntryRow key={entry.publicId} entry={entry} isPaused={isPaused} />
             ))}
           </div>
         </div>
@@ -141,6 +141,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
                 similarity: ranking.myRank.similarity,
                 attemptCount: ranking.myRank.attemptCount,
               }}
+              isPaused={isPaused}
             />
           ) : (
             <p className="text-sm font-bold text-gray-500 dark:text-gray-400 text-center py-2">

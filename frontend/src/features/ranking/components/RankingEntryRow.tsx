@@ -5,6 +5,7 @@ import { resolveProfileUrl } from "@/shared/utils/url";
 
 interface RankingEntryRowProps {
   entry: RankingEntry;
+  isPaused?: boolean;
 }
 
 const RANK_BADGE_COLORS: Record<number, string> = {
@@ -14,9 +15,9 @@ const RANK_BADGE_COLORS: Record<number, string> = {
 };
 
 const TOP_RANK_STYLES: Record<number, { bg: string; shadowVar: string }> = {
-  1: { bg: "bg-yellow-50 dark:bg-yellow-900/25", shadowVar: "--rank-1-accent" },
-  2: { bg: "bg-slate-100 dark:bg-slate-800/40", shadowVar: "--rank-2-accent" },
-  3: { bg: "bg-amber-50 dark:bg-amber-900/25", shadowVar: "--rank-3-accent" },
+  1: { bg: "bg-yellow-200 dark:bg-yellow-900/40", shadowVar: "--rank-1-accent" },
+  2: { bg: "bg-slate-200 dark:bg-slate-700/50", shadowVar: "--rank-2-accent" },
+  3: { bg: "bg-amber-200 dark:bg-amber-900/40", shadowVar: "--rank-3-accent" },
 };
 
 function TrophyIcon() {
@@ -42,7 +43,7 @@ function DefaultAvatar() {
   );
 }
 
-export function RankingEntryRow({ entry }: RankingEntryRowProps) {
+export function RankingEntryRow({ entry, isPaused }: RankingEntryRowProps) {
   const [imgError, setImgError] = useState(false);
   const badgeColor = RANK_BADGE_COLORS[entry.rank] ?? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white";
   const topStyle = TOP_RANK_STYLES[entry.rank];
@@ -57,7 +58,14 @@ export function RankingEntryRow({ entry }: RankingEntryRowProps) {
       ].join(" ")}
       style={
         isFirst
-          ? { animation: "rank-shimmer 2.5s ease-in-out infinite" }
+          ? {
+              backgroundImage: isPaused
+                ? undefined
+                : "linear-gradient(110deg, transparent 40%, rgba(255,255,255,0.15) 44%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0.15) 56%, transparent 60%)",
+              backgroundSize: "200% 100%",
+              animation: isPaused ? "none" : "rank-shine 4s linear infinite",
+              boxShadow: `inset 4px 0 0 0 var(${topStyle.shadowVar})`,
+            }
           : topStyle
             ? { boxShadow: `inset 4px 0 0 0 var(${topStyle.shadowVar})` }
             : undefined
