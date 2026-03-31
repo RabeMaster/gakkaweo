@@ -38,10 +38,19 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
   const [itemHeight, setItemHeight] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const entriesRef = useRef(entries);
+  const [prevEntriesLength, setPrevEntriesLength] = useState(entries.length);
 
   useEffect(() => {
     entriesRef.current = entries;
   }, [entries]);
+
+  if (entries.length !== prevEntriesLength) {
+    setPrevEntriesLength(entries.length);
+    if (entries.length === 0) {
+      setOffset(0);
+      setIsSliding(false);
+    }
+  }
 
   useEffect(() => {
     if (!listRef.current?.firstElementChild) {

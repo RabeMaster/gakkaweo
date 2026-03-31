@@ -43,6 +43,14 @@ export function GamePage() {
   });
   const retryRef = useRef(false);
   const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [trackedSentenceId, setTrackedSentenceId] = useState(sentenceId);
+
+  if (sentenceId !== trackedSentenceId) {
+    setTrackedSentenceId(sentenceId);
+    setLocalCleared(false);
+    setInputError(null);
+    setRateLimited(false);
+  }
 
   const isCleared = isAuthenticated
     ? status?.gameStatus === "CLEARED" || localCleared
@@ -115,8 +123,9 @@ export function GamePage() {
         break;
       }
       case "GAME_EXPIRED":
-        addToast("게임이 만료되었습니다. 새로운 문제를 불러옵니다.", "info");
-        queryClient.invalidateQueries({ queryKey: ["game", "today"] });
+      case "SENTENCE_NOT_FOUND":
+        addToast("새로운 문제를 불러옵니다.", "info");
+        queryClient.removeQueries({ queryKey: ["game"] });
         break;
       case "CONCURRENT_MODIFICATION":
         if (!retryRef.current) {
