@@ -45,7 +45,7 @@ public interface GuessHistoryRepository extends JpaRepository<GuessHistory, Long
               + " FROM guess_history h JOIN game_sessions gs ON h.session_id = gs.id"
               + " WHERE gs.sentence_id = :sentenceId"
               + " AND (gs.member_id IS NULL OR gs.member_id != :memberId)"
-              + " AND h.similarity <= :maxSimilarity"
+              + " AND h.similarity < :maxSimilarity"
               + " ORDER BY h.guess_text, h.similarity DESC) sub"
               + " ORDER BY sub.similarity DESC LIMIT :maxCount",
       nativeQuery = true)
