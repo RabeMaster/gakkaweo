@@ -13,4 +13,7 @@ import org.springframework.stereotype.Component;
 public class GameProperties {
 
   private BigDecimal similarityThreshold = new BigDecimal("95.0");
+  private BigDecimal hintTriggerThreshold = new BigDecimal("60.0");
+  private BigDecimal hintMaxSimilarity = new BigDecimal("90.0");
+  private int hintMaxCount = 5;
 }

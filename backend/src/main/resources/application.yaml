@@ -87,11 +87,14 @@ app:
     timeout: ${AI_SERVICE_TIMEOUT:3s}
   game:
     similarity-threshold: ${SIMILARITY_THRESHOLD:95.0}
+    hint-trigger-threshold: ${HINT_TRIGGER_THRESHOLD:60.0}
+    hint-max-similarity: ${HINT_MAX_SIMILARITY:90.0}
+    hint-max-count: ${HINT_MAX_COUNT:5}
   upload:
     profile-dir: ${UPLOAD_PROFILE_DIR:./uploads/profiles}
   rate-limit:
     guess-per-minute: ${RATE_LIMIT_GUESS:40}
-    read-per-minute: ${RATE_LIMIT_READ:60}
+    read-per-minute: ${RATE_LIMIT_READ:90}
     sse-per-minute: ${RATE_LIMIT_SSE:10}
     auth-per-minute: ${RATE_LIMIT_AUTH:10}
     admin-per-minute: ${RATE_LIMIT_ADMIN:120}
