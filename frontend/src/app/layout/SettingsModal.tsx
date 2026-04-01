@@ -98,13 +98,20 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="settings-modal-title"
+    >
       <div
         ref={modalRef}
         className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-sm"
       >
         <div className="flex items-center justify-between border-b-4 border-black dark:border-white px-6 py-4">
-          <h2 className="text-xl font-black">설정</h2>
+          <h2 id="settings-modal-title" className="text-xl font-black">
+            설정
+          </h2>
           <button
             type="button"
             onClick={onClose}
