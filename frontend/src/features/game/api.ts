@@ -1,5 +1,12 @@
 import { apiFetch } from "@/shared/api/client";
-import type { GuessRequest, GuessResponse, HistoryResponse, StatusResponse, TodayResponse } from "@/shared/api/types";
+import type {
+  GuessRequest,
+  GuessResponse,
+  HintResponse,
+  HistoryResponse,
+  StatusResponse,
+  TodayResponse,
+} from "@/shared/api/types";
 
 export function getToday() {
   return apiFetch<TodayResponse>("/daily/today");
@@ -18,4 +25,8 @@ export function getHistory(sentenceId: string) {
 
 export function getStatus() {
   return apiFetch<StatusResponse>("/daily/status");
+}
+
+export function getHints(sentenceId: string) {
+  return apiFetch<HintResponse>(`/daily/hints?sentenceId=${sentenceId}`);
 }

@@ -158,6 +158,30 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </section>
 
           <section className="border-t-2 border-gray-200 dark:border-gray-800 pt-5 pb-5">
+            <h3 className="text-base font-black text-gray-700 dark:text-gray-300 mb-2">힌트 (다른 플레이어의 추측)</h3>
+            <ul className="space-y-1.5 text-sm font-medium">
+              <li className="flex gap-2">
+                <span className="shrink-0 font-black">·</span>
+                <span>
+                  유사도 <strong className="font-black">60% 이상</strong> 달성 시 다른 플레이어의 추측을 볼 수 있습니다
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="shrink-0 font-black">·</span>
+                <span>내 최고 유사도보다 낮은 추측만 표시됩니다</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="shrink-0 font-black">·</span>
+                <span>단, 90% 이상의 추측은 표시되지 않습니다</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="shrink-0 font-black">·</span>
+                <span>좌측 패널에서 확인할 수 있습니다 (로그인 필요)</span>
+              </li>
+            </ul>
+          </section>
+
+          <section className="border-t-2 border-gray-200 dark:border-gray-800 pt-5 pb-5">
             <h3 className="text-base font-black text-gray-700 dark:text-gray-300 mb-2">랭킹 선정 방식</h3>
             <ul className="space-y-1.5 text-sm font-medium">
               <li className="flex gap-2">
