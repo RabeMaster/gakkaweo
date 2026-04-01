@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useThemeStore } from "@/shared/stores/useThemeStore";
+import { SOUND_VOLUME_KEY, getSoundVolume } from "@/shared/config/sound";
 
 type Theme = "light" | "dark" | "system";
 
@@ -22,19 +23,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { theme, setTheme } = useThemeStore();
   const modalRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [volume, setVolume] = useState(() => {
-    try {
-      const v = localStorage.getItem("sound_volume");
-      return v !== null ? parseFloat(v) : 0.7;
-    } catch {
-      return 0.7;
-    }
-  });
+  const [volume, setVolume] = useState(getSoundVolume);
 
   function handleVolumeChange(v: number) {
     setVolume(v);
     try {
-      localStorage.setItem("sound_volume", String(v));
+      localStorage.setItem(SOUND_VOLUME_KEY, String(v));
     } catch {
       // 스토리지 접근 불가 시 무시
     }
@@ -43,11 +37,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   }
 
-  function playTestSound(file: string) {
+  function stopAudio() {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current = null;
     }
+  }
+
+  function playTestSound(file: string) {
+    stopAudio();
     const audio = new Audio(file);
     audio.volume = volume;
     audio.play().catch(() => {});
@@ -87,6 +86,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      stopAudio();
+    }
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;
@@ -168,7 +173,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   className={[
                     `border-2 border-black dark:border-white px-3 py-1.5 text-xs font-black transition-all duration-100 ${color} text-black`,
                     "shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
-                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-brutal-sm disabled:hover:translate-x-0 disabled:hover:translate-y-0",
+                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-brutal-sm disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:active:shadow-brutal-sm disabled:active:translate-x-0 disabled:active:translate-y-0",
                   ].join(" ")}
                 >
                   {label}

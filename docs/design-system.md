@@ -228,7 +228,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 ### 설정 모달
 
 - **테마**: 라이트/다크/시스템 3버튼 토글. 활성 = `bg-black text-white`
-- **사운드 볼륨**: `input[type=range]` 슬라이더 (`accent-yellow-400`). localStorage `sound_volume` (기본 0.5, 범위 0~1). 0이면 🔇, 그 외 🔊
+- **사운드 볼륨**: `input[type=range]` 슬라이더 (`accent-yellow-400`). localStorage `sound_volume` (기본 0.7, 범위 0~1). 상수: `shared/config/sound.ts`. 0이면 🔇, 그 외 🔊
 - **사운드 테스트**: 런치패드 버튼 (`border-2 shadow-brutal-sm`). 색상별 구분 (클리어=green). 기존 재생 중 사운드 정지 후 새로 재생. 음소거 시 disabled
 
 ### 프로필 이미지 (마이페이지)
