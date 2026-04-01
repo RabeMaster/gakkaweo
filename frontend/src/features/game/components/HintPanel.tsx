@@ -25,7 +25,9 @@ function HintList({ hints }: { hints: HintEntry[] }) {
             i < hints.length - 1 ? "border-b-2 border-black/20 dark:border-white/20" : "",
           ].join(" ")}
         >
-          <span className="text-sm font-medium truncate">{hint.guessText}</span>
+          <span className="text-sm font-medium truncate" title={hint.guessText}>
+            {hint.guessText}
+          </span>
           <span className="shrink-0">
             <SimilarityBadge similarity={hint.similarity} />
           </span>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import confetti from "canvas-confetti";
 import { ApiError } from "@/shared/api/client";
@@ -11,11 +11,13 @@ import { useCountdown } from "@/features/game/hooks/useCountdown";
 import { useAnonymousGame } from "@/features/game/hooks/useAnonymousGame";
 import { HintMask } from "@/features/game/components/HintMask";
 import { GuessInput } from "@/features/game/components/GuessInput";
+import { GuessFeedback } from "@/features/game/components/GuessFeedback";
 import { GuessHistory } from "@/features/game/components/GuessHistory";
 import { GameClearedCard } from "@/features/game/components/GameClearedCard";
 import { YesterdayAnswer } from "@/features/game/components/YesterdayAnswer";
 import { HelpModal, HELP_SHOWN_KEY } from "@/features/game/components/HelpModal";
 import { getSoundVolume } from "@/shared/config/sound";
+import { normalizeGuessText } from "@/shared/utils/normalize";
 
 export function GamePage() {
   const queryClient = useQueryClient();
@@ -33,7 +35,6 @@ export function GamePage() {
   const { formatted: countdown, isExpired } = useCountdown(today?.expiresAt);
 
   const [inputError, setInputError] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<{ guessText: string; similarity: number } | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [localCleared, setLocalCleared] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(() => {
@@ -51,7 +52,6 @@ export function GamePage() {
     setTrackedSentenceId(sentenceId);
     setLocalCleared(false);
     setInputError(null);
-    setLastResult(null);
     setRateLimited(false);
   }
 
@@ -59,11 +59,30 @@ export function GamePage() {
     ? status?.gameStatus === "CLEARED" || localCleared
     : anonState.isCleared || localCleared;
 
-  const displayGuesses = isAuthenticated ? (history?.guesses ?? []) : anonState.guesses;
+  const displayGuesses = useMemo(
+    () => (isAuthenticated ? (history?.guesses ?? []) : anonState.guesses),
+    [isAuthenticated, history?.guesses, anonState.guesses],
+  );
 
   const attemptCount = isAuthenticated ? (status?.attemptCount ?? 0) : anonState.attemptCount;
 
   const bestSimilarity = isAuthenticated ? (status?.bestSimilarity ?? 0) : anonState.bestSimilarity;
+
+  const lastGuess = useMemo(() => {
+    if (displayGuesses.length === 0) {
+      return null;
+    }
+    const last = displayGuesses[displayGuesses.length - 1];
+    return { guessText: last.guessText, similarity: last.similarity };
+  }, [displayGuesses]);
+
+  const bestGuess = useMemo(() => {
+    if (displayGuesses.length === 0) {
+      return null;
+    }
+    const best = displayGuesses.reduce((acc, g) => (g.similarity > acc.similarity ? g : acc));
+    return { guessText: best.guessText, similarity: best.similarity };
+  }, [displayGuesses]);
 
   useEffect(() => {
     if (!isExpired || !today?.expiresAt) {
@@ -182,7 +201,11 @@ export function GamePage() {
       return;
     }
     setInputError(null);
-    setLastResult(null);
+
+    if (!normalizeGuessText(text)) {
+      setInputError("유효한 문자(한글, 영문, 숫자)를 포함해야 합니다");
+      return;
+    }
 
     const existing = displayGuesses.find((g) => g.guessText === text);
     if (existing) {
@@ -194,7 +217,6 @@ export function GamePage() {
       { sentenceId, guessText: text },
       {
         onSuccess: (res) => {
-          setLastResult({ guessText: text, similarity: res.similarity });
           if (isAuthenticated) {
             appendGuessToCache(text, res);
           } else {
@@ -271,15 +293,11 @@ export function GamePage() {
 
       {isCleared && <GameClearedCard attemptCount={attemptCount} bestSimilarity={bestSimilarity} />}
 
-      <GuessInput
-        onSubmit={handleSubmit}
-        isLoading={guessMutation.isPending}
-        disabled={rateLimited}
-        error={inputError}
-        result={lastResult}
-      />
+      <GuessFeedback error={inputError} lastGuess={lastGuess} bestGuess={bestGuess} />
 
-      <GuessHistory guesses={displayGuesses} />
+      <GuessInput onSubmit={handleSubmit} isLoading={guessMutation.isPending} disabled={rateLimited} />
+
+      <GuessHistory key={sentenceId} guesses={displayGuesses} />
 
       <HelpModal
         isOpen={isHelpOpen}

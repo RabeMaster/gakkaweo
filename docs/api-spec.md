@@ -387,7 +387,7 @@
 
 - **동작**:
   - 요청자의 bestSimilarity가 60% 미만이면 403 반환
-  - 다른 유저의 추측 중 요청자의 bestSimilarity 이하만 반환
+  - 다른 유저의 추측 중 요청자의 bestSimilarity 미만만 반환
   - 동일 guessText는 최고 유사도 1건만 (DISTINCT ON)
   - 요청자 본인의 추측은 제외
   - 최대 5개, 유사도 높은 순 정렬

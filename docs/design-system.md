@@ -240,9 +240,19 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **팝오버**: `border-4 shadow-brutal-sm`, click-outside/Escape 닫기
 - **hover 오버레이**: `bg-black/40` + 편집 아이콘 (프로필 이미지 위)
 
+### 추측 피드백
+
+- **위치**: 게임 페이지 중앙 칼럼, GuessInput 위
+- **구조**: 고정 높이 2행 (`h-6` × 2, `space-y-1`). 레이아웃 시프트 방지
+- **Row 1**: 최고 유사도 — `displayGuesses`에서 `useMemo` 파생. HSL 색상 퍼센트
+- **Row 2**: 에러 시 에러 메시지 (`text-red-500`) / 정상 시 마지막 추측 (guessText + HSL 퍼센트)
+- **빈 상태**: 라벨 + `—` (대시)로 공간 유지
+- **데이터 원천**: `displayGuesses` 파생 (추가 API 없음). 새로고침 시 history API → 자동 복원
+- **FE 정규화**: `normalizeGuessText()` — BE `TextNormalizer`와 동일 로직 (`[^가-힣a-zA-Z0-9\s]` 제거). 서버 호출 전 선검증
+
 ### 힌트 패널
 
-- **위치**: 좌측 칼럼, RankingPanel 아래 (sticky 영역 내). 부모 `div.w-72.shrink-0.sticky.top-24.space-y-4`가 RankingPanel + HintPanel 래핑
+- **위치**: 좌측 칼럼, RankingPanel 아래. 부모 `div.w-72.shrink-0.space-y-6`이 RankingPanel + HintPanel 래핑
 - **조건**: 항상 표시. 비로그인 → 로그인 유도 안내. 로그인 + bestSimilarity < 60 → 잠금 안내
 - **카드**: `Card` + `!p-4 space-y-3` (RankingPanel과 동일 배경)
 - **제목**: "다른 플레이어의 추측" `text-lg font-extrabold`
@@ -250,7 +260,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **스포일러**: 힌트 목록 기본 `blur-sm` 처리. 클릭 시 전체 해제. 새로고침 시 자동 리셋 (React state, localStorage 미사용)
 - **행 구분선**: `border-b-2 border-black/20 dark:border-white/20` (마지막 항목 제외)
 - **갱신**: 매 추측 시 `["game", "hints", sentenceId]` invalidate + `staleTime: 60_000`
-- **힌트 범위**: 요청자의 bestSimilarity 이하 추측만 표시 (서버측 필터링)
+- **힌트 범위**: 요청자의 bestSimilarity 미만 추측만 표시 (서버측 필터링)
 
 ### 어드민 패널 (`/admin`)
 
