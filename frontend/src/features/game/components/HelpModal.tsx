@@ -104,7 +104,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <ol className="space-y-2.5 text-sm font-medium">
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 border-2 border-black dark:border-white bg-yellow-300 flex items-center justify-center text-xs font-black">
-                  -
+                  1
                 </span>
                 <span>
                   힌트 마스크로 정답의 <strong className="font-black">단어 수와 글자 수</strong>를 확인하세요.
@@ -112,13 +112,13 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 border-2 border-black dark:border-white bg-yellow-300 flex items-center justify-center text-xs font-black">
-                  -
+                  2
                 </span>
                 <span>정답이라고 생각하는 문장을 입력하세요.</span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 border-2 border-black dark:border-white bg-yellow-300 flex items-center justify-center text-xs font-black">
-                  -
+                  3
                 </span>
                 <span>
                   AI가 <strong className="font-black">유사도(0~100%)</strong>를 알려줍니다.
@@ -126,24 +126,55 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 border-2 border-black dark:border-white bg-yellow-300 flex items-center justify-center text-xs font-black">
-                  -
+                  4
                 </span>
                 <span>
-                  유사도 <strong className="font-black">95% 이상</strong>이면 정답! 차지합니다.
+                  유사도 <strong className="font-black">95% 이상</strong>이면 정답!
                 </span>
               </li>
               <li className="flex gap-3">
                 <span className="shrink-0 w-6 h-6 border-2 border-black dark:border-white bg-yellow-300 flex items-center justify-center text-xs font-black">
-                  -
+                  5
                 </span>
                 <span>적은 시도로 맞출수록 높은 순위를 차지합니다.</span>
               </li>
             </ol>
-            <p className="mt-3 text-sm font-medium leading-relaxed border-l-4 border-yellow-400 pl-3 bg-yellow-50 dark:bg-yellow-900/20 py-2">
-              - 정답을 맞힌 이후에도 계속 추측할 수 있습니다.
-              <br />- 시도 횟수는 최초 맞춘 시점으로 고정되며, 최고 유사도만 업데이트됩니다.
-              <br />- 다른 플레이어와 유사도를 경쟁하며 순위를 올려보세요!
-            </p>
+            <div className="mt-3 border-l-4 border-yellow-400 pl-3 bg-yellow-50 dark:bg-yellow-900/20 py-2">
+              <ul className="space-y-1 text-sm font-medium">
+                <li className="flex gap-2">
+                  <span className="shrink-0 font-black">·</span>
+                  <span>정답을 맞힌 이후에도 계속 추측할 수 있습니다.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="shrink-0 font-black">·</span>
+                  <span>시도 횟수는 최초 맞춘 시점으로 고정되며, 최고 유사도만 업데이트됩니다.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="shrink-0 font-black">·</span>
+                  <span>다른 플레이어와 유사도를 경쟁하며 순위를 올려보세요!</span>
+                </li>
+              </ul>
+            </div>
+          </section>
+
+          <section className="border-t-2 border-gray-200 dark:border-gray-800 pt-5 pb-5">
+            <h3 className="text-base font-black text-gray-700 dark:text-gray-300 mb-2">랭킹 선정 방식</h3>
+            <ul className="space-y-1.5 text-sm font-medium">
+              <li className="flex gap-2">
+                <span className="shrink-0 font-black">·</span>
+                <span>유사도가 높을수록 상위 랭킹</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="shrink-0 font-black">·</span>
+                <span>유사도가 같으면 시도 횟수가 적은 사람이 상위</span>
+              </li>
+              <li className="flex gap-2">
+                <span className="shrink-0 font-black">·</span>
+                <span>
+                  <strong className="font-black">100%</strong> 달성자끼리는 먼저 달성한 사람이 상위
+                </span>
+              </li>
+            </ul>
           </section>
 
           <section className="border-t-2 border-gray-200 dark:border-gray-800 pt-5 pb-5">

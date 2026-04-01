@@ -15,6 +15,7 @@ import { GuessHistory } from "@/features/game/components/GuessHistory";
 import { GameClearedCard } from "@/features/game/components/GameClearedCard";
 import { YesterdayAnswer } from "@/features/game/components/YesterdayAnswer";
 import { HelpModal, HELP_SHOWN_KEY } from "@/features/game/components/HelpModal";
+import { getSoundVolume } from "@/shared/config/sound";
 
 export function GamePage() {
   const queryClient = useQueryClient();
@@ -79,6 +80,13 @@ export function GamePage() {
     confetti({ ...opts, origin: { x: 0.5, y: 0.5 } });
     confetti({ ...opts, origin: { x: 0.65, y: 0.5 } });
     confetti({ ...opts, origin: { x: 0.8, y: 0.5 } });
+
+    const vol = getSoundVolume();
+    if (vol > 0) {
+      const audio = new Audio("/sounds/clear.mp3");
+      audio.volume = vol;
+      audio.play().catch(() => {});
+    }
   }, [localCleared]);
 
   useEffect(
@@ -171,6 +179,12 @@ export function GamePage() {
       return;
     }
     setInputError(null);
+
+    const existing = displayGuesses.find((g) => g.guessText === text);
+    if (existing) {
+      setInputError(`이미 추측한 문장입니다 (유사도: ${existing.similarity.toFixed(1)}%)`);
+      return;
+    }
 
     guessMutation.mutate(
       { sentenceId, guessText: text },
