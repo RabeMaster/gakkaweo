@@ -18,7 +18,7 @@ export function HomePage() {
 
   return (
     <div className="flex gap-6 items-start">
-      <div className="w-72 shrink-0 sticky top-24 space-y-6">
+      <div className="w-72 shrink-0 space-y-6">
         <RankingPanel ranking={ranking} isLoading={rankingLoading} />
         <HintPanel
           hints={hints?.hints ?? []}
