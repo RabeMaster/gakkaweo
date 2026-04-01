@@ -183,6 +183,12 @@ export function GamePage() {
     }
     setInputError(null);
 
+    const existing = displayGuesses.find((g) => g.guessText === text);
+    if (existing) {
+      setInputError(`이미 추측한 문장입니다 (유사도: ${existing.similarity.toFixed(1)}%)`);
+      return;
+    }
+
     guessMutation.mutate(
       { sentenceId, guessText: text },
       {
