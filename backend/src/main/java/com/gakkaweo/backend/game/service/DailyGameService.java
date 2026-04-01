@@ -10,6 +10,7 @@ import com.gakkaweo.backend.domain.game.entity.GuessHistory;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.game.repository.GuessHistoryRepository;
+import com.gakkaweo.backend.domain.game.repository.HintProjection;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.game.config.GameProperties;
@@ -17,6 +18,7 @@ import com.gakkaweo.backend.game.dto.GameStatusResponse;
 import com.gakkaweo.backend.game.dto.GuessHistoryResponse;
 import com.gakkaweo.backend.game.dto.GuessRequest;
 import com.gakkaweo.backend.game.dto.GuessResponse;
+import com.gakkaweo.backend.game.dto.HintResponse;
 import com.gakkaweo.backend.game.dto.TodayResponse;
 import com.gakkaweo.backend.game.util.HintMaskGenerator;
 import com.gakkaweo.backend.infra.ai.service.SimilarityService;
@@ -164,6 +166,35 @@ public class DailyGameService {
               return new GuessHistoryResponse(entries);
             })
         .orElse(new GuessHistoryResponse(List.of()));
+  }
+
+  @Transactional(readOnly = true)
+  public HintResponse getHints(UUID sentenceId, UUID memberPublicId) {
+    DailySentence sentence = findTodaySentenceByPublicId(sentenceId);
+    Member member = findMember(memberPublicId);
+
+    GameSession session =
+        gameSessionRepository
+            .findByMemberAndSentence(member, sentence)
+            .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
+
+    if (session.getBestSimilarity().compareTo(gameProperties.getHintTriggerThreshold()) < 0) {
+      throw new BusinessException(ErrorCode.HINT_NOT_AVAILABLE);
+    }
+
+    BigDecimal maxSimilarity =
+        session.getBestSimilarity().min(gameProperties.getHintMaxSimilarity());
+
+    List<HintProjection> projections =
+        guessHistoryRepository.findHints(
+            sentence.getId(), member.getId(), maxSimilarity, gameProperties.getHintMaxCount());
+
+    List<HintResponse.HintEntry> entries =
+        projections.stream()
+            .map(p -> new HintResponse.HintEntry(p.getGuessText(), p.getSimilarity()))
+            .toList();
+
+    return new HintResponse(entries);
   }
 
   @Transactional(readOnly = true)

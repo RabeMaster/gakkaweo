@@ -51,6 +51,15 @@ export interface StatusResponse {
   clearedAt: string | null;
 }
 
+export interface HintEntry {
+  guessText: string;
+  similarity: number;
+}
+
+export interface HintResponse {
+  hints: HintEntry[];
+}
+
 // --- Ranking ---
 
 export interface RankingEntry {

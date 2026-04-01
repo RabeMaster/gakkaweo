@@ -22,6 +22,7 @@ public enum ErrorCode {
   INVALID_GUESS_TEXT(HttpStatus.BAD_REQUEST, "유효하지 않은 추측 입력입니다"),
   AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스를 일시적으로 이용할 수 없습니다"),
 
+  HINT_NOT_AVAILABLE(HttpStatus.FORBIDDEN, "힌트를 사용하려면 유사도 60% 이상이 필요합니다"),
   SENTENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "오늘의 문제를 찾을 수 없습니다"),
   SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "게임 세션을 찾을 수 없습니다"),
   GAME_EXPIRED(HttpStatus.CONFLICT, "만료된 게임입니다"),

@@ -85,7 +85,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
   const showMySection = isAuthenticated && ranking && entries.length > 0;
 
   return (
-    <Card className="w-72 shrink-0 self-start sticky top-24 !p-4 space-y-3">
+    <Card className="!p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-extrabold">실시간 랭킹</h2>
         {shouldAnimate && (

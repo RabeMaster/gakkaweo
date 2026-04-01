@@ -240,6 +240,18 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **팝오버**: `border-4 shadow-brutal-sm`, click-outside/Escape 닫기
 - **hover 오버레이**: `bg-black/40` + 편집 아이콘 (프로필 이미지 위)
 
+### 힌트 패널
+
+- **위치**: 좌측 칼럼, RankingPanel 아래 (sticky 영역 내). 부모 `div.w-72.shrink-0.sticky.top-24.space-y-4`가 RankingPanel + HintPanel 래핑
+- **조건**: 항상 표시. 비로그인 → 로그인 유도 안내. 로그인 + bestSimilarity < 60 → 잠금 안내
+- **카드**: `Card` + `!p-4 space-y-3` (RankingPanel과 동일 배경)
+- **제목**: "다른 플레이어의 추측" `text-lg font-extrabold`
+- **상태 분기**: (1) 비로그인 → 로그인 유도 (2) bestSimilarity < 60 → 잠금 안내 (3) 빈 목록 (4) 힌트 목록 (스포일러 처리)
+- **스포일러**: 힌트 목록 기본 `blur-sm` 처리. 클릭 시 전체 해제. 새로고침 시 자동 리셋 (React state, localStorage 미사용)
+- **행 구분선**: `border-b-2 border-black/20 dark:border-white/20` (마지막 항목 제외)
+- **갱신**: 매 추측 시 `["game", "hints", sentenceId]` invalidate + `staleTime: 60_000`
+- **힌트 범위**: 요청자의 bestSimilarity 이하 추측만 표시 (서버측 필터링)
+
 ### 어드민 패널 (`/admin`)
 
 - **레이아웃**: 사이드바(w-56, 고정) + 콘텐츠 영역(flex-1). `flex gap-6 items-start`

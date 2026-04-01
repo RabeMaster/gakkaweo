@@ -5,6 +5,7 @@ import com.gakkaweo.backend.game.dto.GameStatusResponse;
 import com.gakkaweo.backend.game.dto.GuessHistoryResponse;
 import com.gakkaweo.backend.game.dto.GuessRequest;
 import com.gakkaweo.backend.game.dto.GuessResponse;
+import com.gakkaweo.backend.game.dto.HintResponse;
 import com.gakkaweo.backend.game.dto.TodayResponse;
 import com.gakkaweo.backend.game.service.DailyGameService;
 import jakarta.validation.Valid;
@@ -45,6 +46,12 @@ public class DailyGameController {
   public ResponseEntity<GuessHistoryResponse> getHistory(
       @RequestParam UUID sentenceId, @AuthenticationPrincipal CustomUserDetails userDetails) {
     return ResponseEntity.ok(dailyGameService.getHistory(sentenceId, userDetails.publicId()));
+  }
+
+  @GetMapping("/hints")
+  public ResponseEntity<HintResponse> getHints(
+      @RequestParam UUID sentenceId, @AuthenticationPrincipal CustomUserDetails userDetails) {
+    return ResponseEntity.ok(dailyGameService.getHints(sentenceId, userDetails.publicId()));
   }
 
   @GetMapping("/status")

@@ -29,6 +29,7 @@
 | POST   | `/daily/guess`               | 불필요 | GUESS 40/min | 추측 제출         |
 | GET    | `/daily/history`             | 필수   | READ 60/min  | 추측 히스토리     |
 | GET    | `/daily/status`              | 필수   | READ 60/min  | 게임 상태 조회    |
+| GET    | `/daily/hints`               | 필수   | READ 60/min  | 힌트 조회         |
 | GET    | `/ranking/today`             | 불필요 | READ 60/min  | 랭킹 조회         |
 | GET    | `/ranking/stream`            | 불필요 | SSE 10/min   | 랭킹 SSE 스트림   |
 | GET    | `/announcements/active`      | 불필요 | READ 60/min  | 활성 공지 조회     |
@@ -366,6 +367,32 @@
 
 - **에러**: `SENTENCE_NOT_FOUND`(404)
 
+### `GET /daily/hints` — 힌트 조회
+
+- **인증**: 필수
+- **Rate Limit**: READ (60/min)
+- **쿼리 파라미터**: `sentenceId` (필수, UUID)
+- **응답**:
+
+```json
+{
+  "hints": [
+    {
+      "guessText": "String",
+      "similarity": 85.5
+    }
+  ]
+}
+```
+
+- **동작**:
+  - 요청자의 bestSimilarity가 60% 미만이면 403 반환
+  - 다른 유저의 추측 중 요청자의 bestSimilarity 이하만 반환
+  - 동일 guessText는 최고 유사도 1건만 (DISTINCT ON)
+  - 요청자 본인의 추측은 제외
+  - 최대 5개, 유사도 높은 순 정렬
+- **에러**: `HINT_NOT_AVAILABLE`(403), `SESSION_NOT_FOUND`(404), `SENTENCE_NOT_FOUND`(404), `MEMBER_NOT_FOUND`(404)
+
 ---
 
 ## 4. 랭킹 (Ranking)
@@ -472,6 +499,7 @@
 | `MISSING_PARAMETER`            | 400  | 필수 파라미터 누락                |
 | `METHOD_NOT_ALLOWED`           | 405  | HTTP 메서드 미지원                |
 | `INVALID_GUESS_TEXT`           | 400  | 정규화 후 빈 문자열               |
+| `HINT_NOT_AVAILABLE`           | 403  | 힌트 조건 미달 (bestSimilarity 60% 미만) |
 | `SENTENCE_NOT_FOUND`           | 404  | 오늘 문제 없음                    |
 | `SESSION_NOT_FOUND`            | 404  | 게임 세션 없음                    |
 | `GAME_EXPIRED`                 | 409  | 게임 세션 만료                    |
@@ -526,7 +554,7 @@
 | 그룹  | 대상 엔드포인트                | 제한   | 식별 기준                |
 | ----- | ------------------------------ | ------ | ------------------------ |
 | GUESS | `POST /daily/guess`            | 40/min | 익명: IP, 로그인: userId |
-| READ  | 모든 `GET` (OAuth/health 제외) | 60/min | 익명: IP, 로그인: userId |
+| READ  | 모든 `GET` (OAuth/health 제외) | 90/min | 익명: IP, 로그인: userId |
 | SSE   | `GET /ranking/stream`          | 10/min | 익명: IP, 로그인: userId |
 | AUTH  | `/auth/**`                     | 10/min | 항상 IP                  |
 | ADMIN | `/admin/**`                    | 120/min | userId 기준             |

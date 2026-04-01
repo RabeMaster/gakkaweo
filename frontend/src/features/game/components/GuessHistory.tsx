@@ -15,6 +15,14 @@ const PAGE_SIZE = 5;
 
 export function GuessHistory({ guesses }: GuessHistoryProps) {
   const [page, setPage] = useState(0);
+  const [prevLength, setPrevLength] = useState(guesses.length);
+
+  if (guesses.length !== prevLength) {
+    setPrevLength(guesses.length);
+    if (prevLength === 0 && guesses.length > 0) {
+      setPage(0);
+    }
+  }
 
   if (guesses.length === 0) {
     return null;

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getHistory, getStatus, getToday, submitGuess } from "@/features/game/api";
+import { getHints, getHistory, getStatus, getToday, submitGuess } from "@/features/game/api";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import type { GuessRequest } from "@/shared/api/types";
 
@@ -30,6 +30,17 @@ export function useGameHistory(sentenceId: string | undefined) {
     queryFn: () => getHistory(sentenceId!),
     staleTime: 0,
     enabled: isAuthenticated && !!sentenceId,
+  });
+}
+
+export function useHints(sentenceId: string | undefined, bestSimilarity: number) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: ["game", "hints", sentenceId],
+    queryFn: () => getHints(sentenceId!),
+    staleTime: 60_000,
+    enabled: isAuthenticated && !!sentenceId && bestSimilarity >= 60,
   });
 }
 
