@@ -33,6 +33,7 @@ export function GamePage() {
   const { formatted: countdown, isExpired } = useCountdown(today?.expiresAt);
 
   const [inputError, setInputError] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<{ guessText: string; similarity: number } | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
   const [localCleared, setLocalCleared] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(() => {
@@ -50,6 +51,7 @@ export function GamePage() {
     setTrackedSentenceId(sentenceId);
     setLocalCleared(false);
     setInputError(null);
+    setLastResult(null);
     setRateLimited(false);
   }
 
@@ -109,6 +111,7 @@ export function GamePage() {
       ],
     }));
     queryClient.invalidateQueries({ queryKey: ["game", "status", sentenceId] });
+    queryClient.invalidateQueries({ queryKey: ["game", "hints", sentenceId] });
     queryClient.invalidateQueries({ queryKey: ["ranking"] });
   }
 
@@ -179,6 +182,7 @@ export function GamePage() {
       return;
     }
     setInputError(null);
+    setLastResult(null);
 
     const existing = displayGuesses.find((g) => g.guessText === text);
     if (existing) {
@@ -190,6 +194,7 @@ export function GamePage() {
       { sentenceId, guessText: text },
       {
         onSuccess: (res) => {
+          setLastResult({ guessText: text, similarity: res.similarity });
           if (isAuthenticated) {
             appendGuessToCache(text, res);
           } else {
@@ -271,6 +276,7 @@ export function GamePage() {
         isLoading={guessMutation.isPending}
         disabled={rateLimited}
         error={inputError}
+        result={lastResult}
       />
 
       <GuessHistory guesses={displayGuesses} />

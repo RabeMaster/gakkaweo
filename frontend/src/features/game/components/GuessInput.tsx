@@ -1,15 +1,17 @@
 import { useRef, useState } from "react";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
+import { getSimilarityColor } from "@/shared/utils/similarity";
 
 interface GuessInputProps {
   onSubmit: (text: string) => void;
   isLoading: boolean;
   disabled?: boolean;
   error?: string | null;
+  result?: { guessText: string; similarity: number } | null;
 }
 
-export function GuessInput({ onSubmit, isLoading, disabled = false, error = null }: GuessInputProps) {
+export function GuessInput({ onSubmit, isLoading, disabled = false, error = null, result = null }: GuessInputProps) {
   const [text, setText] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
   const isComposingRef = useRef(false);
@@ -69,6 +71,14 @@ export function GuessInput({ onSubmit, isLoading, disabled = false, error = null
         </Button>
       </div>
       {error && <p className="text-sm font-bold text-red-500">{error}</p>}
+      {!error && result && (
+        <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
+          {result.guessText}{" "}
+          <span style={{ color: getSimilarityColor(result.similarity).bg }}>
+            (유사도: {result.similarity.toFixed(1)}%)
+          </span>
+        </p>
+      )}
     </div>
   );
 }
