@@ -82,6 +82,12 @@ public class GameSession {
     }
   }
 
+  public void updateClearedAt() {
+    if (this.bestSimilarity.compareTo(new BigDecimal("100")) < 0) {
+      this.clearedAt = Instant.now();
+    }
+  }
+
   public void markCleared() {
     this.status = GameSessionStatus.CLEARED;
     this.clearedAt = Instant.now();

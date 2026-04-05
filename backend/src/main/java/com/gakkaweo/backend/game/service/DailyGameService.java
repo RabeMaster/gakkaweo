@@ -99,6 +99,8 @@ public class DailyGameService {
       if (isCorrect) {
         session.markCleared();
       }
+    } else if (session.isCleared() && isPerfect(similarity)) {
+      session.updateClearedAt();
     }
     session.updateBestSimilarity(similarity);
 
@@ -264,6 +266,10 @@ public class DailyGameService {
     return memberRepository
         .findByPublicId(publicId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+  }
+
+  private static boolean isPerfect(BigDecimal similarity) {
+    return similarity.compareTo(new BigDecimal("100")) >= 0;
   }
 
   private void validateGuessAllowed(GameSession session) {
