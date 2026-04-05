@@ -82,6 +82,10 @@ public class GameSession {
     }
   }
 
+  public void updateClearedAt() {
+    this.clearedAt = Instant.now();
+  }
+
   public void markCleared() {
     this.status = GameSessionStatus.CLEARED;
     this.clearedAt = Instant.now();
