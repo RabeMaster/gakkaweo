@@ -16,18 +16,10 @@ const PROVIDERS: {
   id: Provider;
   loginLabel: string;
   icon: typeof KakaoIcon;
-  disabled?: boolean;
-  disabledReason?: string;
 }[] = [
   { id: "kakao", loginLabel: "카카오 로그인", icon: KakaoIcon },
   { id: "google", loginLabel: "Google 로그인", icon: GoogleIcon },
-  {
-    id: "naver",
-    loginLabel: "네이버 로그인",
-    icon: NaverIcon,
-    disabled: true,
-    disabledReason: "네이버 로그인은 아직 승인 대기 중이며 개발 중입니다",
-  },
+  { id: "naver", loginLabel: "네이버 로그인", icon: NaverIcon },
 ];
 
 function handleOAuthLogin(provider: Provider) {
@@ -100,28 +92,18 @@ export function LoginPage() {
             (으)로 로그인했습니다
           </p>
           <div className="space-y-3">
-            {PROVIDERS.map(({ id, loginLabel, icon: Icon, disabled, disabledReason }) => {
+            {PROVIDERS.map(({ id, loginLabel, icon: Icon }) => {
               const { bg, text } = PROVIDER_COLORS[id];
               return (
                 <button
                   key={id}
                   type="button"
-                  onClick={() => {
-                    if (!disabled) {
-                      handleOAuthLogin(id);
-                    }
-                  }}
-                  disabled={disabled}
-                  title={disabled ? disabledReason : undefined}
+                  onClick={() => handleOAuthLogin(id)}
                   className={[
                     "w-full border-4 border-black dark:border-white rounded-none font-bold text-base px-4 py-3",
-                    disabled
-                      ? "opacity-50 cursor-not-allowed shadow-brutal"
-                      : [
-                          "shadow-brutal transition-all duration-100",
-                          "hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1",
-                          "active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
-                        ].join(" "),
+                    "shadow-brutal transition-all duration-100",
+                    "hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1",
+                    "active:shadow-none active:translate-x-1.5 active:translate-y-1.5",
                     bg,
                     text,
                   ].join(" ")}
