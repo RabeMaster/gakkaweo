@@ -105,7 +105,7 @@
   "publicId": "UUID",
   "nickname": "String (자동 생성)",
   "profileUrl": null,
-  "role": "ROLE_USER"
+  "role": "USER"
 }
 ```
 
@@ -131,7 +131,7 @@
   "publicId": "UUID",
   "nickname": "String",
   "profileUrl": "String | null",
-  "role": "ROLE_USER | ROLE_ADMIN"
+  "role": "USER | ADMIN"
 }
 ```
 
@@ -163,7 +163,7 @@
   "publicId": "UUID",
   "nickname": "String",
   "profileUrl": "String",
-  "role": "ROLE_USER | ROLE_ADMIN"
+  "role": "USER | ADMIN"
 }
 ```
 
@@ -188,7 +188,7 @@
   "publicId": "UUID",
   "nickname": "String",
   "profileUrl": "String",
-  "role": "ROLE_USER | ROLE_ADMIN"
+  "role": "USER | ADMIN"
 }
 ```
 
@@ -208,7 +208,7 @@
   "publicId": "UUID",
   "nickname": "String",
   "profileUrl": "/uploads/profiles/{publicId}.webp?v={timestamp}",
-  "role": "ROLE_USER | ROLE_ADMIN"
+  "role": "USER | ADMIN"
 }
 ```
 
@@ -226,7 +226,7 @@
   "publicId": "UUID",
   "nickname": "String",
   "profileUrl": null,
-  "role": "ROLE_USER | ROLE_ADMIN"
+  "role": "USER | ADMIN"
 }
 ```
 

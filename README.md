@@ -171,6 +171,16 @@ cp .env.sample .env
 # .env 파일을 열어 DB, Redis, JWT, OAuth 정보를 입력하세요
 ```
 
+Backend는 루트 `.env`를 심볼릭 링크로 참조합니다. clone 후 링크를 생성하세요.
+
+```bash
+# macOS / Linux
+ln -s ../.env backend/.env
+
+# Windows (관리자 권한 또는 개발자 모드 필요)
+mklink backend\.env ..\.env
+```
+
 ### 2. 인프라 실행 (PostgreSQL, Redis, AI Service)
 
 ```bash
@@ -197,6 +207,26 @@ pnpm dev
 ```
 
 `http://localhost:3000`에서 접속할 수 있습니다.
+
+### 5. 초기 데이터 설정
+
+최초 실행 시 계정과 문장 데이터가 없으므로 게임이 동작하지 않습니다. 아래 순서로 초기 데이터를 넣어주세요.
+
+1. **회원가입**: `http://localhost:3000/login`에서 로컬 계정 생성
+2. **오늘의 문장 등록**: DB에 직접 문장을 추가합니다.
+
+```sql
+INSERT INTO daily_sentences (public_id, sentence, status, used_at, created_at)
+VALUES (gen_random_uuid(), '오늘 날씨가 정말 좋다', 'ACTIVE', CURRENT_DATE, NOW());
+```
+
+3. **Backend 재시작**: 문장 추가 후 Backend를 재시작하면 게임을 플레이할 수 있습니다.
+
+> **어드민 패널 사용**: 가입한 계정의 role을 `ADMIN`으로 변경하면 `/admin`에서 문장 등록/삭제, 사용자 관리 등을 UI로 할 수 있습니다.
+>
+> ```sql
+> UPDATE members SET role = 'ADMIN' WHERE nickname = '가입한_닉네임';
+> ```
 
 ---
 
