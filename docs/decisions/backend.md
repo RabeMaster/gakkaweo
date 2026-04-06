@@ -1,0 +1,188 @@
+# 백엔드 의사결정
+
+## 패키지 구조
+
+도메인 계층과 기능 계층을 분리하는 하이브리드 구조를 채택했다.
+
+```
+backend/src/main/java/.../backend/
+├── domain/          # 순수 도메인 — 엔티티, 리포지토리, 비즈니스 규칙
+│   ├── member/      #   Member, SocialAccount, LocalAccount
+│   ├── game/        #   DailySentence, GameSession, GuessHistory
+│   ├── auth/        #   RefreshToken
+│   └── admin/       #   Announcement, AuditLog, SentenceUpload
+├── auth/            # 기능: 인증 — 서비스, 컨트롤러, JWT, OAuth2
+├── game/            # 기능: 게임 — 서비스, 컨트롤러, DTO
+├── ranking/         # 기능: 랭킹 — Redis 기반 서비스, SSE 이벤트
+├── admin/           # 기능: 어드민 — 관리 서비스, 컨트롤러
+├── ratelimit/       # 기능: Rate Limiting — 필터, 버킷 관리
+├── infra/           # 외부 의존성 — AI Service 클라이언트, Circuit Breaker
+└── config/          # 글로벌 설정 — SecurityConfig 등
+```
+
+### 왜 이 구조인가
+
+- **domain/**: 엔티티는 JPA 매핑과 비즈니스 규칙만 담는다. `@Transactional`이나 외부 서비스 호출 로직이 들어가지 않는다. `GameSession.markCleared()`, `GameSession.updateBestSimilarity()` 같은 도메인 메서드로 상태 변경을 캡슐화한다.
+- **기능 패키지** (auth/, game/, ranking/): 도메인 객체를 조합하고 트랜잭션을 관리하는 서비스 계층이다. 각 기능은 자기 컨트롤러, 서비스, DTO를 갖는다.
+- **infra/**: AI 서비스 HTTP 통신, Circuit Breaker 같은 외부 의존성을 격리한다. 기능 서비스에서는 `SimilarityService` 인터페이스만 의존한다.
+
+### DTO 패턴
+
+`XxxResponse.from(Entity)` 정적 팩토리 메서드로 엔티티 → DTO 변환을 캡슐화한다. 컨트롤러에서 엔티티를 직접 반환하지 않는다.
+
+```java
+// 예시
+public record MemberResponse(UUID publicId, String nickname, ...) {
+    public static MemberResponse from(Member member) {
+        return new MemberResponse(member.getPublicId(), member.getNickname(), ...);
+    }
+}
+```
+
+## 트랜잭션 전략
+
+### 원칙: TX 내 I/O 분리
+
+트랜잭션 안에서는 DB 쓰기만 수행하고, BCrypt 해싱, Redis 연산, HTTP 호출 같은 I/O는 트랜잭션 밖에서 처리하는 것을 원칙으로 한다.
+
+| 연산           | TX 안/밖  | 이유                                                               |
+| -------------- | --------- | ------------------------------------------------------------------ |
+| DB 읽기/쓰기   | 안        | 데이터 정합성과 원자성 보장                                        |
+| BCrypt 해싱    | 밖        | CPU-bound 연산, 트랜잭션 롤백 대상 아님                            |
+| Redis 연산     | 밖        | 데이터가 즉시 일관되지 않아도 되며, 실패해도 코어 로직에 영향 없음 |
+| AI 서비스 호출 | 안 (예외) | 유사도 결과와 게임 상태를 하나의 트랜잭션으로 묶어야 함            |
+
+### 예외: AI 서비스 호출
+
+`DailyGameService.guessAuthenticated()`에서 AI 유사도 호출은 `@Transactional` 안에 있다. 유사도 계산 결과가 게임 세션 상태(bestSimilarity, attemptCount, clearedAt)와 원자적으로 저장되어야 하기 때문이다. AI 서비스 장애 시에는 Resilience4j Circuit Breaker가 빠르게 실패하도록 한다.
+
+### 랭킹 Redis 업데이트
+
+`RankingService.updateRanking()`은 `@Transactional`이 없다. Redis 업데이트가 실패해도 게임 진행은 롤백하지 않는다. 불일치가 발생하면 어드민 패널에서 랭킹 캐시를 리셋할 수 있다.
+
+### 어드민 긴급 교체
+
+`AdminSentenceService.emergencyReplace()`는 `TransactionTemplate`을 사용하여 수동으로 트랜잭션을 관리한다. 기존 세션/추측 기록 삭제 → 새 문장 배정을 하나의 TX로 묶고, Redis 정리와 SSE 브로드캐스트는 TX 밖에서 수행한다.
+
+## 인증
+
+### JWT Cookie 기반 인증
+
+세션 기반 대신 JWT Cookie를 선택한 이유:
+
+- **단일 서버**: 세션 클러스터링이 불필요하므로 세션도 가능하지만, JWT가 서버 메모리를 절약
+  > 사실 서버를 여러대로 확장할 계획이 없으므로 세션도 충분히 가능했지만, JWT는 stateless하므로 서버 메모리를 사용하지 않고, 확장성 측면에서도 유리하다고 판단했다.
+- **Cookie 전송**: `HttpOnly`, `Secure`, `SameSite` 플래그로 XSS/CSRF 방어. 프론트엔드에서 토큰 관리 코드가 불필요
+  > 사실 쿠키도 탈취되면 위험하지만, `HttpOnly`로 설정하여 JavaScript에서 접근할 수 없게 하고, `Secure`로 HTTPS에서만 전송되도록 하여 보안을 강화한다.
+  > 그래도 탈취된다면, Refresh Token Rotation과 Access Token 블랙리스트로 피해를 최소화한다.
+- **인디케이터 쿠키**: `has_session` 쿠키는 non-HttpOnly로 설정. 프론트엔드에서 로그인 여부를 빠르게 확인하고, 불필요한 `/auth/me` 호출을 방지
+  > 단순하게 `/auth/me` 호출로 로그인 여부를 확인할 수도 있지만, 매 페이지마다 API 호출이 발생하기에, 쿠키 하나로 로그인 상태를 확인하는 것이 성능에 좋을 것 같았다.
+
+### Refresh Token Rotation
+
+Family 기반 Refresh Token Rotation을 구현했다.
+
+```
+1. 로그인 → access_token + refresh_token 발급. refresh_token은 SHA-256 해시하여 DB 저장
+2. 갱신 → 기존 refresh_token 폐기, 같은 familyId로 새 토큰 발급
+3. 재사용 감지 → 이미 폐기된 토큰으로 갱신 시도 시, 해당 family 전체 폐기 (토큰 탈취 대응)
+```
+
+- `familyId`: UUID로 같은 갱신 체인의 토큰들을 묶는다
+- `tokenHash`: SHA-256 해시 저장. DB 유출 시에도 원본 토큰 노출 방지
+- 로그아웃: access_token의 JTI(JWT ID)를 Redis 블랙리스트에 등록 (남은 만료 시간만큼 TTL)
+
+### 차단 (Ban) 처리
+
+차단된 사용자는 로그인, 토큰 갱신, OAuth 콜백 시점에 검사한다. 매 요청마다 DB를 조회하는 필터 방식은 사용하지 않는다.
+
+> 차단 여부를 판단하기 위해 매 요청마다 DB 조회를 하는 것은 성능에 부담이 될 수 있다고 판단했다.
+
+- 차단 시 refresh_token을 폐기하고 access_token을 블랙리스트에 등록하여 즉시 세션을 종료한다.
+
+## 랭킹 시스템
+
+### Redis Sorted Set 스코어 인코딩
+
+단일 `double` 값에 유사도, 시도 횟수, 시간을 인코딩한다.
+
+```java
+// 100% 달성자: 선착순
+score = (similarity * 10 * 1_000_000_000) - clearedAtSeconds
+
+// 95~99.9%: 유사도 > 시도 횟수 > 경과 시간
+score = (similarity * 10 * 1_000_000_000) - (attemptCount * 100_000) - elapsedSeconds
+```
+
+- `reverseRank`로 점수가 높을수록 상위 랭크
+- 100% 달성자는 `clearedAt`이 빠를수록 점수가 높음 (빼기이므로)
+- 95~99.9%에서는 유사도가 1차, 시도 횟수가 2차, 경과 시간이 3차 정렬 기준
+
+> 단순하게 사용자 측면에서 바라봤을 때, 유사도가 높을수록 좋은 랭킹이 되는 것이 직관적이라고 생각했다. 그리고 100% 달성자 중에서는 선착순이 공정하다고 판단했다. 또한, 95~99.9% 달성자들 사이에서는 유사도가 가장 중요하지만, 동점자가 많을 수 있기 때문에 시도 횟수와 경과 시간으로 추가적으로 순위를 매기는 방식으로 결정했다.
+
+### SSE 실시간 랭킹
+
+WebSocket 대신 SSE를 선택한 이유:
+
+- **단방향**: 랭킹은 서버 → 클라이언트 단방향 푸시만 필요
+- **단순성**: HTTP 기반이므로 Nginx 프록시 설정이 간단 (버퍼링 OFF)
+- **자동 재연결**: 브라우저 `EventSource` API가 자동 재연결 지원
+
+이벤트 종류: `RANKING_UPDATE` (랭킹 변경), `DAY_CHANGE` (자정 문제 전환), `ANNOUNCEMENT` (공지), `HEARTBEAT` (10초 간격, 연결 수 포함).
+100ms 디바운스로 짧은 시간 내 다수 변경을 한 번에 전송한다.
+
+> 버퍼링을 만약 끄지 않는다면, 랭킹 업데이트가 발생해도 Nginx가 데이터를 버퍼링하여 클라이언트에 즉시 전달되지 않을 수 있다. 이로 인해 랭킹이 실시간으로 반영되지 않는 문제가 발생할 수 있다.
+
+> 웹소켓을 사용해 유사도 입력과 랭킹 업데이트같은 이벤트들을 묶어서 처리할 수도 있었지만, 랭킹 업데이트는 단방향 푸시만 필요하고, 웹소켓은 설정과 관리가 더 복잡하기 때문에, 단순히 SSE로 구현하는 것이 충분하다고 판단했다. 추후 양방향 통신이 필요한 기능이 추가된다면 웹소켓 도입을 재검토해볼 수 있다.
+
+## Rate Limiting
+
+Bucket4j 인메모리 토큰 버킷을 사용한다. 단일 서버이므로 분산 Rate Limiter가 불필요하다.
+
+| 그룹  | 대상                  | 제한    | 식별                     |
+| ----- | --------------------- | ------- | ------------------------ |
+| GUESS | `POST /daily/guess`   | 40/min  | 로그인: userId, 익명: IP |
+| READ  | `GET` 엔드포인트      | 120/min | 로그인: userId, 익명: IP |
+| SSE   | `GET /ranking/stream` | 10/min  | 로그인: userId, 익명: IP |
+| AUTH  | `/auth/**`            | 10/min  | 항상 IP                  |
+| ADMIN | `/admin/**`           | 120/min | userId                   |
+
+- 5분마다 미사용 버킷 정리 (스케줄러)
+- 429 응답 시 `Retry-After` 헤더 포함
+- 성공 시 `X-Rate-Limit-Remaining` 헤더로 남은 토큰 수 반환
+
+> 제한값을 넉넉하게 잡은 이유는, 너무 낮으면 정상적인 사용자가 제한에 걸려 불편함을 겪을 수 있기 때문이다. 특히 추측 API는 게임의 핵심 기능이므로, 충분한 시도 기회를 제공하는 것이 중요하다고 판단했다. 물론, 악의적인 사용자가 무제한으로 시도하는 것을 방지하기 위해 적절한 수준의 제한을 설정했다.
+
+## Resilience4j Circuit Breaker
+
+AI 서비스 호출을 Circuit Breaker로 감싼다. AI 서비스 장애 시 빠르게 실패하여 게임 서비스 전체의 응답 시간 저하를 방지한다.
+
+```
+CLOSED → 정상 호출
+OPEN → AI 서비스 연속 실패 시, 즉시 AI_SERVICE_UNAVAILABLE 에러 반환
+HALF_OPEN → 일정 시간 후 재시도
+```
+
+## 데이터 모델
+
+### 시간 처리
+
+`LocalDateTime` 금지. 모든 시간은 `Instant`(UTC)로 저장하고, KST 변환이 필요한 곳에서만 `TimeConstants.KST`를 사용한다. `LocalDate`는 날짜만 필요한 경우 (출제일, 스케줄)에 사용.
+
+> 기본적으로 한국에서만 서비스 할 예정이라면, 서버 시간도 KST로 설정할 수 있지만, UTC로 저장하는 것이 더 표준적이고, 나중에 다른 시간대 지원이 필요할 때도 유연하게 대응할 수 있다고 판단했다.
+
+> 세계 표준시인 UTC로 시간을 저장하면, 나중에 다른 시간대 지원이 필요할 때도 유연하게 대응할 수 있다. KST로 저장하면, 나중에 다른 시간대 지원이 필요할 때 문제가 될 수 있다.
+
+> 실제로 이전의 개발 경험중에서 UTC와 KST 혼용으로 여러 버그를 경험한 적이 많다.
+
+### Flyway 마이그레이션
+
+V1~V13까지 적용. 기존 마이그레이션은 절대 수정하지 않고, 새 마이그레이션을 추가한다.
+
+> 마이그레이션 파일은 `V{timestamp}__{description}.sql` 형식으로 작성한다. 예: `V20260407_01__add_user_email.sql`
+
+> 개발을 진행하며, 데이터 모델이 변경될 때마다 새로운 마이그레이션 파일을 추가하여, 데이터베이스 스키마의 변경 이력을 명확하게 관리하기 위함이였다.
+
+---
+
+_마지막 업데이트: 2026-04-07_
