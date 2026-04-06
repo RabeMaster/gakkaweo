@@ -8,66 +8,79 @@
 - **에러 응답**: `ErrorBody` 통일 포맷
 - **콘텐츠 타입**: `application/json` (SSE는 `text/event-stream`)
 
+## 목차
+
+1. [인증 (Auth)](#1-인증-auth) — 회원가입, 로그인, 토큰 갱신, 닉네임/프로필/탈퇴
+2. [OAuth 2.0 소셜 로그인](#2-oauth-20-소셜-로그인) — 카카오, Google, 네이버
+3. [데일리 게임](#3-데일리-게임-daily-game) — 오늘 문제, 추측 제출, 히스토리, 상태, 힌트
+4. [랭킹](#4-랭킹-ranking) — 오늘 랭킹, SSE 스트림
+5. [에러 응답 포맷](#5-에러-응답-포맷)
+6. [인증 흐름](#6-인증-흐름) — JWT Cookie, Refresh Token Rotation
+7. [CORS 설정](#7-cors-설정)
+8. [Rate Limiting 상세](#8-rate-limiting-상세)
+9. [공지](#9-공지-public)
+10. [어드민 API](#10-어드민-api) — 문장, 사용자, 대시보드, 시스템
+
 ---
 
 ## 엔드포인트 요약
 
-| Method | Path                         | Auth   | Rate Limit   | 설명              |
-| ------ | ---------------------------- | ------ | ------------ | ----------------- |
-| GET    | `/health`                    | 불필요 | 없음         | 헬스체크          |
-| POST   | `/auth/register`             | 불필요 | AUTH 10/min  | 회원가입          |
-| POST   | `/auth/login`                | 불필요 | AUTH 10/min  | 로그인            |
-| POST   | `/auth/refresh`              | 불필요 | AUTH 10/min  | 토큰 갱신         |
-| POST   | `/auth/logout`               | 필수   | AUTH 10/min  | 로그아웃          |
-| GET    | `/auth/me`                   | 필수   | READ 60/min  | 내 정보 조회      |
-| PATCH  | `/auth/nickname`             | 필수   | AUTH 10/min  | 닉네임 변경       |
-| PATCH  | `/auth/profile-image`        | 필수   | AUTH 10/min  | 프로필 이미지 업로드 |
-| DELETE | `/auth/profile-image`        | 필수   | AUTH 10/min  | 프로필 이미지 삭제   |
-| DELETE | `/auth/account`              | 필수   | AUTH 10/min  | 회원 탈퇴         |
-| GET    | `/oauth2/authorization/{id}` | 불필요 | 없음         | OAuth 로그인 시작 |
-| GET    | `/daily/today`               | 불필요 | READ 60/min  | 오늘 문제 조회    |
-| POST   | `/daily/guess`               | 불필요 | GUESS 40/min | 추측 제출         |
-| GET    | `/daily/history`             | 필수   | READ 60/min  | 추측 히스토리     |
-| GET    | `/daily/status`              | 필수   | READ 60/min  | 게임 상태 조회    |
-| GET    | `/daily/hints`               | 필수   | READ 60/min  | 힌트 조회         |
-| GET    | `/ranking/today`             | 불필요 | READ 60/min  | 랭킹 조회         |
-| GET    | `/ranking/stream`            | 불필요 | SSE 10/min   | 랭킹 SSE 스트림   |
-| GET    | `/announcements/active`      | 불필요 | READ 60/min  | 활성 공지 조회     |
-| GET    | `/admin/sentences`           | ADMIN  | ADMIN 120/min | 문장 목록         |
-| POST   | `/admin/sentences`           | ADMIN  | ADMIN 120/min | 문장 등록         |
-| GET    | `/admin/sentences/{id}`      | ADMIN  | ADMIN 120/min | 문장 상세         |
-| PATCH  | `/admin/sentences/{id}`      | ADMIN  | ADMIN 120/min | 문장 수정         |
-| DELETE | `/admin/sentences/{id}`      | ADMIN  | ADMIN 120/min | 문장 삭제         |
-| GET    | `/admin/sentences/{id}/stats`| ADMIN  | ADMIN 120/min | 문장 통계         |
-| GET    | `/admin/sentences/unused-count` | ADMIN | ADMIN 120/min | 미사용 문장 수   |
-| POST   | `/admin/sentences/upload`    | ADMIN  | ADMIN 120/min | CSV 업로드        |
-| POST   | `/admin/sentences/{id}/schedule` | ADMIN | ADMIN 120/min | 스케줄 지정     |
-| DELETE | `/admin/sentences/{id}/schedule` | ADMIN | ADMIN 120/min | 스케줄 해제     |
-| POST   | `/admin/sentences/similarity-test` | ADMIN | ADMIN 120/min | 유사도 테스트  |
-| POST   | `/admin/sentences/duplicate-check` | ADMIN | ADMIN 120/min | 중복 검사      |
-| POST   | `/admin/sentences/emergency-replace` | ADMIN | ADMIN 120/min | 긴급 교체    |
-| GET    | `/admin/users`               | ADMIN  | ADMIN 120/min | 사용자 목록       |
-| GET    | `/admin/users/{id}`          | ADMIN  | ADMIN 120/min | 사용자 상세       |
-| GET    | `/admin/users/{id}/history`  | ADMIN  | ADMIN 120/min | 게임 이력         |
-| PATCH  | `/admin/users/{id}/role`     | ADMIN  | ADMIN 120/min | 역할 변경         |
-| POST   | `/admin/users/{id}/ban`      | ADMIN  | ADMIN 120/min | 사용자 차단       |
-| DELETE | `/admin/users/{id}/ban`      | ADMIN  | ADMIN 120/min | 차단 해제         |
-| DELETE | `/admin/users/{id}`          | ADMIN  | ADMIN 120/min | 강제 탈퇴         |
-| PATCH  | `/admin/users/{id}/nickname` | ADMIN  | ADMIN 120/min | 닉네임 강제 변경  |
-| DELETE | `/admin/users/{id}/profile-image` | ADMIN | ADMIN 120/min | 프로필 이미지 삭제 |
-| GET    | `/admin/dashboard/today`     | ADMIN  | ADMIN 120/min | 오늘 현황         |
-| GET    | `/admin/dashboard/ranking`   | ADMIN  | ADMIN 120/min | 전체 랭킹         |
-| GET    | `/admin/dashboard/stats/{date}` | ADMIN | ADMIN 120/min | 날짜별 통계     |
-| GET    | `/admin/dashboard/trends`    | ADMIN  | ADMIN 120/min | 추이 데이터       |
-| GET    | `/admin/dashboard/guess-log` | ADMIN  | ADMIN 120/min | 추측 로그         |
-| GET    | `/admin/system/announcements`| ADMIN  | ADMIN 120/min | 공지 목록         |
-| POST   | `/admin/system/announcements`| ADMIN  | ADMIN 120/min | 공지 등록         |
-| PATCH  | `/admin/system/announcements/{id}` | ADMIN | ADMIN 120/min | 공지 수정     |
-| DELETE | `/admin/system/announcements/{id}` | ADMIN | ADMIN 120/min | 공지 삭제     |
-| GET    | `/admin/system/status`       | ADMIN  | ADMIN 120/min | 시스템 상태       |
-| POST   | `/admin/system/ranking-cache/reset` | ADMIN | ADMIN 120/min | 랭킹 캐시 리셋 |
-| POST   | `/admin/system/rate-limit/reset` | ADMIN | ADMIN 120/min | Rate Limit 초기화 |
-| GET    | `/admin/system/audit-logs`   | ADMIN  | ADMIN 120/min | 감사 로그         |
+| Method | Path                                 | Auth   | Rate Limit    | 설명                 |
+| ------ | ------------------------------------ | ------ | ------------- | -------------------- |
+| GET    | `/health`                            | 불필요 | 없음          | 헬스체크             |
+| POST   | `/auth/register`                     | 불필요 | AUTH 10/min   | 회원가입             |
+| POST   | `/auth/login`                        | 불필요 | AUTH 10/min   | 로그인               |
+| POST   | `/auth/refresh`                      | 불필요 | AUTH 10/min   | 토큰 갱신            |
+| POST   | `/auth/logout`                       | 필수   | AUTH 10/min   | 로그아웃             |
+| GET    | `/auth/me`                           | 필수   | READ 120/min   | 내 정보 조회         |
+| PATCH  | `/auth/nickname`                     | 필수   | AUTH 10/min   | 닉네임 변경          |
+| PATCH  | `/auth/profile-image`                | 필수   | AUTH 10/min   | 프로필 이미지 업로드 |
+| DELETE | `/auth/profile-image`                | 필수   | AUTH 10/min   | 프로필 이미지 삭제   |
+| DELETE | `/auth/account`                      | 필수   | AUTH 10/min   | 회원 탈퇴            |
+| GET    | `/oauth2/authorization/{id}`         | 불필요 | 없음          | OAuth 로그인 시작    |
+| GET    | `/daily/today`                       | 불필요 | READ 120/min   | 오늘 문제 조회       |
+| POST   | `/daily/guess`                       | 불필요 | GUESS 40/min  | 추측 제출            |
+| GET    | `/daily/history`                     | 필수   | READ 120/min   | 추측 히스토리        |
+| GET    | `/daily/status`                      | 필수   | READ 120/min   | 게임 상태 조회       |
+| GET    | `/daily/hints`                       | 필수   | READ 120/min   | 힌트 조회            |
+| GET    | `/ranking/today`                     | 불필요 | READ 120/min   | 랭킹 조회            |
+| GET    | `/ranking/stream`                    | 불필요 | SSE 10/min    | 랭킹 SSE 스트림      |
+| GET    | `/announcements/active`              | 불필요 | READ 120/min   | 활성 공지 조회       |
+| GET    | `/admin/sentences`                   | ADMIN  | ADMIN 120/min | 문장 목록            |
+| POST   | `/admin/sentences`                   | ADMIN  | ADMIN 120/min | 문장 등록            |
+| GET    | `/admin/sentences/{id}`              | ADMIN  | ADMIN 120/min | 문장 상세            |
+| PATCH  | `/admin/sentences/{id}`              | ADMIN  | ADMIN 120/min | 문장 수정            |
+| DELETE | `/admin/sentences/{id}`              | ADMIN  | ADMIN 120/min | 문장 삭제            |
+| GET    | `/admin/sentences/{id}/stats`        | ADMIN  | ADMIN 120/min | 문장 통계            |
+| GET    | `/admin/sentences/unused-count`      | ADMIN  | ADMIN 120/min | 미사용 문장 수       |
+| POST   | `/admin/sentences/upload`            | ADMIN  | ADMIN 120/min | CSV 업로드           |
+| POST   | `/admin/sentences/{id}/schedule`     | ADMIN  | ADMIN 120/min | 스케줄 지정          |
+| DELETE | `/admin/sentences/{id}/schedule`     | ADMIN  | ADMIN 120/min | 스케줄 해제          |
+| POST   | `/admin/sentences/similarity-test`   | ADMIN  | ADMIN 120/min | 유사도 테스트        |
+| POST   | `/admin/sentences/duplicate-check`   | ADMIN  | ADMIN 120/min | 중복 검사            |
+| POST   | `/admin/sentences/emergency-replace` | ADMIN  | ADMIN 120/min | 긴급 교체            |
+| GET    | `/admin/users`                       | ADMIN  | ADMIN 120/min | 사용자 목록          |
+| GET    | `/admin/users/{id}`                  | ADMIN  | ADMIN 120/min | 사용자 상세          |
+| GET    | `/admin/users/{id}/history`          | ADMIN  | ADMIN 120/min | 게임 이력            |
+| PATCH  | `/admin/users/{id}/role`             | ADMIN  | ADMIN 120/min | 역할 변경            |
+| POST   | `/admin/users/{id}/ban`              | ADMIN  | ADMIN 120/min | 사용자 차단          |
+| DELETE | `/admin/users/{id}/ban`              | ADMIN  | ADMIN 120/min | 차단 해제            |
+| DELETE | `/admin/users/{id}`                  | ADMIN  | ADMIN 120/min | 강제 탈퇴            |
+| PATCH  | `/admin/users/{id}/nickname`         | ADMIN  | ADMIN 120/min | 닉네임 강제 변경     |
+| DELETE | `/admin/users/{id}/profile-image`    | ADMIN  | ADMIN 120/min | 프로필 이미지 삭제   |
+| GET    | `/admin/dashboard/today`             | ADMIN  | ADMIN 120/min | 오늘 현황            |
+| GET    | `/admin/dashboard/ranking`           | ADMIN  | ADMIN 120/min | 전체 랭킹            |
+| GET    | `/admin/dashboard/stats/{date}`      | ADMIN  | ADMIN 120/min | 날짜별 통계          |
+| GET    | `/admin/dashboard/trends`            | ADMIN  | ADMIN 120/min | 추이 데이터          |
+| GET    | `/admin/dashboard/guess-log`         | ADMIN  | ADMIN 120/min | 추측 로그            |
+| GET    | `/admin/system/announcements`        | ADMIN  | ADMIN 120/min | 공지 목록            |
+| POST   | `/admin/system/announcements`        | ADMIN  | ADMIN 120/min | 공지 등록            |
+| PATCH  | `/admin/system/announcements/{id}`   | ADMIN  | ADMIN 120/min | 공지 수정            |
+| DELETE | `/admin/system/announcements/{id}`   | ADMIN  | ADMIN 120/min | 공지 삭제            |
+| GET    | `/admin/system/status`               | ADMIN  | ADMIN 120/min | 시스템 상태          |
+| POST   | `/admin/system/ranking-cache/reset`  | ADMIN  | ADMIN 120/min | 랭킹 캐시 리셋       |
+| POST   | `/admin/system/rate-limit/reset`     | ADMIN  | ADMIN 120/min | Rate Limit 초기화    |
+| GET    | `/admin/system/audit-logs`           | ADMIN  | ADMIN 120/min | 감사 로그            |
 
 ---
 
@@ -142,7 +155,7 @@
 ### `GET /auth/me` — 내 정보 조회
 
 - **인증**: 필수
-- **Rate Limit**: READ (60/min, userId 기준)
+- **Rate Limit**: READ (120/min, userId 기준)
 - **응답**:
 
 ```json
@@ -247,7 +260,7 @@
 
 ### `GET /daily/today` — 오늘 문제 조회
 
-- **Rate Limit**: READ (60/min)
+- **Rate Limit**: READ (120/min)
 - **응답**:
 
 ```json
@@ -310,7 +323,7 @@
 ### `GET /daily/history` — 추측 히스토리
 
 - **인증**: 필수
-- **Rate Limit**: READ (60/min)
+- **Rate Limit**: READ (120/min)
 - **쿼리 파라미터**: `sentenceId` (필수, UUID)
 - **응답 (세션 존재)**:
 
@@ -340,7 +353,7 @@
 ### `GET /daily/status` — 게임 상태 조회
 
 - **인증**: 필수
-- **Rate Limit**: READ (60/min)
+- **Rate Limit**: READ (120/min)
 - **응답 (세션 존재)**:
 
 ```json
@@ -370,7 +383,7 @@
 ### `GET /daily/hints` — 힌트 조회
 
 - **인증**: 필수
-- **Rate Limit**: READ (60/min)
+- **Rate Limit**: READ (120/min)
 - **쿼리 파라미터**: `sentenceId` (필수, UUID)
 - **응답**:
 
@@ -399,7 +412,7 @@
 
 ### `GET /ranking/today` — 오늘 랭킹 조회
 
-- **Rate Limit**: READ (60/min)
+- **Rate Limit**: READ (120/min)
 - **인증**: 선택 (인증 시 추가 필드 반환)
 - **응답 (비인증)**:
 
@@ -454,7 +467,7 @@
 | ---------------- | ---------------------------------- | ------------------------------------------- |
 | `RANKING_UPDATE` | 랭킹 변경 (연결 시 즉시 + 변경 시) | `{"rankings":[...],"totalPlayers":N}`       |
 | `DAY_CHANGE`     | 자정 날짜 전환                     | `{"sentenceId":"...","hintMask":"...",...}` |
-| `ANNOUNCEMENT`   | 공지 생성/수정/삭제                | `{"id":N,"title":"...","type":"INFO"}`     |
+| `ANNOUNCEMENT`   | 공지 생성/수정/삭제                | `{"id":N,"title":"...","type":"INFO"}`      |
 | `HEARTBEAT`      | 연결 유지 (10초 간격)              | `{"sseConnectionCount":N}`                  |
 
 - 100ms 디바운스 (짧은 시간 내 다수 변경 시 한 번만 전송)
@@ -477,44 +490,44 @@
 
 ### 에러 코드 목록
 
-| 코드                           | HTTP | 설명                              |
-| ------------------------------ | ---- | --------------------------------- |
-| `UNAUTHORIZED`                 | 401  | 인증이 필요한 엔드포인트에 미인증 |
-| `INVALID_TOKEN`                | 401  | JWT 유효하지 않음                 |
-| `EXPIRED_TOKEN`                | 401  | JWT 만료                          |
-| `BLACKLISTED_TOKEN`            | 401  | 로그아웃된 토큰                   |
-| `REFRESH_TOKEN_REUSE_DETECTED` | 401  | Refresh Token 재사용 감지         |
-| `INVALID_REFRESH_TOKEN`        | 401  | Refresh Token 유효하지 않음       |
-| `MEMBER_NOT_FOUND`             | 404  | 회원 미존재                       |
-| `NICKNAME_DUPLICATED`          | 409  | 이미 사용 중인 닉네임             |
-| `NICKNAME_UNCHANGED`           | 400  | 현재 닉네임과 동일                |
-| `NICKNAME_FORBIDDEN`           | 400  | 사용할 수 없는 닉네임 (금칙어)    |
-| `DUPLICATE_USERNAME`           | 409  | 이미 사용 중인 아이디             |
-| `INVALID_CREDENTIALS`          | 401  | 아이디 또는 비밀번호 불일치       |
-| `INVALID_FILE_TYPE`            | 400  | 지원하지 않는 파일 형식           |
-| `FILE_TOO_LARGE`               | 413  | 파일 크기 제한 초과               |
-| `FILE_UPLOAD_FAILED`           | 500  | 파일 업로드 실패                  |
-| `OAUTH_PROVIDER_NOT_SUPPORTED` | 400  | 지원하지 않는 OAuth 프로바이더    |
-| `VALIDATION_FAILED`            | 400  | 요청 검증 실패                    |
-| `MISSING_PARAMETER`            | 400  | 필수 파라미터 누락                |
-| `METHOD_NOT_ALLOWED`           | 405  | HTTP 메서드 미지원                |
-| `INVALID_GUESS_TEXT`           | 400  | 정규화 후 빈 문자열               |
+| 코드                           | HTTP | 설명                                     |
+| ------------------------------ | ---- | ---------------------------------------- |
+| `UNAUTHORIZED`                 | 401  | 인증이 필요한 엔드포인트에 미인증        |
+| `INVALID_TOKEN`                | 401  | JWT 유효하지 않음                        |
+| `EXPIRED_TOKEN`                | 401  | JWT 만료                                 |
+| `BLACKLISTED_TOKEN`            | 401  | 로그아웃된 토큰                          |
+| `REFRESH_TOKEN_REUSE_DETECTED` | 401  | Refresh Token 재사용 감지                |
+| `INVALID_REFRESH_TOKEN`        | 401  | Refresh Token 유효하지 않음              |
+| `MEMBER_NOT_FOUND`             | 404  | 회원 미존재                              |
+| `NICKNAME_DUPLICATED`          | 409  | 이미 사용 중인 닉네임                    |
+| `NICKNAME_UNCHANGED`           | 400  | 현재 닉네임과 동일                       |
+| `NICKNAME_FORBIDDEN`           | 400  | 사용할 수 없는 닉네임 (금칙어)           |
+| `DUPLICATE_USERNAME`           | 409  | 이미 사용 중인 아이디                    |
+| `INVALID_CREDENTIALS`          | 401  | 아이디 또는 비밀번호 불일치              |
+| `INVALID_FILE_TYPE`            | 400  | 지원하지 않는 파일 형식                  |
+| `FILE_TOO_LARGE`               | 413  | 파일 크기 제한 초과                      |
+| `FILE_UPLOAD_FAILED`           | 500  | 파일 업로드 실패                         |
+| `OAUTH_PROVIDER_NOT_SUPPORTED` | 400  | 지원하지 않는 OAuth 프로바이더           |
+| `VALIDATION_FAILED`            | 400  | 요청 검증 실패                           |
+| `MISSING_PARAMETER`            | 400  | 필수 파라미터 누락                       |
+| `METHOD_NOT_ALLOWED`           | 405  | HTTP 메서드 미지원                       |
+| `INVALID_GUESS_TEXT`           | 400  | 정규화 후 빈 문자열                      |
 | `HINT_NOT_AVAILABLE`           | 403  | 힌트 조건 미달 (bestSimilarity 60% 미만) |
-| `SENTENCE_NOT_FOUND`           | 404  | 오늘 문제 없음                    |
-| `SESSION_NOT_FOUND`            | 404  | 게임 세션 없음                    |
-| `GAME_EXPIRED`                 | 409  | 게임 세션 만료                    |
-| `CONCURRENT_MODIFICATION`      | 409  | 낙관적 락 충돌                    |
-| `AI_SERVICE_UNAVAILABLE`       | 503  | AI 서비스 불가                    |
-| `RATE_LIMIT_EXCEEDED`          | 429  | 요청 초과 (Retry-After 헤더 포함) |
-| `SSE_MAX_CONNECTIONS`          | 503  | SSE 최대 연결 초과                |
-| `MEMBER_BANNED`                | 403  | 차단된 계정                       |
-| `SENTENCE_DUPLICATE`           | 409  | 이미 존재하는 문장                |
-| `SENTENCE_ALREADY_USED`        | 409  | 이미 출제된 문장                  |
-| `CSV_PARSE_ERROR`              | 400  | CSV 파싱 오류                     |
-| `ANNOUNCEMENT_NOT_FOUND`       | 404  | 공지 미존재                       |
-| `ADMIN_SELF_ACTION`            | 400  | 본인에 대한 어드민 액션           |
-| `ROLE_ALREADY_ASSIGNED`        | 400  | 이미 동일한 역할                  |
-| `INTERNAL_SERVER_ERROR`        | 500  | 내부 서버 오류                    |
+| `SENTENCE_NOT_FOUND`           | 404  | 오늘 문제 없음                           |
+| `SESSION_NOT_FOUND`            | 404  | 게임 세션 없음                           |
+| `GAME_EXPIRED`                 | 409  | 게임 세션 만료                           |
+| `CONCURRENT_MODIFICATION`      | 409  | 낙관적 락 충돌                           |
+| `AI_SERVICE_UNAVAILABLE`       | 503  | AI 서비스 불가                           |
+| `RATE_LIMIT_EXCEEDED`          | 429  | 요청 초과 (Retry-After 헤더 포함)        |
+| `SSE_MAX_CONNECTIONS`          | 503  | SSE 최대 연결 초과                       |
+| `MEMBER_BANNED`                | 403  | 차단된 계정                              |
+| `SENTENCE_DUPLICATE`           | 409  | 이미 존재하는 문장                       |
+| `SENTENCE_ALREADY_USED`        | 409  | 이미 출제된 문장                         |
+| `CSV_PARSE_ERROR`              | 400  | CSV 파싱 오류                            |
+| `ANNOUNCEMENT_NOT_FOUND`       | 404  | 공지 미존재                              |
+| `ADMIN_SELF_ACTION`            | 400  | 본인에 대한 어드민 액션                  |
+| `ROLE_ALREADY_ASSIGNED`        | 400  | 이미 동일한 역할                         |
+| `INTERNAL_SERVER_ERROR`        | 500  | 내부 서버 오류                           |
 
 ---
 
@@ -543,7 +556,7 @@
 | 항목            | 값                                                     |
 | --------------- | ------------------------------------------------------ |
 | Allowed Origins | `${OAUTH_REDIRECT_URI}` (기본 `http://localhost:3000`) |
-| Allowed Methods | GET, POST, PUT, PATCH, DELETE, OPTIONS                  |
+| Allowed Methods | GET, POST, PUT, PATCH, DELETE, OPTIONS                 |
 | Allowed Headers | \*                                                     |
 | Credentials     | `true` (쿠키 포함)                                     |
 
@@ -551,13 +564,13 @@
 
 ## 8. Rate Limiting 상세
 
-| 그룹  | 대상 엔드포인트                | 제한   | 식별 기준                |
-| ----- | ------------------------------ | ------ | ------------------------ |
-| GUESS | `POST /daily/guess`            | 40/min | 익명: IP, 로그인: userId |
-| READ  | 모든 `GET` (OAuth/health 제외) | 90/min | 익명: IP, 로그인: userId |
-| SSE   | `GET /ranking/stream`          | 10/min | 익명: IP, 로그인: userId |
-| AUTH  | `/auth/**`                     | 10/min | 항상 IP                  |
-| ADMIN | `/admin/**`                    | 120/min | userId 기준             |
+| 그룹  | 대상 엔드포인트                | 제한    | 식별 기준                |
+| ----- | ------------------------------ | ------- | ------------------------ |
+| GUESS | `POST /daily/guess`            | 40/min  | 익명: IP, 로그인: userId |
+| READ  | 모든 `GET` (OAuth/health 제외) | 120/min | 익명: IP, 로그인: userId |
+| SSE   | `GET /ranking/stream`          | 10/min  | 익명: IP, 로그인: userId |
+| AUTH  | `/auth/**`                     | 10/min  | 항상 IP                  |
+| ADMIN | `/admin/**`                    | 120/min | userId 기준              |
 
 **응답 헤더**:
 
@@ -570,7 +583,7 @@
 
 ### `GET /announcements/active` — 현재 활성 공지 조회
 
-- **Rate Limit**: READ (60/min)
+- **Rate Limit**: READ (120/min)
 - **응답**:
 
 ```json
