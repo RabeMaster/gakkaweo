@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /mypage
+
+Sitemap: https://gakkaweo.r4b2.xyz/sitemap.xml
