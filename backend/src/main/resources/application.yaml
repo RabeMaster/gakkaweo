@@ -94,7 +94,7 @@ app:
     profile-dir: ${UPLOAD_PROFILE_DIR:./uploads/profiles}
   rate-limit:
     guess-per-minute: ${RATE_LIMIT_GUESS:40}
-    read-per-minute: ${RATE_LIMIT_READ:90}
+    read-per-minute: ${RATE_LIMIT_READ:120}
     sse-per-minute: ${RATE_LIMIT_SSE:10}
     auth-per-minute: ${RATE_LIMIT_AUTH:10}
     admin-per-minute: ${RATE_LIMIT_ADMIN:120}

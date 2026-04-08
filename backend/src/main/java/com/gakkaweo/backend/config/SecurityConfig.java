@@ -89,6 +89,7 @@ public class SecurityConfig {
     configuration.setAllowedHeaders(List.of("*"));
     configuration.setAllowCredentials(true);
     configuration.setExposedHeaders(List.of("Retry-After", "X-Rate-Limit-Remaining"));
+    configuration.setMaxAge(3600L);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
