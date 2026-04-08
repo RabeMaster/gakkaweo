@@ -48,7 +48,9 @@ function BannerItem({
     <div className={`border-4 ${colorClass} shadow-brutal-sm px-5 py-3 flex items-start gap-3`}>
       <div className="flex-1 min-w-0">
         <p className="font-black text-sm">{announcement.title}</p>
-        {announcement.content && <p className="text-xs font-medium mt-0.5 opacity-80">{announcement.content}</p>}
+        {announcement.content && (
+          <p className="whitespace-pre-line text-xs font-medium mt-0.5 opacity-80">{announcement.content}</p>
+        )}
       </div>
       <button
         type="button"

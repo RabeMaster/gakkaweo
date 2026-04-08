@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.Nullable;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -39,6 +40,23 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<?> handleOptimisticLock(ObjectOptimisticLockingFailureException e) {
     log.warn("낙관적 락 충돌 발생: entity={}, id={}", e.getPersistentClassName(), e.getIdentifier());
     ErrorCode errorCode = ErrorCode.CONCURRENT_MODIFICATION;
+    ErrorBody body =
+        new ErrorBody(
+            errorCode.getStatus().value(),
+            errorCode.name(),
+            errorCode.getMessage(),
+            Instant.now().toString());
+    return ResponseEntity.status(errorCode.getStatus()).body(body);
+  }
+
+  @Override
+  protected ResponseEntity<Object> handleHttpMessageNotReadable(
+      HttpMessageNotReadableException ex,
+      HttpHeaders headers,
+      HttpStatusCode status,
+      WebRequest request) {
+    log.warn("잘못된 JSON 요청: {}", ex.getMessage());
+    ErrorCode errorCode = ErrorCode.VALIDATION_FAILED;
     ErrorBody body =
         new ErrorBody(
             errorCode.getStatus().value(),
