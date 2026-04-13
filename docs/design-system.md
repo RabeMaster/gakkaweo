@@ -282,7 +282,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **사이드바**: `border-4 shadow-brutal`. 탭: 대시보드/문장/사용자/시스템. 활성 탭 `bg-yellow-300 text-black`
 - **테이블**: `border-4 shadow-brutal` 래퍼. 헤더 `border-b-4 bg-gray-100 dark:bg-gray-800`. 행 `border-b-2 border-black/20` + hover `bg-yellow-50`
 - **위젯 카드**: `border-4 shadow-brutal-sm`. 라벨 `text-xs uppercase tracking-wide`. 수치 `text-3xl font-black tabular-nums`
-- **상태 배지**: `px-2 py-0.5 text-xs font-black border-2`. ACTIVE=green, DISABLED=gray, ADMIN=red, USER=blue, 차단=gray-800
+- **상태 배지**: `px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white`. ACTIVE=green-400, USED=blue-300, DISABLED=gray-300, ADMIN=red, USER=blue, 차단=gray-800
 - **다이얼로그**: `border-4 shadow-brutal max-w-lg`. 헤더 `border-b-4 px-6 py-5`. 푸터 `border-t-4`. `role="dialog" aria-modal="true"` + Escape 닫기 필수
 - **텍스트 링크 액션**: 테이블 행 내 액션은 `text-indigo-600 dark:text-indigo-400 font-black text-xs hover:underline`
 - **Pagination**: `Button sm secondary` 이전/다음 + `tabular-nums` 페이지 표시
