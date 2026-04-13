@@ -151,6 +151,10 @@ public class AdminSentenceService {
 
   @Transactional
   public SentenceResponse schedule(UUID publicId, ScheduleRequest request) {
+    if (request.date().isBefore(LocalDate.now(KST))) {
+      throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+    }
+
     DailySentence entity = findByPublicIdOrThrow(publicId);
 
     if (entity.getUsedAt() != null) {
