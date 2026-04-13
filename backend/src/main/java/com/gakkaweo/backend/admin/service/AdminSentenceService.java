@@ -232,11 +232,14 @@ public class AdminSentenceService {
               DailySentence reloadedNew = findByPublicIdOrThrow(newSentence.getPublicId());
 
               reloadedCurrent.setUsedAt(null);
-              if (!request.returnOldToPool()) {
+              if (request.returnOldToPool()) {
+                reloadedCurrent.setStatus(DailySentenceStatus.ACTIVE);
+              } else {
                 reloadedCurrent.setStatus(DailySentenceStatus.DISABLED);
               }
 
               reloadedNew.setUsedAt(today);
+              reloadedNew.setStatus(DailySentenceStatus.USED);
               reloadedNew.setScheduledAt(null);
 
               log.info(

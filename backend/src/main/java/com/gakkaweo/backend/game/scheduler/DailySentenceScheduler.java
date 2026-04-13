@@ -3,6 +3,7 @@ package com.gakkaweo.backend.game.scheduler;
 import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
+import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
@@ -150,6 +151,7 @@ public class DailySentenceScheduler {
 
     boolean wasScheduled = sentence.getScheduledAt() != null;
     sentence.setUsedAt(today);
+    sentence.setStatus(DailySentenceStatus.USED);
     sentence.setScheduledAt(null);
     dailySentenceRepository.save(sentence);
     log.info(
