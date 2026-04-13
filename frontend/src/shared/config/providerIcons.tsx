@@ -1,6 +1,6 @@
 export function KakaoIcon({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M12 3C6.48 3 2 6.42 2 10.6c0 2.7 1.74 5.06 4.36 6.4-.14.52-.92 3.36-.95 3.57 0 0-.02.16.08.22.1.06.22.03.22.03.29-.04 3.37-2.2 3.9-2.57.77.11 1.57.17 2.39.17 5.52 0 10-3.42 10-7.63S17.52 3 12 3z" />
     </svg>
   );
@@ -8,7 +8,7 @@ export function KakaoIcon({ size = 20 }: { size?: number }) {
 
 export function GoogleIcon({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24">
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
         fill="#4285F4"
@@ -31,7 +31,7 @@ export function GoogleIcon({ size = 20 }: { size?: number }) {
 
 export function NaverIcon({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path d="M16.27 3v8.86L7.73 3H3v18h4.73v-8.86L16.27 21H21V3h-4.73z" />
     </svg>
   );
@@ -39,7 +39,7 @@ export function NaverIcon({ size = 20 }: { size?: number }) {
 
 export function GakkaweoIcon({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
       <path
         fillRule="evenodd"
         clipRule="evenodd"

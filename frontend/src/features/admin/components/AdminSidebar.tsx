@@ -11,7 +11,10 @@ export function AdminSidebar() {
   const { pathname } = useLocation();
 
   return (
-    <nav className="w-56 shrink-0 border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal">
+    <nav
+      aria-label="관리 메뉴"
+      className="w-56 shrink-0 border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal"
+    >
       <div className="border-b-4 border-black dark:border-white px-5 py-4">
         <h2 className="text-lg font-black tracking-tight">관리 패널</h2>
       </div>
@@ -29,7 +32,9 @@ export function AdminSidebar() {
                     : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-black dark:hover:text-white",
                 ].join(" ")}
               >
-                <span className="text-base leading-none">{tab.icon}</span>
+                <span className="text-base leading-none" aria-hidden="true">
+                  {tab.icon}
+                </span>
                 {tab.label}
               </Link>
             </li>
