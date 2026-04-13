@@ -1,6 +1,65 @@
+# 가까워 robots.txt — AI 임베딩 유사도 판별 기반 데일리 웹 게임
+
 User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /mypage
+
+# 검색 엔진 크롤러 명시 허용
+User-agent: Googlebot
+Allow: /
+Disallow: /admin
+Disallow: /mypage
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+Disallow: /admin
+Disallow: /mypage
+
+User-agent: Yeti
+Allow: /
+Disallow: /admin
+Disallow: /mypage
+
+User-agent: NaverBot
+Allow: /
+Disallow: /admin
+Disallow: /mypage
+
+User-agent: Daum
+Allow: /
+Disallow: /admin
+Disallow: /mypage
+
+# 소셜 언퍼링(Unfurl) 봇 명시 허용 — 미리보기 생성용
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Facebot
+Allow: /
+
+User-agent: Kakaotalk-Scrap
+Allow: /
+
+User-agent: Discordbot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: Slackbot-LinkExpanding
+Allow: /
+
+User-agent: TelegramBot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
 
 Sitemap: https://gakkaweo.r4b2.xyz/sitemap.xml
