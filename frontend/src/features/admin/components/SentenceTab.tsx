@@ -14,7 +14,7 @@ function StatusBadge({ status }: { status: string }) {
     status === "ACTIVE"
       ? "bg-green-400 text-black"
       : status === "USED"
-        ? "bg-blue-300 text-black border-blue-500"
+        ? "bg-blue-300 text-black"
         : "bg-gray-300 dark:bg-gray-600 text-black dark:text-white";
   return (
     <span className={`inline-block px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white ${color}`}>
