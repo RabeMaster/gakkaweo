@@ -3,7 +3,7 @@
 export interface SentenceResponse {
   publicId: string;
   sentence: string;
-  status: "ACTIVE" | "DISABLED";
+  status: "ACTIVE" | "USED" | "DISABLED";
   usedAt: string | null;
   scheduledAt: string | null;
   totalPlayers: number | null;

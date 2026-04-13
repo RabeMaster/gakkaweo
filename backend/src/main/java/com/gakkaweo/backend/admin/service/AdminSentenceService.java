@@ -151,6 +151,10 @@ public class AdminSentenceService {
 
   @Transactional
   public SentenceResponse schedule(UUID publicId, ScheduleRequest request) {
+    if (request.date().isBefore(LocalDate.now(KST))) {
+      throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+    }
+
     DailySentence entity = findByPublicIdOrThrow(publicId);
 
     if (entity.getUsedAt() != null) {
@@ -228,11 +232,14 @@ public class AdminSentenceService {
               DailySentence reloadedNew = findByPublicIdOrThrow(newSentence.getPublicId());
 
               reloadedCurrent.setUsedAt(null);
-              if (!request.returnOldToPool()) {
+              if (request.returnOldToPool()) {
+                reloadedCurrent.setStatus(DailySentenceStatus.ACTIVE);
+              } else {
                 reloadedCurrent.setStatus(DailySentenceStatus.DISABLED);
               }
 
               reloadedNew.setUsedAt(today);
+              reloadedNew.setStatus(DailySentenceStatus.USED);
               reloadedNew.setScheduledAt(null);
 
               log.info(

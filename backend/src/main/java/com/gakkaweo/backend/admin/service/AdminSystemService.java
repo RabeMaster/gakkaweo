@@ -95,6 +95,7 @@ public class AdminSystemService {
   public AnnouncementResponse createAnnouncement(
       AnnouncementCreateRequest request, UUID adminPublicId) {
     AnnouncementType type = parseAnnouncementType(request.type());
+    validateAnnouncementDates(request.startsAt(), request.endsAt());
 
     AnnouncementResponse response =
         transactionTemplate.execute(
@@ -148,6 +149,7 @@ public class AdminSystemService {
               if (request.endsAt() != null) {
                 announcement.setEndsAt(request.endsAt());
               }
+              validateAnnouncementDates(announcement.getStartsAt(), announcement.getEndsAt());
               announcementRepository.save(announcement);
               return AnnouncementResponse.from(announcement);
             });
@@ -252,6 +254,12 @@ public class AdminSystemService {
     return memberRepository
         .findByPublicId(publicId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+  }
+
+  private void validateAnnouncementDates(Instant startsAt, Instant endsAt) {
+    if (endsAt != null && endsAt.isBefore(startsAt)) {
+      throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+    }
   }
 
   private AnnouncementType parseAnnouncementType(String type) {

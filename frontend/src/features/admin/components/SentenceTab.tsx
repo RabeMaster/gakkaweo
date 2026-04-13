@@ -11,7 +11,11 @@ import { ApiError } from "@/shared/api/client";
 
 function StatusBadge({ status }: { status: string }) {
   const color =
-    status === "ACTIVE" ? "bg-green-400 text-black" : "bg-gray-300 dark:bg-gray-600 text-black dark:text-white";
+    status === "ACTIVE"
+      ? "bg-green-400 text-black"
+      : status === "USED"
+        ? "bg-blue-300 text-black"
+        : "bg-gray-300 dark:bg-gray-600 text-black dark:text-white";
   return (
     <span className={`inline-block px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white ${color}`}>
       {status}
@@ -70,6 +74,7 @@ export function SentenceTab() {
         >
           <option value="">전체</option>
           <option value="ACTIVE">ACTIVE</option>
+          <option value="USED">USED</option>
           <option value="DISABLED">DISABLED</option>
         </select>
       </div>

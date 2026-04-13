@@ -609,7 +609,7 @@
 
 #### `GET /admin/sentences` — 문장 목록
 
-- **쿼리**: `status` (선택, ACTIVE/DISABLED), `page` (기본 0), `size` (기본 20)
+- **쿼리**: `status` (선택, ACTIVE/USED/DISABLED), `page` (기본 0), `size` (기본 20)
 - **응답**: `{sentences: [...], page, size, totalElements, totalPages}`
 
 #### `POST /admin/sentences` — 문장 등록

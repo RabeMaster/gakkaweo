@@ -140,7 +140,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       : "bg-white dark:bg-gray-900 text-black dark:text-white shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
                   ].join(" ")}
                 >
-                  <span className="block text-lg">{icon}</span>
+                  <span className="block text-lg" aria-hidden="true">
+                    {icon}
+                  </span>
                   <span className="block mt-1">{label}</span>
                 </button>
               ))}
@@ -152,9 +154,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               사운드
             </h3>
             <div className="flex items-center gap-3">
-              <span className="text-lg shrink-0">{volume === 0 ? "🔇" : "🔊"}</span>
+              <span className="text-lg shrink-0" aria-hidden="true">
+                {volume === 0 ? "🔇" : "🔊"}
+              </span>
               <input
                 type="range"
+                aria-label="사운드 볼륨"
                 min="0"
                 max="1"
                 step="0.1"

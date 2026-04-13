@@ -22,7 +22,7 @@ const TOP_RANK_STYLES: Record<number, { bg: string; shadowVar: string }> = {
 
 function TrophyIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-black">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-black" aria-hidden="true">
       <path d="M5 3h14v7c0 3.9-3.1 7-7 7s-7-3.1-7-7V3z" />
       <path d="M5 5H2.5c0 3.5 1.5 5.5 2.5 6" />
       <path d="M19 5h2.5c0 3.5-1.5 5.5-2.5 6" />
@@ -35,7 +35,14 @@ function TrophyIcon() {
 function DefaultAvatar() {
   return (
     <div className="w-7 h-7 border-2 border-black dark:border-white bg-gray-200 dark:bg-gray-800 flex items-center justify-center shrink-0">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" className="text-gray-400 dark:text-gray-500">
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="text-gray-400 dark:text-gray-500"
+        aria-hidden="true"
+      >
         <circle cx="12" cy="9" r="3.5" />
         <path d="M12 14c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" />
       </svg>

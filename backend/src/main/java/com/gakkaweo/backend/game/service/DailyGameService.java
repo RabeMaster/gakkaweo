@@ -53,6 +53,10 @@ public class DailyGameService {
   private final GameProperties gameProperties;
   private final ApplicationEventPublisher eventPublisher;
 
+  private static boolean isPerfect(BigDecimal similarity) {
+    return similarity.compareTo(new BigDecimal("100")) >= 0;
+  }
+
   @Transactional(readOnly = true)
   public TodayResponse getToday() {
     DailySentence sentence = findTodaySentence();
@@ -266,10 +270,6 @@ public class DailyGameService {
     return memberRepository
         .findByPublicId(publicId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-  }
-
-  private static boolean isPerfect(BigDecimal similarity) {
-    return similarity.compareTo(new BigDecimal("100")) >= 0;
   }
 
   private void validateGuessAllowed(GameSession session) {
