@@ -2,17 +2,31 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <link rel="canonical" href="https://gakkaweo.r4b2.xyz/" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="매일 정답 문장을 맞추는 AI 유사도 기반 단어 게임" />
+    <meta
+      name="description"
+      content="AI 임베딩 유사도 판별 기반 한국어 데일리 웹 게임. 매일 새로운 정답 문장을 의미 유사도로 맞춰보세요."
+    />
+    <meta
+      name="keywords"
+      content="가까워, 가까워 게임, AI 유사도 게임, 한국어 단어 게임, 의미 유사도, 임베딩 게임, 데일리 게임, 일일 게임, semantle 한국어, 세멘틀, 꼬멘틀, 뉴멘틀, 끄투, sentence similarity game, korean word game"
+    />
     <meta name="theme-color" content="#FDE047" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="가까워 — AI 유사도 단어 게임" />
-    <meta property="og:description" content="매일 정답 문장을 맞추는 AI 유사도 기반 단어 게임" />
-    <meta property="og:url" content="https://gakkaweo.r4b2.xyz" />
+    <meta property="og:title" content="가까워 - AI 유사도 기반 게임" />
+    <meta
+      property="og:description"
+      content="AI 임베딩 유사도 판별 기반 한국어 데일리 웹 게임. 매일 새로운 정답 문장을 의미 유사도로 맞춰보세요."
+    />
+    <meta property="og:url" content="https://gakkaweo.r4b2.xyz/" />
     <meta property="og:image" content="https://gakkaweo.r4b2.xyz/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -21,11 +35,51 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="가까워 — AI 유사도 단어 게임" />
-    <meta name="twitter:description" content="매일 정답 문장을 맞추는 AI 유사도 기반 단어 게임" />
+    <meta name="twitter:title" content="가까워 - AI 유사도 기반 게임" />
+    <meta
+      name="twitter:description"
+      content="AI 임베딩 유사도 판별 기반 한국어 데일리 웹 게임. 매일 새로운 정답 문장을 의미 유사도로 맞춰보세요."
+    />
     <meta name="twitter:image" content="https://gakkaweo.r4b2.xyz/og-image.png" />
 
-    <title>가까워 — AI 유사도 단어 게임</title>
+    <title>가까워 - AI 유사도 기반 게임</title>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "가까워",
+        "alternateName": "Gakkaweo",
+        "url": "https://gakkaweo.r4b2.xyz/",
+        "description": "AI 임베딩 유사도 판별 기반 한국어 데일리 웹 게임. 매일 새로운 정답 문장을 의미 유사도로 맞춰보세요.",
+        "inLanguage": "ko-KR"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": ["Game", "WebApplication"],
+        "name": "가까워",
+        "alternateName": "Gakkaweo",
+        "url": "https://gakkaweo.r4b2.xyz/",
+        "description": "AI 임베딩 유사도 판별 기반 한국어 데일리 웹 게임. 매일 새로운 정답 문장을 의미 유사도로 맞춰보세요.",
+        "inLanguage": "ko-KR",
+        "genre": "Word Game",
+        "gamePlatform": "Web Browser",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript. Requires HTML5.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "KRW"
+        },
+        "author": {
+          "@type": "Person",
+          "name": "Park Jun Ho"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
