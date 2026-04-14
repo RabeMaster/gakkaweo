@@ -202,12 +202,13 @@ export function GamePage() {
     }
     setInputError(null);
 
-    if (!normalizeGuessText(text)) {
+    const normalizedInput = normalizeGuessText(text);
+    if (!normalizedInput) {
       setInputError("유효한 문자(한글, 영문, 숫자)를 포함해야 합니다");
       return;
     }
 
-    const existing = displayGuesses.find((g) => g.guessText === text);
+    const existing = displayGuesses.find((g) => normalizeGuessText(g.guessText) === normalizedInput);
     if (existing) {
       setInputError(`이미 추측한 문장입니다 (유사도: ${existing.similarity.toFixed(1)}%)`);
       return;
