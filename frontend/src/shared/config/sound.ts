@@ -29,6 +29,11 @@ export function playSound(type: SoundType, options?: { stopPrevious?: boolean })
   }
   const audio = new Audio(SOUND_PATHS[type]);
   audio.volume = volume;
+  audio.onended = () => {
+    if (currentAudio === audio) {
+      currentAudio = null;
+    }
+  };
   audio.play().catch(() => {});
   currentAudio = audio;
 }
