@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { HintEntry } from "@/shared/api/types";
 import { Card } from "@/shared/ui/Card";
 import { SimilarityBadge } from "@/shared/ui/SimilarityBadge";
@@ -14,24 +14,51 @@ function SkeletonRow() {
   return <div className="h-8 bg-gray-200 dark:bg-gray-700 animate-pulse" />;
 }
 
+function HintRow({ hint, isLast }: { hint: HintEntry; isLast: boolean }) {
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [isTruncated, setIsTruncated] = useState(false);
+  const [isHover, setIsHover] = useState(false);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) {
+      return;
+    }
+    setIsTruncated(el.scrollHeight > el.clientHeight);
+  }, [hint.guessText]);
+
+  return (
+    <div
+      className={[
+        "relative flex items-start justify-between gap-2 py-2",
+        isLast ? "" : "border-b-2 border-black/20 dark:border-white/20",
+      ].join(" ")}
+      onMouseEnter={() => setIsHover(true)}
+      onMouseLeave={() => setIsHover(false)}
+    >
+      <span ref={textRef} className="text-sm font-medium line-clamp-2 break-all">
+        {hint.guessText}
+      </span>
+      <span className="shrink-0">
+        <SimilarityBadge similarity={hint.similarity} />
+      </span>
+      {isTruncated && isHover && (
+        <div
+          role="tooltip"
+          className="absolute z-20 inset-x-0 top-full mt-1 border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal-sm px-3 py-2 text-sm font-medium break-all"
+        >
+          {hint.guessText}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HintList({ hints }: { hints: HintEntry[] }) {
   return (
     <>
       {hints.map((hint, i) => (
-        <div
-          key={hint.guessText}
-          className={[
-            "flex items-center justify-between gap-2 py-2",
-            i < hints.length - 1 ? "border-b-2 border-black/20 dark:border-white/20" : "",
-          ].join(" ")}
-        >
-          <span className="text-sm font-medium truncate" title={hint.guessText}>
-            {hint.guessText}
-          </span>
-          <span className="shrink-0">
-            <SimilarityBadge similarity={hint.similarity} />
-          </span>
-        </div>
+        <HintRow key={hint.guessText} hint={hint} isLast={i === hints.length - 1} />
       ))}
     </>
   );

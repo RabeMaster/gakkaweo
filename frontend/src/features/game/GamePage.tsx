@@ -16,7 +16,7 @@ import { GuessHistory } from "@/features/game/components/GuessHistory";
 import { GameClearedCard } from "@/features/game/components/GameClearedCard";
 import { YesterdayAnswer } from "@/features/game/components/YesterdayAnswer";
 import { HelpModal, HELP_SHOWN_KEY } from "@/features/game/components/HelpModal";
-import { getSoundVolume } from "@/shared/config/sound";
+import { playSound } from "@/shared/config/sound";
 import { normalizeGuessText } from "@/shared/utils/normalize";
 
 export function GamePage() {
@@ -102,12 +102,7 @@ export function GamePage() {
     confetti({ ...opts, origin: { x: 0.65, y: 0.5 } });
     confetti({ ...opts, origin: { x: 0.8, y: 0.5 } });
 
-    const vol = getSoundVolume();
-    if (vol > 0) {
-      const audio = new Audio("/sounds/clear.mp3");
-      audio.volume = vol;
-      audio.play().catch(() => {});
-    }
+    playSound("clear");
   }, [localCleared]);
 
   useEffect(
@@ -132,6 +127,20 @@ export function GamePage() {
     queryClient.invalidateQueries({ queryKey: ["game", "status", sentenceId] });
     queryClient.invalidateQueries({ queryKey: ["game", "hints", sentenceId] });
     queryClient.invalidateQueries({ queryKey: ["ranking"] });
+  }
+
+  function handleGuessSuccess(guessText: string, res: GuessResponse) {
+    if (isAuthenticated) {
+      appendGuessToCache(guessText, res);
+    } else {
+      addAnonGuess(guessText, res.similarity, res.isCorrect);
+    }
+    if (res.isCorrect && !isCleared) {
+      setLocalCleared(true);
+    }
+    if (res.similarity < 10.0) {
+      playSound("fail");
+    }
   }
 
   function handleGuessError(err: unknown, sentenceId: string, guessText: string) {
@@ -165,14 +174,7 @@ export function GamePage() {
             {
               onSuccess: (res) => {
                 retryRef.current = false;
-                if (isAuthenticated) {
-                  appendGuessToCache(guessText, res);
-                } else {
-                  addAnonGuess(guessText, res.similarity, res.isCorrect);
-                }
-                if (res.isCorrect && !isCleared) {
-                  setLocalCleared(true);
-                }
+                handleGuessSuccess(guessText, res);
               },
               onError: () => {
                 retryRef.current = false;
@@ -202,12 +204,13 @@ export function GamePage() {
     }
     setInputError(null);
 
-    if (!normalizeGuessText(text)) {
+    const normalizedInput = normalizeGuessText(text);
+    if (!normalizedInput) {
       setInputError("유효한 문자(한글, 영문, 숫자)를 포함해야 합니다");
       return;
     }
 
-    const existing = displayGuesses.find((g) => g.guessText === text);
+    const existing = displayGuesses.find((g) => normalizeGuessText(g.guessText) === normalizedInput);
     if (existing) {
       setInputError(`이미 추측한 문장입니다 (유사도: ${existing.similarity.toFixed(1)}%)`);
       return;
@@ -216,16 +219,7 @@ export function GamePage() {
     guessMutation.mutate(
       { sentenceId, guessText: text },
       {
-        onSuccess: (res) => {
-          if (isAuthenticated) {
-            appendGuessToCache(text, res);
-          } else {
-            addAnonGuess(text, res.similarity, res.isCorrect);
-          }
-          if (res.isCorrect && !isCleared) {
-            setLocalCleared(true);
-          }
-        },
+        onSuccess: (res) => handleGuessSuccess(text, res),
         onError: (err) => handleGuessError(err, sentenceId, text),
       },
     );
