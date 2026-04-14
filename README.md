@@ -210,23 +210,11 @@ pnpm dev
 
 ### 5. 초기 데이터 설정
 
-최초 실행 시 계정과 문장 데이터가 없으므로 게임이 동작하지 않습니다. 아래 순서로 초기 데이터를 넣어주세요.
+최초 실행 시 `InitialDataSeeder`가 다음을 자동으로 처리합니다.
 
-1. **회원가입**: `http://localhost:3000/login`에서 로컬 계정 생성
-2. **오늘의 문장 등록**: DB에 직접 문장을 추가합니다.
-
-```sql
-INSERT INTO daily_sentences (public_id, sentence, status, used_at, created_at)
-VALUES (gen_random_uuid(), '오늘 날씨가 정말 좋다', 'ACTIVE', CURRENT_DATE, NOW());
-```
-
-3. **Backend 재시작**: 문장 추가 후 Backend를 재시작하면 게임을 플레이할 수 있습니다.
-
-> **어드민 패널 사용**: 가입한 계정의 role을 `ADMIN`으로 변경하면 `/admin`에서 문장 등록/삭제, 사용자 관리 등을 UI로 할 수 있습니다.
->
-> ```sql
-> UPDATE members SET role = 'ADMIN' WHERE nickname = '가입한_닉네임';
-> ```
+- **기본 문장 5개** 자동 삽입 (`backend/src/main/resources/seed/sentences.txt`). 파일을 편집해 문장을 추가·교체할 수 있으며, 중복은 자동 skip됩니다.
+- `.env`에 `SEED_ADMIN_PASSWORD`(8자 이상)를 설정하면 **admin 계정이 자동 생성**됩니다 (username: `admin`, 닉네임 자동 생성). 이후 `/admin` 접근이 가능합니다.
+- 비밀번호 8자 미만이거나 시드 파일이 없으면 서버 실행이 중단됩니다.
 
 ---
 
