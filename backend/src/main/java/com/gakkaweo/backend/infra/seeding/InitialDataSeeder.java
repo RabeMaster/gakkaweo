@@ -30,7 +30,6 @@ import org.springframework.util.StringUtils;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-@Order(Ordered.HIGHEST_PRECEDENCE)
 public class InitialDataSeeder {
 
   private static final String SEED_SENTENCES_PATH = "seed/sentences.txt";
@@ -46,6 +45,7 @@ public class InitialDataSeeder {
   private final TransactionTemplate transactionTemplate;
 
   @EventListener(ApplicationReadyEvent.class)
+  @Order(Ordered.HIGHEST_PRECEDENCE)
   public void onApplicationReady() {
     boolean sentencesEmpty = dailySentenceRepository.count() == 0;
     boolean membersEmpty = memberRepository.count() == 0;
