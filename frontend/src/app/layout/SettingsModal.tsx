@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useThemeStore } from "@/shared/stores/useThemeStore";
-import { SOUND_VOLUME_KEY, getSoundVolume } from "@/shared/config/sound";
+import {
+  SOUND_VOLUME_KEY,
+  type SoundType,
+  getSoundVolume,
+  playSound,
+  setCurrentSoundVolume,
+  stopCurrentSound,
+} from "@/shared/config/sound";
 
 type Theme = "light" | "dark" | "system";
 
@@ -15,14 +22,13 @@ interface SettingsModalProps {
   onClose: () => void;
 }
 
-const SOUND_TESTS: { label: string; file: string; color: string }[] = [
-  { label: "클리어", file: "/sounds/clear.mp3", color: "bg-green-400" },
+const SOUND_TESTS: { label: string; type: SoundType; color: string }[] = [
+  { label: "클리어", type: "clear", color: "bg-green-400" },
 ];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { theme, setTheme } = useThemeStore();
   const modalRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [volume, setVolume] = useState(getSoundVolume);
 
   function handleVolumeChange(v: number) {
@@ -32,25 +38,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     } catch {
       // 스토리지 접근 불가 시 무시
     }
-    if (audioRef.current) {
-      audioRef.current.volume = v;
+    if (v <= 0) {
+      stopCurrentSound();
+    } else {
+      setCurrentSoundVolume(v);
     }
   }
 
-  function stopAudio() {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
-    }
-  }
-
-  function playTestSound(file: string) {
-    stopAudio();
-    const audio = new Audio(file);
-    audio.volume = volume;
-    audio.play().catch(() => {});
-    audioRef.current = audio;
+  function playTestSound(type: SoundType) {
+    playSound(type, { stopPrevious: true });
   }
 
   useEffect(() => {
@@ -89,7 +85,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (!isOpen) {
-      stopAudio();
+      stopCurrentSound();
     }
   }, [isOpen]);
 
@@ -176,11 +172,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               사운드 테스트
             </h3>
             <div className="flex gap-2">
-              {SOUND_TESTS.map(({ label, file, color }) => (
+              {SOUND_TESTS.map(({ label, type, color }) => (
                 <button
                   type="button"
-                  key={file}
-                  onClick={() => playTestSound(file)}
+                  key={type}
+                  onClick={() => playTestSound(type)}
                   disabled={volume === 0}
                   className={[
                     `border-2 border-black dark:border-white px-3 py-1.5 text-xs font-black transition-all duration-100 ${color} text-black`,

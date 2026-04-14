@@ -16,7 +16,7 @@ import { GuessHistory } from "@/features/game/components/GuessHistory";
 import { GameClearedCard } from "@/features/game/components/GameClearedCard";
 import { YesterdayAnswer } from "@/features/game/components/YesterdayAnswer";
 import { HelpModal, HELP_SHOWN_KEY } from "@/features/game/components/HelpModal";
-import { getSoundVolume } from "@/shared/config/sound";
+import { playSound } from "@/shared/config/sound";
 import { normalizeGuessText } from "@/shared/utils/normalize";
 
 export function GamePage() {
@@ -102,12 +102,7 @@ export function GamePage() {
     confetti({ ...opts, origin: { x: 0.65, y: 0.5 } });
     confetti({ ...opts, origin: { x: 0.8, y: 0.5 } });
 
-    const vol = getSoundVolume();
-    if (vol > 0) {
-      const audio = new Audio("/sounds/clear.mp3");
-      audio.volume = vol;
-      audio.play().catch(() => {});
-    }
+    playSound("clear");
   }, [localCleared]);
 
   useEffect(
