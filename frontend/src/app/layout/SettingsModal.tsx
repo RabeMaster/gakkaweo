@@ -24,6 +24,7 @@ interface SettingsModalProps {
 
 const SOUND_TESTS: { label: string; type: SoundType; color: string }[] = [
   { label: "클리어", type: "clear", color: "bg-green-400" },
+  { label: "실패", type: "fail", color: "bg-red-400" },
 ];
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {

@@ -1,10 +1,11 @@
 export const SOUND_VOLUME_KEY = "sound_volume";
 export const DEFAULT_VOLUME = 0.7;
 
-export type SoundType = "clear";
+export type SoundType = "clear" | "fail";
 
 export const SOUND_PATHS: Record<SoundType, string> = {
   clear: "/sounds/clear.mp3",
+  fail: "/sounds/faa.mp3",
 };
 
 let currentAudio: HTMLAudioElement | null = null;

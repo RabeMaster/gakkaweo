@@ -129,6 +129,20 @@ export function GamePage() {
     queryClient.invalidateQueries({ queryKey: ["ranking"] });
   }
 
+  function handleGuessSuccess(guessText: string, res: GuessResponse) {
+    if (isAuthenticated) {
+      appendGuessToCache(guessText, res);
+    } else {
+      addAnonGuess(guessText, res.similarity, res.isCorrect);
+    }
+    if (res.isCorrect && !isCleared) {
+      setLocalCleared(true);
+    }
+    if (res.similarity < 10.0) {
+      playSound("fail");
+    }
+  }
+
   function handleGuessError(err: unknown, sentenceId: string, guessText: string) {
     if (!(err instanceof ApiError)) {
       addToast("알 수 없는 오류가 발생했습니다.", "error");
@@ -160,14 +174,7 @@ export function GamePage() {
             {
               onSuccess: (res) => {
                 retryRef.current = false;
-                if (isAuthenticated) {
-                  appendGuessToCache(guessText, res);
-                } else {
-                  addAnonGuess(guessText, res.similarity, res.isCorrect);
-                }
-                if (res.isCorrect && !isCleared) {
-                  setLocalCleared(true);
-                }
+                handleGuessSuccess(guessText, res);
               },
               onError: () => {
                 retryRef.current = false;
@@ -212,16 +219,7 @@ export function GamePage() {
     guessMutation.mutate(
       { sentenceId, guessText: text },
       {
-        onSuccess: (res) => {
-          if (isAuthenticated) {
-            appendGuessToCache(text, res);
-          } else {
-            addAnonGuess(text, res.similarity, res.isCorrect);
-          }
-          if (res.isCorrect && !isCleared) {
-            setLocalCleared(true);
-          }
-        },
+        onSuccess: (res) => handleGuessSuccess(text, res),
         onError: (err) => handleGuessError(err, sentenceId, text),
       },
     );
