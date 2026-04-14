@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +77,7 @@ public class InitialDataSeeder {
     }
 
     Set<String> seen = new HashSet<>();
-    int inserted = 0;
+    List<DailySentence> sentences = new ArrayList<>();
     try (InputStream is = resource.getInputStream();
         BufferedReader reader =
             new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
@@ -85,19 +87,17 @@ public class InitialDataSeeder {
         if (sentence.isEmpty() || sentence.startsWith("#") || !seen.add(sentence)) {
           continue;
         }
-        final String value = sentence;
-        transactionTemplate.executeWithoutResult(
-            status -> dailySentenceRepository.save(new DailySentence(value)));
-        inserted++;
+        sentences.add(new DailySentence(sentence));
       }
     } catch (IOException e) {
       throw new IllegalStateException("시드 파일 읽기 실패: " + SEED_SENTENCES_PATH, e);
     }
 
-    if (inserted == 0) {
+    if (sentences.isEmpty()) {
       throw new IllegalStateException("시드 파일에서 유효한 문장을 찾지 못함: " + SEED_SENTENCES_PATH);
     }
-    log.info("문장 시딩 완료: 삽입={}", inserted);
+    transactionTemplate.executeWithoutResult(status -> dailySentenceRepository.saveAll(sentences));
+    log.info("문장 시딩 완료: 삽입={}", sentences.size());
   }
 
   private void seedAdmin() {
