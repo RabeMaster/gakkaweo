@@ -63,7 +63,7 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           REDIS_PASSWORD: ""
-          JWT_ACCESS_SECRET: ci-dummy
+          JWT_ACCESS_SECRET: Y2ktZHVtbXktand0LXNlY3JldC1rZXktZm9yLW9wZW5hcGktZG9jcy1nZW5lcmF0aW9u
           SEED_ADMIN_PASSWORD: ci-dummy-pw
           APP_OPENAPI_DOCS_MODE: true
           OAUTH_KAKAO_CLIENT_ID: ci-dummy
