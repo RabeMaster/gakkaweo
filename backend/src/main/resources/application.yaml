@@ -103,6 +103,20 @@ app:
   seed:
     admin-password: ${SEED_ADMIN_PASSWORD:}
 
+  openapi:
+    docs-mode: ${APP_OPENAPI_DOCS_MODE:false}
+
+springdoc:
+  api-docs:
+    groups:
+      enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    disable-swagger-default-url: true
+  show-actuator: false
+
 resilience4j:
   circuitbreaker:
     instances:

@@ -9,7 +9,11 @@ public class EndpointGroupResolver {
     if (uri.equals("/health")
         || uri.startsWith("/uploads/")
         || uri.startsWith("/login/oauth2/")
-        || uri.startsWith("/oauth2/authorization/")) {
+        || uri.startsWith("/oauth2/authorization/")
+        || uri.startsWith("/swagger-ui")
+        || uri.startsWith("/v3/api-docs")
+        || uri.startsWith("/swagger-resources")
+        || uri.startsWith("/webjars/")) {
       return EndpointGroup.NONE;
     }
 

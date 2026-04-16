@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.5.11'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '8.4.0'
+    id 'org.springdoc.openapi-gradle-plugin' version '1.9.0'
 }
 
 group = 'com.gakkaweo'
@@ -39,6 +40,9 @@ dependencies {
     // Rate Limiting
     implementation 'com.bucket4j:bucket4j_jdk17-core:8.17.0'
 
+    // OpenAPI / Swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-database-postgresql'
     compileOnly 'org.projectlombok:lombok'
@@ -57,6 +61,16 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
     }
+}
+
+openApi {
+    apiDocsUrl = 'http://localhost:8080/v3/api-docs/full'
+    outputDir = file("${layout.buildDirectory.get()}/openapi")
+    outputFileName = 'openapi-full.json'
+    customBootRun {
+        args = ['--app.openapi.docs-mode=true']
+    }
+    waitTimeInSeconds = 120
 }
 
 tasks.named('test') {
