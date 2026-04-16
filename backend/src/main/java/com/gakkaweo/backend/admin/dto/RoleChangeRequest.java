@@ -1,6 +1,15 @@
 package com.gakkaweo.backend.admin.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
-public record RoleChangeRequest(@NotBlank @Pattern(regexp = "USER|ADMIN") String role) {}
+@Schema(description = "역할 변경 요청")
+public record RoleChangeRequest(
+    @Schema(
+            description = "변경할 역할",
+            allowableValues = {"USER", "ADMIN"},
+            example = "ADMIN")
+        @NotBlank
+        @Pattern(regexp = "USER|ADMIN")
+        String role) {}
