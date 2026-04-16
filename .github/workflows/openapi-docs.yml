@@ -24,8 +24,8 @@ jobs:
         image: postgres:16-alpine
         env:
           POSTGRES_DB: gakkaweo
-          POSTGRES_USER: gakkaweo
-          POSTGRES_PASSWORD: gakkaweo
+          POSTGRES_USER: ci-dummy
+          POSTGRES_PASSWORD: ci-dummy
         ports:
           - 5432:5432
         options: >-
@@ -58,14 +58,20 @@ jobs:
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_USER: gakkaweo
-          DB_PASSWORD: gakkaweo
+          DB_USER: ci-dummy
+          DB_PASSWORD: ci-dummy
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           REDIS_PASSWORD: ""
-          JWT_ACCESS_SECRET: ci-dummy-secret-key-for-openapi-docs-generation-only
-          SEED_ADMIN_PASSWORD: admin1234
+          JWT_ACCESS_SECRET: ci-dummy
+          SEED_ADMIN_PASSWORD: ci-dummy-pw
           APP_OPENAPI_DOCS_MODE: true
+          OAUTH_KAKAO_CLIENT_ID: ci-dummy
+          OAUTH_KAKAO_CLIENT_SECRET: ci-dummy
+          OAUTH_GOOGLE_CLIENT_ID: ci-dummy
+          OAUTH_GOOGLE_CLIENT_SECRET: ci-dummy
+          OAUTH_NAVER_CLIENT_ID: ci-dummy
+          OAUTH_NAVER_CLIENT_SECRET: ci-dummy
         run: |
           chmod +x gradlew
           ./gradlew generateOpenApiDocs

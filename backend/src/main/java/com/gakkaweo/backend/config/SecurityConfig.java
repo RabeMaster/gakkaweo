@@ -8,6 +8,7 @@ import com.gakkaweo.backend.auth.oauth2.CookieAuthorizationRequestRepository;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginFailureHandler;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import com.gakkaweo.backend.auth.oauth2.service.CustomOAuth2UserService;
+import com.gakkaweo.backend.auth.security.RestAccessDeniedHandler;
 import com.gakkaweo.backend.auth.security.RestAuthenticationEntryPoint;
 import com.gakkaweo.backend.config.openapi.OpenApiProperties;
 import com.gakkaweo.backend.ratelimit.filter.RateLimitFilter;
@@ -39,6 +40,7 @@ public class SecurityConfig {
   private final CookieAuthorizationRequestRepository authorizationRequestRepository;
   private final OAuth2Properties oAuth2Properties;
   private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+  private final RestAccessDeniedHandler restAccessDeniedHandler;
   private final OpenApiProperties openApiProperties;
 
   @Bean
@@ -81,12 +83,15 @@ public class SecurityConfig {
                     .requestMatchers("/announcements/active")
                     .permitAll()
                     .requestMatchers("/admin/**")
-                    .permitAll() // TEMP
+                    .hasRole("ADMIN")
                     .requestMatchers("/daily/**")
                     .authenticated()
                     .anyRequest()
                     .authenticated())
-        .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
+        .exceptionHandling(
+            ex ->
+                ex.authenticationEntryPoint(restAuthenticationEntryPoint)
+                    .accessDeniedHandler(restAccessDeniedHandler))
         .oauth2Login(
             oauth2 ->
                 oauth2

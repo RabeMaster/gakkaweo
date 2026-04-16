@@ -50,7 +50,7 @@ import java.lang.annotation.Target;
                   @ExampleObject(
                       value =
                           """
-              {"status":403,"code":"MEMBER_BANNED","message":"차단된 계정입니다","timestamp":"2026-04-17T12:00:00Z"}"""))),
+              {"status":403,"code":"ACCESS_DENIED","message":"접근 권한이 없습니다","timestamp":"2026-04-17T12:00:00Z"}"""))),
   @ApiResponse(
       responseCode = "404",
       description = "리소스 없음",

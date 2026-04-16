@@ -7,6 +7,8 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
+import org.springframework.http.CacheControl;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,14 +24,14 @@ public class SwaggerConfigController {
   private final SwaggerUiConfigProperties swaggerUiConfigProperties;
 
   @GetMapping("/v3/api-docs/swagger-config")
-  public Map<String, Object> swaggerConfig() {
+  public ResponseEntity<Map<String, Object>> swaggerConfig() {
     Map<String, Object> config = new LinkedHashMap<>();
     config.put("configUrl", "/v3/api-docs/swagger-config");
     config.put("urls", filterUrlsByRole());
     config.put("operationsSorter", swaggerUiConfigProperties.getOperationsSorter());
     config.put("tagsSorter", swaggerUiConfigProperties.getTagsSorter());
     config.put("validatorUrl", "");
-    return config;
+    return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(config);
   }
 
   private List<Map<String, String>> filterUrlsByRole() {
