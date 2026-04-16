@@ -14,6 +14,7 @@ import com.gakkaweo.backend.auth.util.CookieUtils;
 import com.gakkaweo.backend.config.openapi.StandardErrorResponses;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -50,10 +51,20 @@ public class AuthController {
 
   @Operation(
       summary = "회원가입",
+      description =
+          "에러 코드:\n- `DUPLICATE_USERNAME` (409): 이미 사용 중인 아이디\n"
+              + "- `NICKNAME_FORBIDDEN` (400): 사용할 수 없는 닉네임 자동 생성",
       responses =
           @ApiResponse(
               responseCode = "201",
-              headers = @Header(name = "Set-Cookie", schema = @Schema(type = "string"))))
+              headers =
+                  @Header(
+                      name = "Set-Cookie",
+                      description =
+                          "3개 쿠키 발급: access_token (HttpOnly, Path=/, 30m), "
+                              + "refresh_token (HttpOnly, Path=/auth/refresh, 7d), "
+                              + "has_session (non-HttpOnly, Path=/, 7d)",
+                      schema = @Schema(type = "string"))))
   @StandardErrorResponses
   @PostMapping("/register")
   public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
@@ -63,10 +74,20 @@ public class AuthController {
 
   @Operation(
       summary = "로그인",
+      description =
+          "에러 코드:\n- `INVALID_CREDENTIALS` (401): 아이디 또는 비밀번호 불일치\n"
+              + "- `MEMBER_BANNED` (403): 차단된 계정",
       responses =
           @ApiResponse(
               responseCode = "200",
-              headers = @Header(name = "Set-Cookie", schema = @Schema(type = "string"))))
+              headers =
+                  @Header(
+                      name = "Set-Cookie",
+                      description =
+                          "3개 쿠키 발급: access_token (HttpOnly, Path=/, 30m), "
+                              + "refresh_token (HttpOnly, Path=/auth/refresh, 7d), "
+                              + "has_session (non-HttpOnly, Path=/, 7d)",
+                      schema = @Schema(type = "string"))))
   @StandardErrorResponses
   @PostMapping("/login")
   public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -76,10 +97,21 @@ public class AuthController {
 
   @Operation(
       summary = "토큰 갱신",
+      description =
+          "에러 코드:\n- `INVALID_REFRESH_TOKEN` (401): 유효하지 않은 리프레시 토큰\n"
+              + "- `REFRESH_TOKEN_REUSE_DETECTED` (401): 토큰 재사용 감지, 전체 세션 종료\n"
+              + "- `MEMBER_BANNED` (403): 차단된 계정",
       responses =
           @ApiResponse(
               responseCode = "200",
-              headers = @Header(name = "Set-Cookie", schema = @Schema(type = "string"))))
+              headers =
+                  @Header(
+                      name = "Set-Cookie",
+                      description =
+                          "3개 쿠키 발급: access_token (HttpOnly, Path=/, 30m), "
+                              + "refresh_token (HttpOnly, Path=/auth/refresh, 7d), "
+                              + "has_session (non-HttpOnly, Path=/, 7d)",
+                      schema = @Schema(type = "string"))))
   @StandardErrorResponses
   @PostMapping("/refresh")
   public ResponseEntity<Void> refresh(@CookieValue("refresh_token") String refreshToken) {
@@ -96,7 +128,9 @@ public class AuthController {
         .build();
   }
 
-  @Operation(summary = "로그아웃")
+  @Operation(
+      summary = "로그아웃",
+      description = "쿠키 삭제: access_token, refresh_token, has_session (MaxAge=0)")
   @SecurityRequirement(name = "cookieAuth")
   @StandardErrorResponses
   @PostMapping("/logout")
@@ -122,7 +156,12 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "닉네임 변경")
+  @Operation(
+      summary = "닉네임 변경",
+      description =
+          "에러 코드:\n- `NICKNAME_UNCHANGED` (400): 현재 닉네임과 동일\n"
+              + "- `NICKNAME_DUPLICATED` (409): 이미 사용 중인 닉네임\n"
+              + "- `NICKNAME_FORBIDDEN` (400): 사용할 수 없는 닉네임")
   @SecurityRequirement(name = "cookieAuth")
   @StandardErrorResponses
   @PatchMapping("/nickname")
@@ -134,12 +173,18 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "프로필 이미지 업로드", description = "WebP 형식, 최대 1MB")
+  @Operation(
+      summary = "프로필 이미지 업로드",
+      description =
+          "WebP 형식, 최대 1MB\n\n에러 코드:\n- `INVALID_FILE_TYPE` (400): WebP 이외 형식\n"
+              + "- `FILE_TOO_LARGE` (413): 1MB 초과\n"
+              + "- `FILE_UPLOAD_FAILED` (500): 저장 실패")
   @SecurityRequirement(name = "cookieAuth")
   @StandardErrorResponses
   @PatchMapping("/profile-image")
   public ResponseEntity<AuthResponse> uploadProfileImage(
-      @RequestParam("file") MultipartFile file,
+      @Parameter(description = "프로필 이미지 (WebP만 허용, 최대 1MB)") @RequestParam("file")
+          MultipartFile file,
       @AuthenticationPrincipal CustomUserDetails userDetails) {
     String profileUrl = profileImageService.save(userDetails.publicId(), file);
     AuthResponse response = authService.updateProfileUrl(userDetails.publicId(), profileUrl);
@@ -159,7 +204,9 @@ public class AuthController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "회원 탈퇴")
+  @Operation(
+      summary = "회원 탈퇴",
+      description = "쿠키 삭제: access_token, refresh_token, has_session (MaxAge=0)")
   @SecurityRequirement(name = "cookieAuth")
   @StandardErrorResponses
   @DeleteMapping("/account")

@@ -40,7 +40,8 @@ public class RankingController {
       summary = "랭킹 SSE 스트림",
       description =
           "이벤트: RANKING_UPDATE (랭킹 변경), DAY_CHANGE (자정 전환), "
-              + "ANNOUNCEMENT (공지), HEARTBEAT (10초 간격 연결 유지). 최대 500 동시 연결")
+              + "ANNOUNCEMENT (공지), HEARTBEAT (10초 간격 연결 유지). 최대 500 동시 연결\n\n"
+              + "에러 코드:\n- `SSE_MAX_CONNECTIONS` (503): 최대 연결 수 초과")
   @StandardErrorResponses
   @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter streamRanking() {

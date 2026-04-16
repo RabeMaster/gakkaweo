@@ -10,6 +10,7 @@ import com.gakkaweo.backend.admin.service.AdminSystemService;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.config.openapi.AdminErrorResponses;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,7 +52,9 @@ public class AdminSystemController {
     return ResponseEntity.ok(adminSystemService.getAnnouncements());
   }
 
-  @Operation(summary = "공지 등록")
+  @Operation(
+      summary = "공지 등록",
+      responses = @ApiResponse(responseCode = "201", useReturnTypeSchema = true))
   @AdminErrorResponses
   @PostMapping("/announcements")
   public ResponseEntity<AnnouncementResponse> createAnnouncement(
@@ -70,7 +73,12 @@ public class AdminSystemController {
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
-  @Operation(summary = "공지 수정")
+  @Operation(
+      summary = "공지 수정",
+      description =
+          """
+          에러 코드:
+          - `ANNOUNCEMENT_NOT_FOUND` (404): 공지 없음""")
   @AdminErrorResponses
   @PatchMapping("/announcements/{id}")
   public ResponseEntity<AnnouncementResponse> updateAnnouncement(
@@ -89,7 +97,12 @@ public class AdminSystemController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "공지 삭제")
+  @Operation(
+      summary = "공지 삭제",
+      description =
+          """
+          에러 코드:
+          - `ANNOUNCEMENT_NOT_FOUND` (404): 공지 없음""")
   @AdminErrorResponses
   @DeleteMapping("/announcements/{id}")
   public ResponseEntity<Void> deleteAnnouncement(

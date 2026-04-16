@@ -71,7 +71,14 @@ public class AdminUserController {
     return ResponseEntity.ok(adminUserService.getUserHistory(publicId));
   }
 
-  @Operation(summary = "역할 변경")
+  @Operation(
+      summary = "역할 변경",
+      description =
+          """
+          에러 코드:
+          - `MEMBER_NOT_FOUND` (404): 사용자 없음
+          - `ADMIN_SELF_ACTION` (400): 자기 자신의 역할 변경 불가
+          - `ROLE_ALREADY_ASSIGNED` (400): 이미 동일한 역할""")
   @AdminErrorResponses
   @PatchMapping("/{publicId}/role")
   public ResponseEntity<AdminUserResponse> changeRole(
@@ -91,7 +98,13 @@ public class AdminUserController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "사용자 차단")
+  @Operation(
+      summary = "사용자 차단",
+      description =
+          """
+          에러 코드:
+          - `MEMBER_NOT_FOUND` (404): 사용자 없음
+          - `ADMIN_SELF_ACTION` (400): 자기 자신 차단 불가""")
   @AdminErrorResponses
   @PostMapping("/{publicId}/ban")
   public ResponseEntity<Void> banUser(
@@ -109,7 +122,13 @@ public class AdminUserController {
     return ResponseEntity.ok().build();
   }
 
-  @Operation(summary = "차단 해제")
+  @Operation(
+      summary = "차단 해제",
+      description =
+          """
+          에러 코드:
+          - `MEMBER_NOT_FOUND` (404): 사용자 없음
+          - `ADMIN_SELF_ACTION` (400): 자기 자신 해제 불가""")
   @AdminErrorResponses
   @DeleteMapping("/{publicId}/ban")
   public ResponseEntity<Void> unbanUser(
@@ -127,7 +146,13 @@ public class AdminUserController {
     return ResponseEntity.ok().build();
   }
 
-  @Operation(summary = "강제 탈퇴")
+  @Operation(
+      summary = "강제 탈퇴",
+      description =
+          """
+          에러 코드:
+          - `MEMBER_NOT_FOUND` (404): 사용자 없음
+          - `ADMIN_SELF_ACTION` (400): 자기 자신 탈퇴 불가""")
   @AdminErrorResponses
   @DeleteMapping("/{publicId}")
   public ResponseEntity<Void> forceDeleteUser(
@@ -151,7 +176,15 @@ public class AdminUserController {
     return ResponseEntity.ok().build();
   }
 
-  @Operation(summary = "닉네임 강제 변경")
+  @Operation(
+      summary = "닉네임 강제 변경",
+      description =
+          """
+          에러 코드:
+          - `MEMBER_NOT_FOUND` (404): 사용자 없음
+          - `ADMIN_SELF_ACTION` (400): 자기 자신의 닉네임 변경 불가
+          - `NICKNAME_DUPLICATED` (409): 이미 사용 중인 닉네임
+          - `NICKNAME_FORBIDDEN` (400): 사용할 수 없는 닉네임""")
   @AdminErrorResponses
   @PatchMapping("/{publicId}/nickname")
   public ResponseEntity<AdminUserResponse> forceChangeNickname(
@@ -172,7 +205,13 @@ public class AdminUserController {
     return ResponseEntity.ok(response);
   }
 
-  @Operation(summary = "프로필 이미지 강제 삭제")
+  @Operation(
+      summary = "프로필 이미지 강제 삭제",
+      description =
+          """
+          에러 코드:
+          - `MEMBER_NOT_FOUND` (404): 사용자 없음
+          - `ADMIN_SELF_ACTION` (400): 자기 자신의 이미지 삭제 불가""")
   @AdminErrorResponses
   @DeleteMapping("/{publicId}/profile-image")
   public ResponseEntity<Void> forceDeleteProfileImage(
