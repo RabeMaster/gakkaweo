@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>가까워 API Documentation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.21.0/swagger-ui.css">
+  <style>
+    body { margin: 0; }
+    .doc-banner {
+      background: #fef3c7;
+      border-bottom: 3px solid #000;
+      padding: 12px 24px;
+      font-family: 'Pretendard', system-ui, sans-serif;
+      font-size: 14px;
+      text-align: center;
+    }
+    .doc-banner a {
+      color: #4f46e5;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .doc-banner a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="doc-banner">
+    전체 API 설계 문서 &mdash;
+    런타임 API: <a href="https://api.r4b2.xyz/swagger-ui.html" target="_blank">api.r4b2.xyz/swagger-ui.html</a>
+  </div>
+  <div id="swagger-ui"></div>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.21.0/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: "./openapi-full.json",
+      dom_id: "#swagger-ui",
+      presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+      layout: "BaseLayout",
+      operationsSorter: "method",
+      tagsSorter: "alpha",
+    });
+  </script>
+</body>
+</html>
