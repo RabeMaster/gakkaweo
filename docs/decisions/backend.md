@@ -199,6 +199,35 @@ Flyway는 DDL 전용으로 유지하고, DML(초기 admin 계정 + 기본 문장
 
 > Flyway에 DML을 넣는 대안도 있었지만, BCrypt 해싱과 닉네임 생성 로직을 SQL로 구현하면 서비스 코드와 중복된다. Java 런타임 시딩으로 통합해서 `PasswordEncoder`·`NicknameGenerator` 같은 기존 컴포넌트를 재사용했다. 매 실행마다 파일을 재파싱하는 비용을 피하기 위해 `count() == 0` 상태에서만 시딩하는 방식을 택했다.
 
+## API 문서화 (springdoc-openapi)
+
+수기 작성 `docs/api-spec.md`를 springdoc-openapi로 대체했다.
+
+### 이중 분리
+
+- **런타임 Swagger UI** (`/swagger-ui.html`): 비인증 시 public 그룹만, ADMIN 로그인 시 admin 그룹 추가 노출
+- **GitHub Pages 정적 사이트** (`docs-site/`): CI가 `docs-mode=true`로 전체 스펙(`/v3/api-docs/full`)을 생성해 `gh-pages`에 배포
+
+### Role 기반 그룹 필터링
+
+Spring Security role 기반으로 admin 그룹 접근을 제어한다.
+
+- `GroupedOpenApi` admin 빈은 항상 등록하되, `/v3/api-docs/admin`은 `hasRole('ADMIN')`으로 보호
+- `SwaggerConfigController`가 기본 `/v3/api-docs/swagger-config`를 대체해 `SecurityContextHolder` Principal 기반으로 그룹 목록 필터링
+- 비ADMIN에게 admin 그룹명 자체가 드롭다운에 표시되지 않음
+
+### CI 전용 모드 (`docs-mode=true`)
+
+- `NoOpSimilarityService`(`@Primary` + `@ConditionalOnProperty`)로 AI 서비스 없이 Spring 컨텍스트 부팅
+- `full` 그룹은 `@ConditionalOnProperty`(1차) + SecurityConfig `access` 체크(2차)로 이중 차단
+
+### 어노테이션 Tier 2
+
+- 컨트롤러: `@Tag(name)` + 메서드별 `@Operation(summary)`
+- 에러: `@StandardErrorResponses` (400/401/404/429/503), `@AdminErrorResponses` (+403)
+- 인증: `@SecurityRequirement(name="cookieAuth")`
+- OAuth 합성 경로: `OpenApiCustomizer`로 PathItem 삽입 (컨트롤러 없는 Spring Security 엔드포인트)
+
 ---
 
-_마지막 업데이트: 2026-04-15_
+_마지막 업데이트: 2026-04-16_

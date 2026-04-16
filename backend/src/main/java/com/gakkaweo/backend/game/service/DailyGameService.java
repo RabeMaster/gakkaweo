@@ -21,7 +21,7 @@ import com.gakkaweo.backend.game.dto.GuessResponse;
 import com.gakkaweo.backend.game.dto.HintResponse;
 import com.gakkaweo.backend.game.dto.TodayResponse;
 import com.gakkaweo.backend.game.util.HintMaskGenerator;
-import com.gakkaweo.backend.infra.ai.service.SimilarityService;
+import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import java.math.BigDecimal;
@@ -47,7 +47,7 @@ public class DailyGameService {
   private final GameSessionRepository gameSessionRepository;
   private final GuessHistoryRepository guessHistoryRepository;
   private final MemberRepository memberRepository;
-  private final SimilarityService similarityService;
+  private final SimilarityClient similarityService;
   private final RankingService rankingService;
   private final HintMaskGenerator hintMaskGenerator;
   private final GameProperties gameProperties;

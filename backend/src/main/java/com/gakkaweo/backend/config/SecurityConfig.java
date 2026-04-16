@@ -8,13 +8,16 @@ import com.gakkaweo.backend.auth.oauth2.CookieAuthorizationRequestRepository;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginFailureHandler;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import com.gakkaweo.backend.auth.oauth2.service.CustomOAuth2UserService;
+import com.gakkaweo.backend.auth.security.RestAccessDeniedHandler;
 import com.gakkaweo.backend.auth.security.RestAuthenticationEntryPoint;
+import com.gakkaweo.backend.config.openapi.OpenApiProperties;
 import com.gakkaweo.backend.ratelimit.filter.RateLimitFilter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -37,6 +40,8 @@ public class SecurityConfig {
   private final CookieAuthorizationRequestRepository authorizationRequestRepository;
   private final OAuth2Properties oAuth2Properties;
   private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
+  private final RestAccessDeniedHandler restAccessDeniedHandler;
+  private final OpenApiProperties openApiProperties;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -51,6 +56,22 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/uploads/**")
                     .permitAll()
+                    .requestMatchers("/v3/api-docs")
+                    .denyAll()
+                    .requestMatchers(
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/public",
+                        "/v3/api-docs/swagger-config",
+                        "/swagger-resources/**",
+                        "/webjars/**")
+                    .permitAll()
+                    .requestMatchers("/v3/api-docs/admin")
+                    .hasRole("ADMIN")
+                    .requestMatchers("/v3/api-docs/full")
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(openApiProperties.isDocsMode()))
                     .requestMatchers(HttpMethod.GET, "/daily/today")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/daily/guess")
@@ -67,7 +88,10 @@ public class SecurityConfig {
                     .authenticated()
                     .anyRequest()
                     .authenticated())
-        .exceptionHandling(ex -> ex.authenticationEntryPoint(restAuthenticationEntryPoint))
+        .exceptionHandling(
+            ex ->
+                ex.authenticationEntryPoint(restAuthenticationEntryPoint)
+                    .accessDeniedHandler(restAccessDeniedHandler))
         .oauth2Login(
             oauth2 ->
                 oauth2

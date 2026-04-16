@@ -20,7 +20,7 @@ AI 임베딩 유사도 판별 기반 데일리 웹 게임입니다. 세멘틀(Se
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-[웹사이트 (운영중)](https://gakkaweo.r4b2.xyz) · [API 명세](docs/api-spec.md) · [디자인 시스템](docs/design-system.md) · [기술 의사결정](docs/decisions/)
+[웹사이트 (운영중)](https://gakkaweo.r4b2.xyz) · [API 문서 (Swagger)](https://api.r4b2.xyz/swagger-ui.html) · [디자인 시스템](docs/design-system.md) · [기술 의사결정](docs/decisions/)
 
 </div>
 
@@ -138,8 +138,9 @@ gakkaweo/
 │   ├── gakkaweo.conf            # 프론트엔드 (SPA 서빙)
 │   └── api.conf                 # 백엔드 (리버스 프록시)
 │
+├── docs-site/                   # Swagger UI 정적 사이트 (GitHub Pages)
+│
 ├── docs/                        # 프로젝트 문서
-│   ├── api-spec.md              # REST API 명세
 │   ├── design-system.md         # UI/UX 디자인 시스템
 │   ├── branch-strategy.md       # 브랜치 전략
 │   ├── commit-convention.md     # 커밋 컨벤션
@@ -222,7 +223,7 @@ pnpm dev
 
 | 문서                                     | 설명                                           |
 | ---------------------------------------- | ---------------------------------------------- |
-| [API 명세](docs/api-spec.md)             | REST API 엔드포인트, 요청/응답 포맷, 에러 코드 |
+| [API 문서 (Swagger)](https://api.r4b2.xyz/swagger-ui.html) | 런타임 API 문서 (public, admin은 로그인 필요) |
 | [디자인 시스템](docs/design-system.md)   | Neo-Brutalism UI 규칙, 컴포넌트 스타일 가이드  |
 | [브랜치 전략](docs/branch-strategy.md)   | main/dev 기반 브랜치 워크플로우                |
 | [커밋 컨벤션](docs/commit-convention.md) | Conventional Commits 규칙                      |
@@ -244,4 +245,4 @@ pnpm dev
 
 ---
 
-_마지막 업데이트: 2026-04-07_
+_마지막 업데이트: 2026-04-16_
