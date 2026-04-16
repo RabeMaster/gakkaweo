@@ -33,8 +33,7 @@ public class OpenApiConfig {
                 .description("AI 유사도 기반 단어 게임 REST API")
                 .contact(new Contact().name("가까워").url("https://gakkaweo.r4b2.xyz"))
                 .license(new License().name("MIT")))
-        .addServersItem(new Server().url("https://api.r4b2.xyz").description("Production"))
-        .addServersItem(new Server().url("http://localhost:8080").description("Local"))
+        .addServersItem(new Server().url("/").description("Current Server"))
         .components(
             new Components()
                 .addSecuritySchemes(
@@ -127,6 +126,7 @@ public class OpenApiConfig {
         .group("full")
         .displayName("Full API (CI)")
         .pathsToMatch("/**")
+        .addOpenApiCustomizer(oauthPathsCustomizer())
         .build();
   }
 }

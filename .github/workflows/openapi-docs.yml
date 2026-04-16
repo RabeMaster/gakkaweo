@@ -46,11 +46,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
-          cache: gradle
+
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Generate OpenAPI docs
         working-directory: backend
@@ -65,7 +66,9 @@ jobs:
           JWT_ACCESS_SECRET: ci-dummy-secret-key-for-openapi-docs-generation-only
           SEED_ADMIN_PASSWORD: admin1234
           APP_OPENAPI_DOCS_MODE: true
-        run: ./gradlew generateOpenApiDocs
+        run: |
+          chmod +x gradlew
+          ./gradlew generateOpenApiDocs
 
       - name: Prepare deploy
         run: |

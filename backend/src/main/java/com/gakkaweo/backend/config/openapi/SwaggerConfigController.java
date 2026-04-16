@@ -1,45 +1,44 @@
 package com.gakkaweo.backend.config.openapi;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import org.springdoc.core.properties.SwaggerUiConfigParameters;
+import lombok.RequiredArgsConstructor;
+import org.springdoc.core.models.GroupedOpenApi;
+import org.springdoc.core.properties.SwaggerUiConfigProperties;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Hidden
 @RestController
+@RequiredArgsConstructor
 public class SwaggerConfigController {
 
-  private final SwaggerUiConfigParameters configParameters;
-
-  public SwaggerConfigController(SwaggerUiConfigParameters configParameters) {
-    this.configParameters = configParameters;
-  }
+  private final List<GroupedOpenApi> groupedOpenApis;
+  private final SwaggerUiConfigProperties swaggerUiConfigProperties;
 
   @GetMapping("/v3/api-docs/swagger-config")
   public Map<String, Object> swaggerConfig() {
     Map<String, Object> config = new LinkedHashMap<>();
     config.put("configUrl", "/v3/api-docs/swagger-config");
     config.put("urls", filterUrlsByRole());
-    config.put("operationsSorter", configParameters.getOperationsSorter());
-    config.put("tagsSorter", configParameters.getTagsSorter());
+    config.put("operationsSorter", swaggerUiConfigProperties.getOperationsSorter());
+    config.put("tagsSorter", swaggerUiConfigProperties.getTagsSorter());
     config.put("validatorUrl", "");
     return config;
   }
 
   private List<Map<String, String>> filterUrlsByRole() {
-    Set<org.springdoc.core.properties.SwaggerUiConfigParameters.SwaggerUrl> urls =
-        configParameters.getUrls();
     boolean isAdmin = hasAdminRole();
 
-    return urls.stream()
+    return groupedOpenApis.stream()
         .filter(
-            url -> {
-              String name = url.getName();
+            group -> {
+              String name = group.getGroup();
               if ("full".equals(name)) {
                 return false;
               }
@@ -49,11 +48,10 @@ public class SwaggerConfigController {
               return true;
             })
         .map(
-            url -> {
+            group -> {
               Map<String, String> entry = new LinkedHashMap<>();
-              entry.put("url", url.getUrl());
-              entry.put(
-                  "name", url.getDisplayName() != null ? url.getDisplayName() : url.getName());
+              entry.put("url", "/v3/api-docs/" + group.getGroup());
+              entry.put("name", group.getDisplayName());
               return entry;
             })
         .toList();
