@@ -20,7 +20,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
-public class SimilarityService {
+public class SimilarityService implements SimilarityClient {
 
   private final AiServiceClient aiServiceClient;
   private final TextNormalizer textNormalizer;
@@ -38,6 +38,7 @@ public class SimilarityService {
     this.circuitBreaker = circuitBreakerRegistry.circuitBreaker("aiService");
   }
 
+  @Override
   public BigDecimal testSimilarity(String sentenceText, String guessText) {
     String normalized = textNormalizer.normalize(guessText);
     if (normalized.isEmpty()) {
@@ -46,6 +47,7 @@ public class SimilarityService {
     return callWithCircuitBreaker(sentenceText, normalized);
   }
 
+  @Override
   public BigDecimal calculateSimilarity(
       Long sentenceId, String guessText, String sentenceText, Duration cacheTtl) {
     String normalized = textNormalizer.normalize(guessText);

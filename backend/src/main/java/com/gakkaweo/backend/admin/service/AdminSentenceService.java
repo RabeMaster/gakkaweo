@@ -21,7 +21,7 @@ import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.game.repository.GuessHistoryRepository;
-import com.gakkaweo.backend.infra.ai.service.SimilarityService;
+import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -48,7 +48,7 @@ public class AdminSentenceService {
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
   private final GuessHistoryRepository guessHistoryRepository;
-  private final SimilarityService similarityService;
+  private final SimilarityClient similarityService;
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final TransactionTemplate transactionTemplate;
