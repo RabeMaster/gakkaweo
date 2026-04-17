@@ -82,15 +82,15 @@ public class GameSession {
     }
   }
 
-  public void updateClearedAt() {
+  public void updateClearedAt(Instant now) {
     if (this.bestSimilarity.compareTo(new BigDecimal("100")) < 0) {
-      this.clearedAt = Instant.now();
+      this.clearedAt = now;
     }
   }
 
-  public void markCleared() {
+  public void markCleared(Instant now) {
     this.status = GameSessionStatus.CLEARED;
-    this.clearedAt = Instant.now();
+    this.clearedAt = now;
   }
 
   public boolean isInProgress() {

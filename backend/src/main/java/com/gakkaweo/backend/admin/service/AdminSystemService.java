@@ -3,7 +3,6 @@ package com.gakkaweo.backend.admin.service;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
-import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
@@ -29,6 +28,7 @@ import com.gakkaweo.backend.ranking.sse.SseConnectionManager;
 import com.gakkaweo.backend.ratelimit.filter.BucketStore;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -64,6 +64,7 @@ public class AdminSystemService {
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final TransactionTemplate transactionTemplate;
+  private final Clock clock;
 
   private static Specification<AuditLog> auditLogFilters(
       String action, Instant dateFrom, Instant dateTo) {
@@ -155,7 +156,7 @@ public class AdminSystemService {
             });
 
     if (response != null && response.active()) {
-      Instant now = Instant.now();
+      Instant now = clock.instant();
       if (!response.startsAt().isAfter(now)
           && (response.endsAt() == null || !response.endsAt().isBefore(now))) {
         AnnouncementType type = AnnouncementType.valueOf(response.type());
@@ -204,7 +205,7 @@ public class AdminSystemService {
   }
 
   public void resetRankingCache() {
-    LocalDate today = LocalDate.now(KST);
+    LocalDate today = LocalDate.now(clock);
     String rankingKey = RANKING_KEY_PREFIX + today;
 
     Set<String> members = redisTemplate.opsForZSet().range(rankingKey, 0, -1);
@@ -271,7 +272,7 @@ public class AdminSystemService {
   }
 
   private boolean isCurrentlyActiveByTime(Instant startsAt, Instant endsAt) {
-    Instant now = Instant.now();
+    Instant now = clock.instant();
     if (startsAt.isAfter(now)) {
       return false;
     }

@@ -3,7 +3,6 @@ package com.gakkaweo.backend.admin.service;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
-import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.admin.dto.AdminUserResponse;
 import com.gakkaweo.backend.admin.dto.ForceNicknameRequest;
@@ -28,7 +27,7 @@ import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.domain.member.validation.NicknameValidator;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import jakarta.persistence.criteria.Predicate;
-import java.time.Instant;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +61,7 @@ public class AdminUserService {
   private final NicknameValidator nicknameValidator;
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
+  private final Clock clock;
 
   private static Specification<Member> memberFilters(String nickname, Boolean banned) {
     return (root, query, cb) -> {
@@ -152,7 +152,7 @@ public class AdminUserService {
 
     Member reloaded = findMember(targetPublicId);
     reloaded.setBanned(true);
-    reloaded.setBannedAt(Instant.now());
+    reloaded.setBannedAt(clock.instant());
 
     log.info("사용자 차단: publicId={}", targetPublicId);
   }
@@ -186,7 +186,7 @@ public class AdminUserService {
 
   public void cleanupRedisAfterDelete(UUID publicId) {
     try {
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       String rankingKey = RANKING_KEY_PREFIX + today;
       String memberKey = RANKING_MEMBER_PREFIX + publicId;
       String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
@@ -231,7 +231,7 @@ public class AdminUserService {
 
   public void syncNicknameToRedis(UUID publicId, String nickname) {
     try {
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
 
       if (redisTemplate.hasKey(detailKey)) {
@@ -258,7 +258,7 @@ public class AdminUserService {
 
   private void syncProfileUrlToRedis(UUID publicId, String profileUrl) {
     try {
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
 
       if (redisTemplate.hasKey(detailKey)) {
