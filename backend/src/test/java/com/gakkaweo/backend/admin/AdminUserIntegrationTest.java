@@ -10,7 +10,10 @@ import com.gakkaweo.backend.admin.dto.UserGameHistoryResponse;
 import com.gakkaweo.backend.admin.dto.UserListResponse;
 import com.gakkaweo.backend.common.exception.ErrorBody;
 import com.gakkaweo.backend.domain.member.entity.Member;
+import com.gakkaweo.backend.domain.member.entity.SocialAccount;
+import com.gakkaweo.backend.domain.member.entity.SocialProvider;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
+import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.support.IntegrationTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,11 +24,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @DisplayName("Admin 사용자 관리 통합 테스트")
 class AdminUserIntegrationTest extends IntegrationTestBase {
 
   @Autowired MemberRepository memberRepository;
+  @Autowired SocialAccountRepository socialAccountRepository;
+  @Autowired TransactionTemplate transactionTemplate;
 
   @Test
   @DisplayName("역할 변경 - USER → ADMIN 성공")
@@ -232,6 +238,105 @@ class AdminUserIntegrationTest extends IntegrationTestBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody().history()).isEmpty();
+  }
+
+  @Test
+  @DisplayName("목록 조회 - nickname 필터 매칭")
+  void 목록_nickname_필터() {
+    Member admin = testAuthHelper.createAdmin();
+    Member match = testAuthHelper.createMember();
+    testAuthHelper.createMember();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+
+    ResponseEntity<UserListResponse> response =
+        restTemplate.exchange(
+            url("/admin/users?nickname=" + match.getNickname() + "&page=0&size=20"),
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            UserListResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().users())
+        .extracting(AdminUserResponse::nickname)
+        .contains(match.getNickname());
+  }
+
+  @Test
+  @DisplayName("목록 조회 - banned=true 필터")
+  void 목록_banned_필터() {
+    Member admin = testAuthHelper.createAdmin();
+    testAuthHelper.createBannedMember();
+    testAuthHelper.createMember();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+
+    ResponseEntity<UserListResponse> response =
+        restTemplate.exchange(
+            url("/admin/users?banned=true&page=0&size=20"),
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            UserListResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().users()).allSatisfy(user -> assertThat(user.banned()).isTrue());
+  }
+
+  @Test
+  @DisplayName("닉네임 강제 변경 - 정상 200")
+  void 닉네임_변경_성공() {
+    Member admin = testAuthHelper.createAdmin();
+    Member target = testAuthHelper.createMember();
+    HttpHeaders headers = authedJson(admin);
+
+    ResponseEntity<AdminUserResponse> response =
+        restTemplate.exchange(
+            url("/admin/users/" + target.getPublicId() + "/nickname"),
+            HttpMethod.PATCH,
+            new HttpEntity<>(new ForceNicknameRequest("새닉네임"), headers),
+            AdminUserResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().nickname()).isEqualTo("새닉네임");
+  }
+
+  @Test
+  @DisplayName("사용자 상세 - 소셜 계정 provider=KAKAO")
+  void 상세_소셜() {
+    Member admin = testAuthHelper.createAdmin();
+    Member target = testAuthHelper.createMember();
+    transactionTemplate.executeWithoutResult(
+        status ->
+            socialAccountRepository.save(
+                new SocialAccount(target, SocialProvider.KAKAO, "kakao-test-id")));
+
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+    ResponseEntity<UserDetailResponse> response =
+        restTemplate.exchange(
+            url("/admin/users/" + target.getPublicId()),
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            UserDetailResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().provider()).isEqualTo("KAKAO");
+  }
+
+  @Test
+  @DisplayName("사용자 상세 - 로컬 계정 provider=LOCAL")
+  void 상세_로컬() {
+    Member admin = testAuthHelper.createAdmin();
+    Member target = testAuthHelper.createMember();
+    testAuthHelper.createLocalAccount(target, "localuser", "pass1234!");
+
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+    ResponseEntity<UserDetailResponse> response =
+        restTemplate.exchange(
+            url("/admin/users/" + target.getPublicId()),
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            UserDetailResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().provider()).isEqualTo("LOCAL");
   }
 
   private HttpHeaders authedJson(Member admin) {
