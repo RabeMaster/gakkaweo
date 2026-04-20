@@ -54,6 +54,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'com.redis:testcontainers-redis:2.2.2'
+    testImplementation 'org.wiremock:wiremock-standalone:3.9.2'
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -101,6 +102,7 @@ jacocoTestReport {
                     '**/dto/**',
                     '**/config/openapi/**',
                     '**/BackendApplication.class',
+                    '**/InitialDataSeeder.class',
                     '**/*Properties.class',
                     '**/*Event.class',
                     '**/*Request.class',
