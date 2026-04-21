@@ -112,6 +112,7 @@ public class RefreshTokenService {
   private void revokeFamilyInternal(UUID familyId) {
     List<RefreshToken> tokens = refreshTokenRepository.findByFamilyId(familyId);
     tokens.forEach(token -> token.setRevoked(true));
+    refreshTokenRepository.saveAll(tokens);
     log.info("Token Family 폐기: familyId={}, count={}", familyId, tokens.size());
   }
 }
