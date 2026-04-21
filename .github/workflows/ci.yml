@@ -82,7 +82,7 @@ jobs:
 
       - run: ./gradlew spotlessCheck
 
-      - run: ./gradlew build -x test
+      - run: ./gradlew build
 
   ai-service:
     name: AI Service

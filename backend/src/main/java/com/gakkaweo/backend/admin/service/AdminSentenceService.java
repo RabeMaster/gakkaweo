@@ -1,7 +1,6 @@
 package com.gakkaweo.backend.admin.service;
 
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
-import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.admin.dto.DuplicateCheckRequest;
 import com.gakkaweo.backend.admin.dto.DuplicateCheckResponse;
@@ -24,6 +23,7 @@ import com.gakkaweo.backend.domain.game.repository.GuessHistoryRepository;
 import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +52,7 @@ public class AdminSentenceService {
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final TransactionTemplate transactionTemplate;
+  private final Clock clock;
 
   @Transactional(readOnly = true)
   public SentenceListResponse getSentences(String status, int page, int size) {
@@ -151,7 +152,7 @@ public class AdminSentenceService {
 
   @Transactional
   public SentenceResponse schedule(UUID publicId, ScheduleRequest request) {
-    if (request.date().isBefore(LocalDate.now(KST))) {
+    if (request.date().isBefore(LocalDate.now(clock))) {
       throw new BusinessException(ErrorCode.VALIDATION_FAILED);
     }
 
@@ -204,7 +205,7 @@ public class AdminSentenceService {
   }
 
   public SentenceResponse emergencyReplace(EmergencyReplaceRequest request) {
-    LocalDate today = LocalDate.now(KST);
+    LocalDate today = LocalDate.now(clock);
 
     UUID newPublicId =
         transactionTemplate.execute(

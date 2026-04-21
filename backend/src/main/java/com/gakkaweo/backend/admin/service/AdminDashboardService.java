@@ -22,6 +22,7 @@ import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import com.gakkaweo.backend.ranking.sse.SseConnectionManager;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -42,10 +43,11 @@ public class AdminDashboardService {
   private final MemberRepository memberRepository;
   private final RankingService rankingService;
   private final SseConnectionManager sseConnectionManager;
+  private final Clock clock;
 
   @Transactional(readOnly = true)
   public TodayWidgetResponse getTodayWidget() {
-    LocalDate today = LocalDate.now(KST);
+    LocalDate today = LocalDate.now(clock);
     DailySentence sentence =
         dailySentenceRepository
             .findByUsedAt(today)
@@ -73,7 +75,7 @@ public class AdminDashboardService {
 
   public FullRankingResponse getFullRanking(LocalDate date) {
     if (date == null) {
-      date = LocalDate.now(KST);
+      date = LocalDate.now(clock);
     }
     RankingResponse ranking = rankingService.getFullRankingsForDate(date);
 
@@ -100,7 +102,7 @@ public class AdminDashboardService {
 
   @Transactional(readOnly = true)
   public TrendDataResponse getTrends(int days) {
-    LocalDate today = LocalDate.now(KST);
+    LocalDate today = LocalDate.now(clock);
     List<DailyTrend> trends = new ArrayList<>();
 
     for (int i = days - 1; i >= 0; i--) {

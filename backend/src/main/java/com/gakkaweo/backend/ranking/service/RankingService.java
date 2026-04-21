@@ -18,6 +18,7 @@ import com.gakkaweo.backend.ranking.dto.RankingResponse.MyRank;
 import com.gakkaweo.backend.ranking.dto.RankingResponse.RankingEntry;
 import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -48,16 +49,17 @@ public class RankingService {
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
   private final MemberRepository memberRepository;
+  private final Clock clock;
 
   public Integer updateRanking(GameSession session, Member member) {
     try {
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       String rankingKey = buildRankingKey(today);
       String memberKey = RANKING_MEMBER_PREFIX + member.getPublicId();
       String detailKey = buildDetailKey(today, member.getPublicId());
 
       ZonedDateTime startOfDay = today.atStartOfDay(KST);
-      long elapsedSeconds = Duration.between(startOfDay, ZonedDateTime.now(KST)).getSeconds();
+      long elapsedSeconds = Duration.between(startOfDay, ZonedDateTime.now(clock)).getSeconds();
       Long clearedAtSeconds = calculateClearedAtSeconds(session, startOfDay);
       double score =
           encodeScore(
@@ -91,7 +93,7 @@ public class RankingService {
 
   public RankingResponse getRankings() {
     try {
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       return getRankingsForDate(today);
     } catch (Exception e) {
       log.warn("랭킹 목록 조회 실패: {}", e.getMessage(), e);
@@ -102,7 +104,7 @@ public class RankingService {
   @Transactional(readOnly = true)
   public RankingResponse getRankingsForUser(UUID memberPublicId) {
     try {
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       RankingResponse base = getRankingsForDate(today);
 
       MyRank myRank = lookupMyRank(today, memberPublicId);

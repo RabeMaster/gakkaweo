@@ -9,29 +9,46 @@ import com.gakkaweo.backend.domain.member.entity.Member;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class RefreshTokenService {
 
   private final RefreshTokenRepository refreshTokenRepository;
   private final JwtProperties jwtProperties;
+  private final Clock clock;
+  private final TransactionTemplate newTxTemplate;
+
+  public RefreshTokenService(
+      RefreshTokenRepository refreshTokenRepository,
+      JwtProperties jwtProperties,
+      Clock clock,
+      PlatformTransactionManager txManager) {
+    this.refreshTokenRepository = refreshTokenRepository;
+    this.jwtProperties = jwtProperties;
+    this.clock = clock;
+    TransactionTemplate template = new TransactionTemplate(txManager);
+    template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    this.newTxTemplate = template;
+  }
 
   @Transactional
   public String createRefreshToken(Member member) {
     String rawToken = UUID.randomUUID().toString();
     String tokenHash = hashToken(rawToken);
     UUID familyId = UUID.randomUUID();
-    Instant expiresAt = Instant.now().plus(jwtProperties.getRefreshExpiration());
+    Instant expiresAt = clock.instant().plus(jwtProperties.getRefreshExpiration());
 
     RefreshToken refreshToken = new RefreshToken(member, tokenHash, familyId, expiresAt);
     refreshTokenRepository.save(refreshToken);
@@ -49,11 +66,13 @@ public class RefreshTokenService {
 
     if (existing.isRevoked()) {
       log.warn("Refresh Token 재사용 감지: familyId={}", existing.getFamilyId());
-      revokeFamily(existing.getFamilyId());
+      UUID familyId = existing.getFamilyId();
+      // 상위 TX 롤백과 무관하게 family revoke를 즉시 commit (REQUIRES_NEW)
+      newTxTemplate.executeWithoutResult(status -> revokeFamilyInternal(familyId));
       throw new BusinessException(ErrorCode.REFRESH_TOKEN_REUSE_DETECTED);
     }
 
-    if (existing.getExpiresAt().isBefore(Instant.now())) {
+    if (existing.getExpiresAt().isBefore(clock.instant())) {
       log.warn("만료된 Refresh Token 사용 시도: familyId={}", existing.getFamilyId());
       existing.setRevoked(true);
       throw new BusinessException(ErrorCode.EXPIRED_TOKEN);
@@ -63,20 +82,13 @@ public class RefreshTokenService {
 
     String newRawToken = UUID.randomUUID().toString();
     String newTokenHash = hashToken(newRawToken);
-    Instant expiresAt = Instant.now().plus(jwtProperties.getRefreshExpiration());
+    Instant expiresAt = clock.instant().plus(jwtProperties.getRefreshExpiration());
 
     RefreshToken newRefreshToken =
         new RefreshToken(existing.getMember(), newTokenHash, existing.getFamilyId(), expiresAt);
     refreshTokenRepository.save(newRefreshToken);
 
     return newRawToken;
-  }
-
-  @Transactional
-  public void revokeFamily(UUID familyId) {
-    List<RefreshToken> tokens = refreshTokenRepository.findByFamilyId(familyId);
-    tokens.forEach(token -> token.setRevoked(true));
-    log.info("Token Family 폐기: familyId={}, count={}", familyId, tokens.size());
   }
 
   @Transactional(readOnly = true)
@@ -95,5 +107,11 @@ public class RefreshTokenService {
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 알고리즘을 사용할 수 없습니다", e);
     }
+  }
+
+  private void revokeFamilyInternal(UUID familyId) {
+    List<RefreshToken> tokens = refreshTokenRepository.findByFamilyId(familyId);
+    tokens.forEach(token -> token.setRevoked(true));
+    log.info("Token Family 폐기: familyId={}, count={}", familyId, tokens.size());
   }
 }

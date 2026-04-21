@@ -3,7 +3,6 @@ package com.gakkaweo.backend.auth.service;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.BLACKLIST_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
-import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.auth.dto.AuthResponse;
 import com.gakkaweo.backend.auth.dto.TokenPair;
@@ -16,6 +15,7 @@ import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.validation.NicknameValidator;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import io.jsonwebtoken.Claims;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Objects;
@@ -39,6 +39,7 @@ public class AuthService {
   private final NicknameValidator nicknameValidator;
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
+  private final Clock clock;
 
   @Transactional
   public TokenPair issueTokens(Member member) {
@@ -69,7 +70,7 @@ public class AuthService {
   public void logout(String accessToken) {
     Claims claims = jwtProvider.parseAccessToken(accessToken);
     String jti = claims.getId();
-    long remainingMillis = claims.getExpiration().getTime() - System.currentTimeMillis();
+    long remainingMillis = claims.getExpiration().getTime() - clock.millis();
 
     if (remainingMillis > 0) {
       redisTemplate
@@ -132,7 +133,7 @@ public class AuthService {
 
   public void syncProfileUrlToRedis(UUID publicId, String profileUrl) {
     try {
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
 
       if (redisTemplate.hasKey(detailKey)) {
@@ -146,7 +147,7 @@ public class AuthService {
 
   public void syncNicknameToRedis(UUID publicId, String nickname) {
     try {
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
 
       if (redisTemplate.hasKey(detailKey)) {

@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import java.time.Clock;
 import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
@@ -16,15 +17,17 @@ public class JwtProvider {
 
   private final SecretKey secretKey;
   private final long accessExpirationMillis;
+  private final Clock clock;
 
-  public JwtProvider(JwtProperties jwtProperties) {
+  public JwtProvider(JwtProperties jwtProperties, Clock clock) {
     byte[] keyBytes = Base64.getDecoder().decode(jwtProperties.getAccessSecret());
     this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     this.accessExpirationMillis = jwtProperties.getAccessExpiration().toMillis();
+    this.clock = clock;
   }
 
   public String createAccessToken(UUID publicId, String role) {
-    Date now = new Date();
+    Date now = Date.from(clock.instant());
     Date expiry = new Date(now.getTime() + accessExpirationMillis);
 
     return Jwts.builder()

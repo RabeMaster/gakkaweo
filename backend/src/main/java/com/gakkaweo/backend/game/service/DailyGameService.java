@@ -25,6 +25,7 @@ import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -52,6 +53,7 @@ public class DailyGameService {
   private final HintMaskGenerator hintMaskGenerator;
   private final GameProperties gameProperties;
   private final ApplicationEventPublisher eventPublisher;
+  private final Clock clock;
 
   private static boolean isPerfect(BigDecimal similarity) {
     return similarity.compareTo(new BigDecimal("100")) >= 0;
@@ -62,9 +64,9 @@ public class DailyGameService {
     DailySentence sentence = findTodaySentence();
     HintMaskGenerator.HintMask hint = hintMaskGenerator.generate(sentence.getSentence());
 
-    Instant expiresAt = LocalDate.now(KST).plusDays(1).atStartOfDay(KST).toInstant();
+    Instant expiresAt = LocalDate.now(clock).plusDays(1).atStartOfDay(KST).toInstant();
 
-    LocalDate yesterday = LocalDate.now(KST).minusDays(1);
+    LocalDate yesterday = LocalDate.now(clock).minusDays(1);
     String yesterdaySentence =
         dailySentenceRepository
             .findByUsedAt(yesterday)
@@ -97,14 +99,15 @@ public class DailyGameService {
     boolean isCorrect = similarity.compareTo(gameProperties.getSimilarityThreshold()) >= 0;
 
     BigDecimal previousBest = session.getBestSimilarity();
+    Instant now = clock.instant();
 
     if (session.isInProgress()) {
       session.incrementAttempt();
       if (isCorrect) {
-        session.markCleared();
+        session.markCleared(now);
       }
     } else if (session.isCleared() && isPerfect(similarity)) {
-      session.updateClearedAt();
+      session.updateClearedAt(now);
     }
     session.updateBestSimilarity(similarity);
 
@@ -128,11 +131,7 @@ public class DailyGameService {
         isCorrect);
 
     return new GuessResponse(
-        similarity,
-        session.getAttemptCount(),
-        isCorrect,
-        session.getStatus().name(),
-        Instant.now());
+        similarity, session.getAttemptCount(), isCorrect, session.getStatus().name(), now);
   }
 
   @Transactional(readOnly = true)
@@ -145,7 +144,7 @@ public class DailyGameService {
 
     boolean isCorrect = similarity.compareTo(gameProperties.getSimilarityThreshold()) >= 0;
 
-    return new GuessResponse(similarity, null, isCorrect, null, Instant.now());
+    return new GuessResponse(similarity, null, isCorrect, null, clock.instant());
   }
 
   @Transactional(readOnly = true)
@@ -241,14 +240,14 @@ public class DailyGameService {
   }
 
   private Duration remainingTtl() {
-    ZonedDateTime now = ZonedDateTime.now(KST);
+    ZonedDateTime now = ZonedDateTime.now(clock);
     ZonedDateTime midnight = now.toLocalDate().plusDays(1).atStartOfDay(KST);
     Duration remaining = Duration.between(now, midnight);
     return remaining.isNegative() || remaining.isZero() ? Duration.ofMinutes(1) : remaining;
   }
 
   private DailySentence findTodaySentence() {
-    LocalDate today = LocalDate.now(KST);
+    LocalDate today = LocalDate.now(clock);
     return dailySentenceRepository
         .findByUsedAt(today)
         .orElseThrow(() -> new BusinessException(ErrorCode.SENTENCE_NOT_FOUND));
@@ -259,7 +258,7 @@ public class DailyGameService {
         dailySentenceRepository
             .findByPublicId(publicId)
             .orElseThrow(() -> new BusinessException(ErrorCode.SENTENCE_NOT_FOUND));
-    LocalDate today = LocalDate.now(KST);
+    LocalDate today = LocalDate.now(clock);
     if (!today.equals(sentence.getUsedAt())) {
       throw new BusinessException(ErrorCode.SENTENCE_NOT_FOUND);
     }

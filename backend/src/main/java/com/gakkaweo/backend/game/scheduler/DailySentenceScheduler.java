@@ -1,7 +1,5 @@
 package com.gakkaweo.backend.game.scheduler;
 
-import static com.gakkaweo.backend.common.time.TimeConstants.KST;
-
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
@@ -10,6 +8,7 @@ import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,11 +35,12 @@ public class DailySentenceScheduler {
   private final RankingService rankingService;
   private final TransactionTemplate transactionTemplate;
   private final ApplicationEventPublisher eventPublisher;
+  private final Clock clock;
 
   @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
   public void executeMidnightJob() {
     log.info("일일 스케줄러 시작");
-    LocalDate today = LocalDate.now(KST);
+    LocalDate today = LocalDate.now(clock);
     LocalDate yesterday = today.minusDays(1);
 
     try {
@@ -81,7 +81,7 @@ public class DailySentenceScheduler {
 
   @EventListener(ApplicationReadyEvent.class)
   public void onApplicationReady() {
-    LocalDate today = LocalDate.now(KST);
+    LocalDate today = LocalDate.now(clock);
     if (dailySentenceRepository.findByUsedAt(today).isEmpty()) {
       log.info("오늘 날짜 기준으로 선택된 문장이 없어 즉시 선정을 진행합니다.");
       executeMidnightJob();

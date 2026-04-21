@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'jacoco'
     id 'org.springframework.boot' version '3.5.11'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'com.diffplug.spotless' version '8.4.0'
@@ -50,6 +51,12 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'com.redis:testcontainers-redis:2.2.2'
+    testImplementation 'org.wiremock:wiremock-standalone:3.9.2'
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -75,4 +82,34 @@ openApi {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacoco {
+    toolVersion = '0.8.12'
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        html.required = true
+        xml.required = true
+    }
+    afterEvaluate {
+        classDirectories.setFrom(
+            files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: [
+                    '**/dto/**',
+                    '**/config/openapi/**',
+                    '**/BackendApplication.class',
+                    '**/InitialDataSeeder.class',
+                    '**/*Properties.class',
+                    '**/*Event.class',
+                    '**/*Request.class',
+                    '**/*Response.class',
+                    '**/*Projection.class',
+                ])
+            })
+        )
+    }
 }

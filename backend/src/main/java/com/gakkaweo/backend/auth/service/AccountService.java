@@ -3,7 +3,6 @@ package com.gakkaweo.backend.auth.service;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
-import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
@@ -15,6 +14,7 @@ import com.gakkaweo.backend.domain.member.repository.LocalAccountRepository;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +38,7 @@ public class AccountService {
   private final AuthService authService;
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
+  private final Clock clock;
 
   @Transactional
   public void deleteAccount(UUID publicId) {
@@ -67,7 +68,7 @@ public class AccountService {
         authService.logout(accessToken);
       }
 
-      LocalDate today = LocalDate.now(KST);
+      LocalDate today = LocalDate.now(clock);
       String rankingKey = RANKING_KEY_PREFIX + today;
       String memberKey = RANKING_MEMBER_PREFIX + publicId;
       String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
