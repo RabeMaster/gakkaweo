@@ -10,6 +10,11 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class TransactionConfig {
 
   @Bean
+  public TransactionTemplate transactionTemplate(PlatformTransactionManager txManager) {
+    return new TransactionTemplate(txManager);
+  }
+
+  @Bean
   public TransactionTemplate newTxTemplate(PlatformTransactionManager txManager) {
     TransactionTemplate template = new TransactionTemplate(txManager);
     template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
