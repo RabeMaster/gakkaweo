@@ -2,6 +2,7 @@ package com.gakkaweo.backend.game;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,6 +11,7 @@ import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.game.scheduler.DailySentenceScheduler;
+import com.gakkaweo.backend.infra.notification.NotificationLevel;
 import com.gakkaweo.backend.infra.notification.client.DiscordWebhookClient;
 import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
 import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
@@ -91,7 +93,7 @@ class DailySentenceSchedulerRetryTest extends IntegrationTestBase {
     verify(rankingService, times(3)).getAllRankingsForDate(yesterday);
 
     ArgumentCaptor<DiscordEmbed> captor = ArgumentCaptor.forClass(DiscordEmbed.class);
-    verify(discordWebhookClient).sendEmbed(captor.capture());
+    verify(discordWebhookClient).send(eq(NotificationLevel.INFO), captor.capture());
     DiscordEmbed embed = captor.getValue();
     assertThat(embed.title()).contains("일부 실패");
     assertThat(embed.fields()).anyMatch(f -> f.name().equals("랭킹 스냅샷") && f.value().equals("실패"));
@@ -107,7 +109,7 @@ class DailySentenceSchedulerRetryTest extends IntegrationTestBase {
     scheduler.executeMidnightJob();
 
     ArgumentCaptor<DiscordEmbed> captor = ArgumentCaptor.forClass(DiscordEmbed.class);
-    verify(discordWebhookClient).sendEmbed(captor.capture());
+    verify(discordWebhookClient).send(eq(NotificationLevel.INFO), captor.capture());
     DiscordEmbed embed = captor.getValue();
     assertThat(embed.title()).contains("실행 완료");
     assertThat(embed.description()).contains("||오늘 테스트 문장||");
