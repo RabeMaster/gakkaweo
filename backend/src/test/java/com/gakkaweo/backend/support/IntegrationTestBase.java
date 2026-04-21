@@ -10,7 +10,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.client.RestTemplate;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+    properties = "app.notification.discord.webhook-url=")
 @ActiveProfiles("test")
 @Import({TestContainerConfig.class, TestClockConfig.class})
 public abstract class IntegrationTestBase {

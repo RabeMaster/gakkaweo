@@ -110,6 +110,20 @@ resilience4j:
         failure-rate-threshold: 50
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      schedulerExpire:
+        max-attempts: 3
+        wait-duration: 10ms
+      schedulerSnapshot:
+        max-attempts: 3
+        wait-duration: 10ms
+      schedulerExpireKeys:
+        max-attempts: 3
+        wait-duration: 10ms
+      schedulerSelectToday:
+        max-attempts: 3
+        wait-duration: 10ms
 
 logging:
   level:
