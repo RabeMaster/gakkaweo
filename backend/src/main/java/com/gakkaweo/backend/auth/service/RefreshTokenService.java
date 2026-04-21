@@ -14,34 +14,21 @@ import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class RefreshTokenService {
 
   private final RefreshTokenRepository refreshTokenRepository;
   private final JwtProperties jwtProperties;
   private final Clock clock;
   private final TransactionTemplate newTxTemplate;
-
-  public RefreshTokenService(
-      RefreshTokenRepository refreshTokenRepository,
-      JwtProperties jwtProperties,
-      Clock clock,
-      PlatformTransactionManager txManager) {
-    this.refreshTokenRepository = refreshTokenRepository;
-    this.jwtProperties = jwtProperties;
-    this.clock = clock;
-    TransactionTemplate template = new TransactionTemplate(txManager);
-    template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    this.newTxTemplate = template;
-  }
 
   @Transactional
   public String createRefreshToken(Member member) {

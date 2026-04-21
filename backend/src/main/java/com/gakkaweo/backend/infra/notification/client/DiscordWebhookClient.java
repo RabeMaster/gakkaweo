@@ -4,6 +4,7 @@ import com.gakkaweo.backend.infra.notification.config.DiscordWebhookProperties;
 import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
@@ -14,19 +15,15 @@ import org.springframework.web.client.RestClientException;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class DiscordWebhookClient {
 
   private final RestClient discordWebhookRestClient;
-  private final String webhookUrl;
-
-  public DiscordWebhookClient(
-      RestClient discordWebhookRestClient, DiscordWebhookProperties properties) {
-    this.discordWebhookRestClient = discordWebhookRestClient;
-    this.webhookUrl = properties.getWebhookUrl();
-  }
+  private final DiscordWebhookProperties properties;
 
   @Async("discordWebhookExecutor")
   public void sendEmbed(DiscordEmbed embed) {
+    String webhookUrl = properties.getWebhookUrl();
     if (!StringUtils.hasText(webhookUrl)) {
       log.debug("Discord 웹훅 URL 미설정, 전송 건너뜀");
       return;
