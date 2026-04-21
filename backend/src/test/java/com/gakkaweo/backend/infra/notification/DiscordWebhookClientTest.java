@@ -1,6 +1,7 @@
 package com.gakkaweo.backend.infra.notification;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.absent;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
@@ -31,12 +32,16 @@ class DiscordWebhookClientTest {
           .build();
 
   private DiscordWebhookClient newClient(String webhookUrl) {
+    return newClient(webhookUrl, null);
+  }
+
+  private DiscordWebhookClient newClient(String webhookUrl, String mentionRoleId) {
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(1000);
     factory.setReadTimeout(1000);
     RestClient restClient = RestClient.builder().requestFactory(factory).build();
     DiscordWebhookProperties properties =
-        new DiscordWebhookProperties(webhookUrl, Duration.ofSeconds(3));
+        new DiscordWebhookProperties(webhookUrl, Duration.ofSeconds(3), mentionRoleId);
     return new DiscordWebhookClient(restClient, properties);
   }
 
@@ -81,5 +86,61 @@ class DiscordWebhookClientTest {
     client.sendEmbed(new DiscordEmbed("t", "d", 0, List.of()));
 
     wireMock.verify(postRequestedFor(urlEqualTo("/webhook")));
+  }
+
+  @Test
+  @DisplayName("send(HIGH, embed) - mentionRoleId 설정 시 Role 멘션 + allowed_mentions.roles")
+  void HIGH_Role_멘션_직렬화() {
+    wireMock.stubFor(post(urlEqualTo("/webhook")).willReturn(aResponse().withStatus(204)));
+    DiscordWebhookClient client = newClient(wireMock.baseUrl() + "/webhook", "12345");
+
+    client.send(NotificationLevel.HIGH, new DiscordEmbed("t", "d", null, List.of()));
+
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/webhook"))
+            .withRequestBody(matchingJsonPath("$.content", equalTo("<@&12345>")))
+            .withRequestBody(matchingJsonPath("$.allowed_mentions.roles[0]", equalTo("12345")))
+            .withRequestBody(matchingJsonPath("$.embeds[0].color", equalTo("15105570"))));
+  }
+
+  @Test
+  @DisplayName("send(HIGH, embed) - mentionRoleId 미설정 시 content 빈 문자열 + 멘션 없음")
+  void HIGH_RoleId_미설정_멘션_생략() {
+    wireMock.stubFor(post(urlEqualTo("/webhook")).willReturn(aResponse().withStatus(204)));
+    DiscordWebhookClient client = newClient(wireMock.baseUrl() + "/webhook", null);
+
+    client.send(NotificationLevel.HIGH, new DiscordEmbed("t", "d", null, List.of()));
+
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/webhook"))
+            .withRequestBody(matchingJsonPath("$.content", equalTo("")))
+            .withRequestBody(matchingJsonPath("$.allowed_mentions.roles", absent())));
+  }
+
+  @Test
+  @DisplayName("send(INFO, embed) - content 빈 문자열, 멘션 차단")
+  void INFO_멘션_없음() {
+    wireMock.stubFor(post(urlEqualTo("/webhook")).willReturn(aResponse().withStatus(204)));
+    DiscordWebhookClient client = newClient(wireMock.baseUrl() + "/webhook", "12345");
+
+    client.send(NotificationLevel.INFO, new DiscordEmbed("t", "d", null, List.of()));
+
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/webhook"))
+            .withRequestBody(matchingJsonPath("$.content", equalTo("")))
+            .withRequestBody(matchingJsonPath("$.embeds[0].color", equalTo("3447003"))));
+  }
+
+  @Test
+  @DisplayName("send - embed.color가 설정되어 있으면 level 색상으로 덮어쓰지 않음")
+  void 기존_색상_유지() {
+    wireMock.stubFor(post(urlEqualTo("/webhook")).willReturn(aResponse().withStatus(204)));
+    DiscordWebhookClient client = newClient(wireMock.baseUrl() + "/webhook");
+
+    client.send(NotificationLevel.INFO, new DiscordEmbed("t", "d", 0x57F287, List.of()));
+
+    wireMock.verify(
+        postRequestedFor(urlEqualTo("/webhook"))
+            .withRequestBody(matchingJsonPath("$.embeds[0].color", equalTo("5763719"))));
   }
 }

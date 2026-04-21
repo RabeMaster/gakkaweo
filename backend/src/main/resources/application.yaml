@@ -107,6 +107,14 @@ app:
     discord:
       webhook-url: ${DISCORD_WEBHOOK_URL:}
       timeout: ${DISCORD_WEBHOOK_TIMEOUT:3s}
+      mention-role-id: ${DISCORD_MENTION_ROLE_ID:}
+    audit-alert:
+      enabled: ${AUDIT_ALERT_ENABLED:true}
+    error-alert:
+      enabled: ${ERROR_ALERT_ENABLED:true}
+      cooldown: ${ERROR_ALERT_COOLDOWN:5m}
+    dedup:
+      cleanup-interval-ms: ${NOTIFICATION_DEDUP_CLEANUP_INTERVAL_MS:300000}
 
   openapi:
     docs-mode: ${APP_OPENAPI_DOCS_MODE:false}
