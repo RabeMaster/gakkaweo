@@ -103,6 +103,11 @@ app:
   seed:
     admin-password: ${SEED_ADMIN_PASSWORD:}
 
+  notification:
+    discord:
+      webhook-url: ${DISCORD_WEBHOOK_URL:}
+      timeout: ${DISCORD_WEBHOOK_TIMEOUT:3s}
+
   openapi:
     docs-mode: ${APP_OPENAPI_DOCS_MODE:false}
 
