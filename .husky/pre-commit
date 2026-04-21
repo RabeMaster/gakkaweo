@@ -10,15 +10,21 @@ fi
 cd frontend && ./node_modules/.bin/lint-staged
 cd ..
 
-# 백엔드 및 AI 서비스 린트 및 포맷
-if git diff --cached --name-only | grep -q 'backend/.*\.java$'; then
+# 백엔드 린트 및 포맷 (staged 파일만 재스테이지)
+STAGED_JAVA=$(git diff --cached --name-only --diff-filter=ACMR | grep 'backend/src/.*\.java$' || true)
+if [ -n "$STAGED_JAVA" ]; then
   cd backend && ./gradlew spotlessApply -q && cd ..
-  git add -u backend/src/
+  echo "$STAGED_JAVA" | while IFS= read -r file; do
+    git add -- "$file"
+  done
 fi
 
-# AI 서비스(파이썬) 린트 및 포맷
-if git diff --cached --name-only | grep -q 'ai-service/.*\.py$'; then
+# AI 서비스(파이썬) 린트 및 포맷 (staged 파일만 재스테이지)
+STAGED_PY=$(git diff --cached --name-only --diff-filter=ACMR | grep 'ai-service/.*\.py$' || true)
+if [ -n "$STAGED_PY" ]; then
   ./ai-service/.venv/Scripts/ruff check --fix ai-service/
   ./ai-service/.venv/Scripts/ruff format ai-service/
-  git add -u ai-service/
+  echo "$STAGED_PY" | while IFS= read -r file; do
+    git add -- "$file"
+  done
 fi
