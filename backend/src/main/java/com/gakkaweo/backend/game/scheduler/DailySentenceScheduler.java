@@ -8,6 +8,8 @@ import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
+import io.github.resilience4j.retry.Retry;
+import io.github.resilience4j.retry.RetryRegistry;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -35,6 +37,7 @@ public class DailySentenceScheduler {
   private final RankingService rankingService;
   private final TransactionTemplate transactionTemplate;
   private final ApplicationEventPublisher eventPublisher;
+  private final RetryRegistry retryRegistry;
   private final Clock clock;
 
   @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
@@ -43,16 +46,28 @@ public class DailySentenceScheduler {
     LocalDate today = LocalDate.now(clock);
     LocalDate yesterday = today.minusDays(1);
 
+    Retry expireRetry = retryRegistry.retry("schedulerExpire");
+    Retry snapshotRetry = retryRegistry.retry("schedulerSnapshot");
+    Retry expireKeysRetry = retryRegistry.retry("schedulerExpireKeys");
+    Retry selectTodayRetry = retryRegistry.retry("schedulerSelectToday");
+
     try {
-      transactionTemplate.executeWithoutResult(status -> expireYesterdaySessions(yesterday));
+      expireRetry.executeRunnable(
+          () ->
+              transactionTemplate.executeWithoutResult(
+                  status -> expireYesterdaySessions(yesterday)));
     } catch (Exception e) {
       log.error("전날 세션 만료 처리 실패: {}", e.getMessage(), e);
     }
 
     boolean snapshotSuccess = false;
     try {
-      RankingSnapshot snapshot = rankingService.getAllRankingsForDate(yesterday);
-      transactionTemplate.executeWithoutResult(status -> saveRankingSnapshot(yesterday, snapshot));
+      snapshotRetry.executeRunnable(
+          () -> {
+            RankingSnapshot snapshot = rankingService.getAllRankingsForDate(yesterday);
+            transactionTemplate.executeWithoutResult(
+                status -> saveRankingSnapshot(yesterday, snapshot));
+          });
       snapshotSuccess = true;
     } catch (Exception e) {
       log.error("전날 랭킹 스냅샷 저장 실패: {}", e.getMessage(), e);
@@ -60,14 +75,16 @@ public class DailySentenceScheduler {
 
     if (snapshotSuccess) {
       try {
-        rankingService.expirePreviousDayRankingKeys(yesterday);
+        expireKeysRetry.executeRunnable(
+            () -> rankingService.expirePreviousDayRankingKeys(yesterday));
       } catch (Exception e) {
         log.error("전날 랭킹 키 만료 처리 실패: {}", e.getMessage(), e);
       }
     }
 
     try {
-      transactionTemplate.executeWithoutResult(status -> selectTodaySentence(today));
+      selectTodayRetry.executeRunnable(
+          () -> transactionTemplate.executeWithoutResult(status -> selectTodaySentence(today)));
     } catch (Exception e) {
       log.error("오늘의 문장 선정 실패: {}", e.getMessage(), e);
     }
