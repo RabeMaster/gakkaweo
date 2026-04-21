@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -49,6 +50,10 @@ public class DailySentenceScheduler {
 
   @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
   public void executeMidnightJob() {
+    executeMidnightJob(true);
+  }
+
+  void executeMidnightJob(boolean notifyOnDiscord) {
     log.info("일일 스케줄러 시작");
     LocalDate today = LocalDate.now(clock);
     LocalDate yesterday = today.minusDays(1);
@@ -107,12 +112,9 @@ public class DailySentenceScheduler {
       log.error("오늘의 문장 선정 실패: {}", e.getMessage(), e);
     }
 
-    String todaySentence =
-        dailySentenceRepository.findByUsedAt(today).map(DailySentence::getSentence).orElse(null);
-
-    dailySentenceRepository
-        .findByUsedAt(today)
-        .ifPresent(s -> eventPublisher.publishEvent(new DayChangeEvent(s.getPublicId())));
+    Optional<DailySentence> todayOpt = dailySentenceRepository.findByUsedAt(today);
+    String todaySentence = todayOpt.map(DailySentence::getSentence).orElse(null);
+    todayOpt.ifPresent(s -> eventPublisher.publishEvent(new DayChangeEvent(s.getPublicId())));
 
     long unusedCount = dailySentenceRepository.countUnusedActive();
 
@@ -126,7 +128,9 @@ public class DailySentenceScheduler {
             yesterdayTotalPlayers,
             unusedCount);
 
-    notifyDiscord(report);
+    if (notifyOnDiscord) {
+      notifyDiscord(report);
+    }
 
     log.info("일일 스케줄러 완료");
   }
@@ -136,7 +140,7 @@ public class DailySentenceScheduler {
     LocalDate today = LocalDate.now(clock);
     if (dailySentenceRepository.findByUsedAt(today).isEmpty()) {
       log.info("오늘 날짜 기준으로 선택된 문장이 없어 즉시 선정을 진행합니다.");
-      executeMidnightJob();
+      executeMidnightJob(false);
     }
   }
 
@@ -193,7 +197,7 @@ public class DailySentenceScheduler {
     try {
       discordWebhookClient.sendEmbed(buildEmbed(report));
     } catch (Exception e) {
-      log.warn("Discord 웹훅 전송 중 예외 발생: {}", e.getMessage());
+      log.warn("Discord 웹훅 전송 중 예외 발생: {}", e.getMessage(), e);
     }
   }
 

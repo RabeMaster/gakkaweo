@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
@@ -24,6 +25,7 @@ public class DiscordWebhookClient {
     this.webhookUrl = properties.getWebhookUrl();
   }
 
+  @Async("discordWebhookExecutor")
   public void sendEmbed(DiscordEmbed embed) {
     if (!StringUtils.hasText(webhookUrl)) {
       log.debug("Discord 웹훅 URL 미설정, 전송 건너뜀");
@@ -39,7 +41,7 @@ public class DiscordWebhookClient {
           .retrieve()
           .toBodilessEntity();
     } catch (RestClientException e) {
-      log.warn("Discord 웹훅 전송 실패: {}", e.getMessage());
+      log.warn("Discord 웹훅 전송 실패: {}", e.getMessage(), e);
     }
   }
 }
