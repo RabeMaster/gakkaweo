@@ -1,9 +1,11 @@
 package com.gakkaweo.backend.infra.notification.client;
 
+import com.gakkaweo.backend.infra.notification.NotificationLevel;
 import com.gakkaweo.backend.infra.notification.config.DiscordWebhookProperties;
+import com.gakkaweo.backend.infra.notification.dto.AllowedMentions;
 import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
+import com.gakkaweo.backend.infra.notification.dto.DiscordWebhookPayload;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -18,11 +20,22 @@ import org.springframework.web.client.RestClientException;
 @RequiredArgsConstructor
 public class DiscordWebhookClient {
 
+  private static final int COLOR_HIGH = 0xE67E22;
+  private static final int COLOR_INFO = 0x3498DB;
+
   private final RestClient discordWebhookRestClient;
   private final DiscordWebhookProperties properties;
 
   @Async("discordWebhookExecutor")
-  public void sendEmbed(DiscordEmbed embed) {
+  public void send(NotificationLevel level, DiscordEmbed embed) {
+    DiscordEmbed finalEmbed = embed.color() != null ? embed : withLevelColor(embed, level);
+    DiscordWebhookPayload payload =
+        new DiscordWebhookPayload(
+            buildContent(level), List.of(finalEmbed), buildAllowedMentions(level));
+    dispatch(payload);
+  }
+
+  private void dispatch(DiscordWebhookPayload payload) {
     String webhookUrl = properties.getWebhookUrl();
     if (!StringUtils.hasText(webhookUrl)) {
       log.debug("Discord 웹훅 URL 미설정, 전송 건너뜀");
@@ -34,11 +47,43 @@ public class DiscordWebhookClient {
           .post()
           .uri(webhookUrl)
           .contentType(MediaType.APPLICATION_JSON)
-          .body(Map.of("embeds", List.of(embed)))
+          .body(payload)
           .retrieve()
           .toBodilessEntity();
     } catch (RestClientException e) {
       log.warn("Discord 웹훅 전송 실패: {}", e.getMessage(), e);
     }
+  }
+
+  private String buildContent(NotificationLevel level) {
+    return switch (level) {
+      case HIGH -> {
+        String roleId = properties.getMentionRoleId();
+        yield StringUtils.hasText(roleId) ? "<@&" + roleId + ">" : "";
+      }
+      case INFO -> "";
+    };
+  }
+
+  private AllowedMentions buildAllowedMentions(NotificationLevel level) {
+    return switch (level) {
+      case HIGH -> {
+        String roleId = properties.getMentionRoleId();
+        yield StringUtils.hasText(roleId)
+            ? AllowedMentions.roles(List.of(roleId))
+            : AllowedMentions.none();
+      }
+      case INFO -> AllowedMentions.none();
+    };
+  }
+
+  private DiscordEmbed withLevelColor(DiscordEmbed embed, NotificationLevel level) {
+    int color =
+        switch (level) {
+          case HIGH -> COLOR_HIGH;
+          case INFO -> COLOR_INFO;
+        };
+    return new DiscordEmbed(
+        embed.title(), embed.description(), color, embed.fields(), embed.timestamp());
   }
 }

@@ -1,7 +1,10 @@
 package com.gakkaweo.backend.common.exception;
 
+import com.gakkaweo.backend.infra.notification.ServerErrorNotifier;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -21,7 +24,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 @Slf4j
 @SuppressWarnings("unused")
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+  private final ServerErrorNotifier serverErrorNotifier;
 
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<?> handleBusinessException(BusinessException e) {
@@ -84,8 +90,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   }
 
   @ExceptionHandler(Exception.class)
-  public ResponseEntity<?> handleUnexpectedException(Exception e) {
+  public ResponseEntity<?> handleUnexpectedException(Exception e, HttpServletRequest request) {
     log.error("예상하지 못한 서버 오류 발생", e);
+    serverErrorNotifier.notify(e, request);
     ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
     ErrorBody body =
         new ErrorBody(

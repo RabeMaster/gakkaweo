@@ -12,4 +12,5 @@ public class DiscordWebhookProperties {
 
   private final String webhookUrl;
   private final Duration timeout;
+  private final String mentionRoleId;
 }

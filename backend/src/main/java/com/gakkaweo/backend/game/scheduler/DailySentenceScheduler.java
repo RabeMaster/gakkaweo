@@ -5,6 +5,7 @@ import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
+import com.gakkaweo.backend.infra.notification.NotificationLevel;
 import com.gakkaweo.backend.infra.notification.client.DiscordWebhookClient;
 import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
 import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
@@ -195,7 +196,7 @@ public class DailySentenceScheduler {
 
   private void notifyDiscord(MidnightJobReport report) {
     try {
-      discordWebhookClient.sendEmbed(buildEmbed(report));
+      discordWebhookClient.send(NotificationLevel.INFO, buildEmbed(report));
     } catch (Exception e) {
       log.warn("Discord 웹훅 전송 중 예외 발생: {}", e.getMessage(), e);
     }

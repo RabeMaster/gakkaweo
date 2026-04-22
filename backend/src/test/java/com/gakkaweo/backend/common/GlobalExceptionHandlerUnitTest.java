@@ -1,9 +1,14 @@
 package com.gakkaweo.backend.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.gakkaweo.backend.common.exception.ErrorBody;
 import com.gakkaweo.backend.common.exception.GlobalExceptionHandler;
+import com.gakkaweo.backend.infra.notification.ServerErrorNotifier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -19,7 +24,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 @DisplayName("GlobalExceptionHandler 단위 테스트 (나머지 분기)")
 class GlobalExceptionHandlerUnitTest {
 
-  private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+  private final ServerErrorNotifier serverErrorNotifier = mock(ServerErrorNotifier.class);
+  private final GlobalExceptionHandler handler = new GlobalExceptionHandler(serverErrorNotifier);
 
   @Test
   @DisplayName("ObjectOptimisticLockingFailureException - CONCURRENT_MODIFICATION 응답")
@@ -35,15 +41,17 @@ class GlobalExceptionHandlerUnitTest {
   }
 
   @Test
-  @DisplayName("handleUnexpectedException - 500 INTERNAL_SERVER_ERROR 응답")
+  @DisplayName("handleUnexpectedException - 500 INTERNAL_SERVER_ERROR 응답 + ServerErrorNotifier 위임")
   void 예상밖_예외() {
     Exception ex = new RuntimeException("boom");
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/boom");
 
-    ResponseEntity<?> response = handler.handleUnexpectedException(ex);
+    ResponseEntity<?> response = handler.handleUnexpectedException(ex, request);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     ErrorBody body = (ErrorBody) response.getBody();
     assertThat(body.code()).isEqualTo("INTERNAL_SERVER_ERROR");
+    verify(serverErrorNotifier).notify(eq(ex), any());
   }
 
   @Test
