@@ -210,8 +210,8 @@ HALF_OPEN → 일정 시간 후 재시도
 `NotificationDeduplicationCache` (`ConcurrentHashMap<String, Instant>`):
 
 - `shouldSend(key, cooldown)`: 원자적 `compute`로 마지막 전송 시각 조회/갱신. `AtomicBoolean` 반환으로 "쿨다운 내 재전송 여부" 판단
-- 키 구조: `exceptionClassName:requestUri` — 동일 예외가 동일 경로에서 반복 발생 시 쿨다운 내 한 번만 알림하게끔 설계
-- `@Scheduled` cleanup: `errorAlert.cooldown × 2` 주기로 만료된 키 제거
+- 키 구조: `exceptionClassName:requestUri` - 동일 예외가 동일 경로에서 반복 발생 시 쿨다운 내 한 번만 알림하게끔 설계
+- `@Scheduled` cleanup: 실행 주기는 `NOTIFICATION_DEDUP_CLEANUP_INTERVAL_MS`(기본 5분). 매 실행 시 마지막 전송 후 `errorAlert.cooldown × 2`가 경과한 엔트리를 제거
 
 ### Async 실행 풀
 
