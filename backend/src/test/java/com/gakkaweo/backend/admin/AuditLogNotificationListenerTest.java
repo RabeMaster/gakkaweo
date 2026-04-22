@@ -101,6 +101,29 @@ class AuditLogNotificationListenerTest {
   }
 
   @Test
+  @DisplayName("targetId가 null/blank면 Target 필드에 타입만 표시")
+  void target_id_없음() {
+    DiscordWebhookClient client = mock(DiscordWebhookClient.class);
+    AuditLogNotificationListener listener = new AuditLogNotificationListener(client, props(true));
+    AuditLogEvent ev =
+        new AuditLogEvent(
+            "SYSTEM_RESET", "SYSTEM", null, "admin-nick", null, "127.0.0.1", Instant.now());
+
+    listener.onAuditLog(ev);
+
+    ArgumentCaptor<DiscordEmbed> embedCaptor = ArgumentCaptor.forClass(DiscordEmbed.class);
+    verify(client).send(eq(NotificationLevel.HIGH), embedCaptor.capture());
+
+    String targetValue =
+        embedCaptor.getValue().fields().stream()
+            .filter(f -> f.name().equals("Target"))
+            .findFirst()
+            .orElseThrow()
+            .value();
+    assertThat(targetValue).isEqualTo("SYSTEM");
+  }
+
+  @Test
   @DisplayName("detail이 비어있으면 Detail 필드 생략")
   void detail_빈값_생략() {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);

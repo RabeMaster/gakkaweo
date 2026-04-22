@@ -7,13 +7,11 @@ import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
-@Slf4j
 @RequiredArgsConstructor
 public class AuditLogNotificationListener {
 
@@ -28,11 +26,7 @@ public class AuditLogNotificationListener {
       return;
     }
 
-    try {
-      discordWebhookClient.send(NotificationLevel.HIGH, buildEmbed(event));
-    } catch (Exception e) {
-      log.warn("어드민 감사 로그 Discord 알림 실패: {}", e.getMessage(), e);
-    }
+    discordWebhookClient.send(NotificationLevel.HIGH, buildEmbed(event));
   }
 
   private DiscordEmbed buildEmbed(AuditLogEvent event) {
@@ -49,8 +43,8 @@ public class AuditLogNotificationListener {
 
   private String formatTarget(AuditLogEvent event) {
     String targetType = safe(event.targetType());
-    String targetId = safe(event.targetId());
-    if (targetId.isEmpty()) {
+    String targetId = event.targetId();
+    if (targetId == null || targetId.isBlank()) {
       return targetType;
     }
     return targetType + ":" + targetId;
@@ -61,6 +55,9 @@ public class AuditLogNotificationListener {
   }
 
   private String truncate(String value) {
+    if (value == null) {
+      return "-";
+    }
     if (value.length() <= DETAIL_MAX_LENGTH) {
       return value;
     }
