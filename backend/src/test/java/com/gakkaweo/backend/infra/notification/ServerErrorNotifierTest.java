@@ -13,7 +13,10 @@ import com.gakkaweo.backend.infra.notification.client.DiscordWebhookClient;
 import com.gakkaweo.backend.infra.notification.config.NotificationProperties;
 import com.gakkaweo.backend.infra.notification.dedup.NotificationDeduplicationCache;
 import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +24,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 @DisplayName("ServerErrorNotifier 단위 테스트")
 class ServerErrorNotifierTest {
+
+  private static final Instant FIXED_INSTANT = Instant.parse("2026-04-22T10:30:00Z");
+  private static final Clock FIXED_CLOCK = Clock.fixed(FIXED_INSTANT, ZoneOffset.UTC);
 
   private NotificationProperties props(boolean enabled) {
     return new NotificationProperties(
@@ -33,7 +39,8 @@ class ServerErrorNotifierTest {
   void 비활성화_전송_없음() {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     NotificationDeduplicationCache dedup = mock(NotificationDeduplicationCache.class);
-    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(false), dedup);
+    ServerErrorNotifier notifier =
+        new ServerErrorNotifier(client, props(false), dedup, FIXED_CLOCK);
 
     notifier.notify(new RuntimeException("boom"), new MockHttpServletRequest("GET", "/boom"));
 
@@ -46,7 +53,7 @@ class ServerErrorNotifierTest {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     NotificationDeduplicationCache dedup = mock(NotificationDeduplicationCache.class);
     when(dedup.shouldSend(anyString(), any())).thenReturn(true);
-    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(true), dedup);
+    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(true), dedup, FIXED_CLOCK);
 
     notifier.notify(new RuntimeException("boom"), new MockHttpServletRequest("POST", "/api/hello"));
 
@@ -59,7 +66,7 @@ class ServerErrorNotifierTest {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     NotificationDeduplicationCache dedup = mock(NotificationDeduplicationCache.class);
     when(dedup.shouldSend(anyString(), any())).thenReturn(false);
-    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(true), dedup);
+    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(true), dedup, FIXED_CLOCK);
 
     notifier.notify(new RuntimeException("boom"), new MockHttpServletRequest("GET", "/boom"));
 
@@ -72,7 +79,7 @@ class ServerErrorNotifierTest {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     NotificationDeduplicationCache dedup = mock(NotificationDeduplicationCache.class);
     when(dedup.shouldSend(anyString(), any())).thenThrow(new RuntimeException("dedup failure"));
-    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(true), dedup);
+    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(true), dedup, FIXED_CLOCK);
 
     notifier.notify(new RuntimeException("boom"), new MockHttpServletRequest("GET", "/boom"));
 
@@ -80,11 +87,12 @@ class ServerErrorNotifierTest {
   }
 
   @Test
-  @DisplayName("embed 필드 구성 - Request/Exception/Message/Stack 4개 필드")
+  @DisplayName("embed 필드 구성 - Request/Exception/Message/Stack 4개 필드 + timestamp")
   void embed_필드_구성() {
     DiscordEmbed embed = captureEmbed(new RuntimeException("boom"), "POST", "/api/hello");
 
     assertThat(embed.title()).isEqualTo("서버 오류 발생");
+    assertThat(embed.timestamp()).isEqualTo(FIXED_INSTANT.toString());
     assertThat(embed.fields())
         .extracting(DiscordEmbed.Field::name)
         .containsExactly("Request", "Exception", "Message", "Stack");
@@ -160,7 +168,7 @@ class ServerErrorNotifierTest {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     NotificationDeduplicationCache dedup = mock(NotificationDeduplicationCache.class);
     when(dedup.shouldSend(anyString(), any())).thenReturn(true);
-    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(true), dedup);
+    ServerErrorNotifier notifier = new ServerErrorNotifier(client, props(true), dedup, FIXED_CLOCK);
 
     notifier.notify(ex, new MockHttpServletRequest(method, uri));
 

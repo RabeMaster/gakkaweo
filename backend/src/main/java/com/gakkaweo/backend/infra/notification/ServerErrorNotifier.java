@@ -5,6 +5,7 @@ import com.gakkaweo.backend.infra.notification.config.NotificationProperties;
 import com.gakkaweo.backend.infra.notification.dedup.NotificationDeduplicationCache;
 import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class ServerErrorNotifier {
   private final DiscordWebhookClient discordWebhookClient;
   private final NotificationProperties notificationProperties;
   private final NotificationDeduplicationCache deduplicationCache;
+  private final Clock clock;
 
   public void notify(Exception ex, HttpServletRequest request) {
     try {
@@ -50,7 +52,7 @@ public class ServerErrorNotifier {
     fields.add(new DiscordEmbed.Field("Exception", ex.getClass().getName(), false));
     fields.add(new DiscordEmbed.Field("Message", truncate(ex.getMessage()), false));
     fields.add(new DiscordEmbed.Field("Stack", summarizeStack(ex), false));
-    return new DiscordEmbed("서버 오류 발생", null, null, fields);
+    return new DiscordEmbed("서버 오류 발생", null, null, fields, clock.instant().toString());
   }
 
   private String truncate(String value) {
