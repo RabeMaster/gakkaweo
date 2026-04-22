@@ -27,13 +27,6 @@ public class DiscordWebhookClient {
   private final DiscordWebhookProperties properties;
 
   @Async("discordWebhookExecutor")
-  public void sendEmbed(DiscordEmbed embed) {
-    DiscordWebhookPayload payload =
-        new DiscordWebhookPayload(null, List.of(embed), AllowedMentions.none());
-    dispatch(payload);
-  }
-
-  @Async("discordWebhookExecutor")
   public void send(NotificationLevel level, DiscordEmbed embed) {
     DiscordEmbed finalEmbed = embed.color() != null ? embed : withLevelColor(embed, level);
     DiscordWebhookPayload payload =

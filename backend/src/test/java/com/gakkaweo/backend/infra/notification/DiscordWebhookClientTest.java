@@ -46,17 +46,17 @@ class DiscordWebhookClientTest {
   }
 
   @Test
-  @DisplayName("sendEmbed - webhookUrl이 빈 문자열이면 요청 보내지 않음")
+  @DisplayName("send - webhookUrl이 빈 문자열이면 요청 보내지 않음")
   void 빈_URL_전송_스킵() {
     DiscordWebhookClient client = newClient("");
 
-    client.sendEmbed(new DiscordEmbed("제목", "설명", 0x57F287, List.of()));
+    client.send(NotificationLevel.INFO, new DiscordEmbed("제목", "설명", 0x57F287, List.of()));
 
     wireMock.verify(0, postRequestedFor(urlEqualTo("/webhook")));
   }
 
   @Test
-  @DisplayName("sendEmbed - webhookUrl이 설정되면 embeds 배열 JSON으로 POST")
+  @DisplayName("send(INFO, embed) - webhookUrl이 설정되면 embeds 배열 JSON으로 POST")
   void 정상_전송() {
     wireMock.stubFor(post(urlEqualTo("/webhook")).willReturn(aResponse().withStatus(204)));
     DiscordWebhookClient client = newClient(wireMock.baseUrl() + "/webhook");
@@ -68,7 +68,7 @@ class DiscordWebhookClientTest {
             0x57F287,
             List.of(new DiscordEmbed.Field("어제 세션 만료", "성공", true)));
 
-    client.sendEmbed(embed);
+    client.send(NotificationLevel.INFO, embed);
 
     wireMock.verify(
         postRequestedFor(urlEqualTo("/webhook"))
@@ -78,12 +78,12 @@ class DiscordWebhookClientTest {
   }
 
   @Test
-  @DisplayName("sendEmbed - Discord가 5xx 응답해도 예외 전파하지 않음")
+  @DisplayName("send - Discord가 5xx 응답해도 예외 전파하지 않음")
   void 오류_응답_무시() {
     wireMock.stubFor(post(urlEqualTo("/webhook")).willReturn(aResponse().withStatus(500)));
     DiscordWebhookClient client = newClient(wireMock.baseUrl() + "/webhook");
 
-    client.sendEmbed(new DiscordEmbed("t", "d", 0, List.of()));
+    client.send(NotificationLevel.INFO, new DiscordEmbed("t", "d", 0, List.of()));
 
     wireMock.verify(postRequestedFor(urlEqualTo("/webhook")));
   }
