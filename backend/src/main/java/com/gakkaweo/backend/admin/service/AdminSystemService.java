@@ -1,8 +1,5 @@
 package com.gakkaweo.backend.admin.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
-
 import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
@@ -206,13 +203,13 @@ public class AdminSystemService {
 
   public void resetRankingCache() {
     LocalDate today = LocalDate.now(clock);
-    String rankingKey = RANKING_KEY_PREFIX + today;
+    String rankingKey = RedisKeyConstants.rankingKey(today);
 
     Set<String> members = redisTemplate.opsForZSet().range(rankingKey, 0, -1);
     if (members != null) {
       for (String memberKey : members) {
-        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
-        String detailKey = RedisKeyConstants.rankingDetailKey(today, UUID.fromString(publicIdStr));
+        UUID publicId = RedisKeyConstants.extractMemberPublicId(memberKey);
+        String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
         redisTemplate.delete(detailKey);
       }
     }

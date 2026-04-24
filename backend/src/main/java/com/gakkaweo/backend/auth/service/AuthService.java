@@ -1,7 +1,5 @@
 package com.gakkaweo.backend.auth.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.BLACKLIST_PREFIX;
-
 import com.gakkaweo.backend.auth.dto.AuthResponse;
 import com.gakkaweo.backend.auth.dto.TokenPair;
 import com.gakkaweo.backend.auth.jwt.JwtProvider;
@@ -74,7 +72,7 @@ public class AuthService {
     if (remainingMillis > 0) {
       redisTemplate
           .opsForValue()
-          .set(BLACKLIST_PREFIX + jti, "logout", Duration.ofMillis(remainingMillis));
+          .set(RedisKeyConstants.blacklistKey(jti), "logout", Duration.ofMillis(remainingMillis));
     }
     log.info("로그아웃: jti={}", jti);
   }

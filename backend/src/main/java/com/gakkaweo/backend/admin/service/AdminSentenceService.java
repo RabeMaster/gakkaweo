@@ -1,7 +1,5 @@
 package com.gakkaweo.backend.admin.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
-
 import com.gakkaweo.backend.admin.dto.DuplicateCheckRequest;
 import com.gakkaweo.backend.admin.dto.DuplicateCheckResponse;
 import com.gakkaweo.backend.admin.dto.EmergencyReplaceRequest;
@@ -15,6 +13,7 @@ import com.gakkaweo.backend.admin.dto.SimilarityTestRequest;
 import com.gakkaweo.backend.admin.dto.SimilarityTestResponse;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -252,8 +251,7 @@ public class AdminSentenceService {
               return newSentence.getPublicId();
             });
 
-    String rankingKey = RANKING_KEY_PREFIX + today;
-    redisTemplate.delete(rankingKey);
+    redisTemplate.delete(RedisKeyConstants.rankingKey(today));
 
     eventPublisher.publishEvent(new DayChangeEvent(newPublicId));
 
