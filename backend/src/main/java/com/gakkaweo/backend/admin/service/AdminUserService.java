@@ -60,6 +60,7 @@ public class AdminUserService {
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final RankingService rankingService;
+  private final AdminAuditService adminAuditService;
   private final Clock clock;
 
   private static Specification<Member> memberFilters(String nickname, Boolean banned) {
@@ -120,7 +121,7 @@ public class AdminUserService {
 
   @Transactional
   public AdminUserResponse changeRole(
-      UUID targetPublicId, UUID adminPublicId, RoleChangeRequest request) {
+      UUID targetPublicId, UUID adminPublicId, RoleChangeRequest request, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findMember(targetPublicId);
@@ -136,11 +137,18 @@ public class AdminUserService {
     }
 
     member.setRole(newRole);
+    adminAuditService.log(
+        adminPublicId,
+        "ROLE_CHANGE",
+        "MEMBER",
+        targetPublicId.toString(),
+        "newRole=" + request.role(),
+        ipAddress);
     return toUserResponse(member);
   }
 
   @Transactional
-  public void banUser(UUID targetPublicId, UUID adminPublicId) {
+  public void banUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findMember(targetPublicId);
@@ -154,10 +162,12 @@ public class AdminUserService {
     reloaded.setBannedAt(clock.instant());
 
     log.info("사용자 차단: publicId={}", targetPublicId);
+    adminAuditService.log(
+        adminPublicId, "USER_BAN", "MEMBER", targetPublicId.toString(), null, ipAddress);
   }
 
   @Transactional
-  public void unbanUser(UUID targetPublicId, UUID adminPublicId) {
+  public void unbanUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findMember(targetPublicId);
@@ -165,10 +175,12 @@ public class AdminUserService {
     member.setBannedAt(null);
 
     log.info("사용자 차단 해제: publicId={}", targetPublicId);
+    adminAuditService.log(
+        adminPublicId, "USER_UNBAN", "MEMBER", targetPublicId.toString(), null, ipAddress);
   }
 
   @Transactional
-  public void forceDeleteUser(UUID targetPublicId, UUID adminPublicId) {
+  public void forceDeleteUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findMember(targetPublicId);
@@ -181,6 +193,8 @@ public class AdminUserService {
     memberRepository.delete(member);
 
     log.info("관리자 강제 탈퇴: publicId={}", targetPublicId);
+    adminAuditService.log(
+        adminPublicId, "USER_FORCE_DELETE", "MEMBER", targetPublicId.toString(), null, ipAddress);
   }
 
   public void cleanupRedisAfterDelete(UUID publicId) {
@@ -195,7 +209,7 @@ public class AdminUserService {
 
   @Transactional
   public AdminUserResponse forceChangeNickname(
-      UUID targetPublicId, UUID adminPublicId, ForceNicknameRequest request) {
+      UUID targetPublicId, UUID adminPublicId, ForceNicknameRequest request, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findMember(targetPublicId);
@@ -213,6 +227,14 @@ public class AdminUserService {
     } catch (DataIntegrityViolationException e) {
       throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
     }
+
+    adminAuditService.log(
+        adminPublicId,
+        "USER_FORCE_NICKNAME",
+        "MEMBER",
+        targetPublicId.toString(),
+        "newNickname=" + member.getNickname(),
+        ipAddress);
 
     return toUserResponse(member);
   }
@@ -232,11 +254,18 @@ public class AdminUserService {
   }
 
   @Transactional
-  public void forceDeleteProfileImage(UUID targetPublicId, UUID adminPublicId) {
+  public void forceDeleteProfileImage(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findMember(targetPublicId);
     member.setProfileUrl(null);
+    adminAuditService.log(
+        adminPublicId,
+        "USER_FORCE_PROFILE_DELETE",
+        "MEMBER",
+        targetPublicId.toString(),
+        null,
+        ipAddress);
   }
 
   public void cleanupProfileImageAndRedis(UUID publicId) {
