@@ -3,9 +3,11 @@ import { useThemeStore } from "@/shared/stores/useThemeStore";
 import {
   SOUND_VOLUME_KEY,
   type SoundType,
+  getLastVolume,
   getSoundVolume,
   playSound,
   setCurrentSoundVolume,
+  setLastVolume,
   stopCurrentSound,
 } from "@/shared/config/sound";
 
@@ -39,10 +41,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     } catch {
       // 스토리지 접근 불가 시 무시
     }
-    if (v <= 0) {
-      stopCurrentSound();
-    } else {
+    if (v > 0) {
+      setLastVolume(v);
       setCurrentSoundVolume(v);
+    } else {
+      stopCurrentSound();
+    }
+  }
+
+  function handleMuteToggle() {
+    if (volume > 0) {
+      handleVolumeChange(0);
+    } else {
+      handleVolumeChange(getLastVolume());
     }
   }
 
@@ -151,9 +162,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               사운드
             </h3>
             <div className="flex items-center gap-3">
-              <span className="text-lg shrink-0" aria-hidden="true">
+              <button
+                type="button"
+                onClick={handleMuteToggle}
+                aria-label={volume === 0 ? "음소거 해제" : "음소거"}
+                aria-pressed={volume === 0}
+                className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 w-7 h-7 shrink-0 flex items-center justify-center text-sm transition-all duration-100 shadow-brutal-sm-hover hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
+              >
                 {volume === 0 ? "🔇" : "🔊"}
-              </span>
+              </button>
               <input
                 type="range"
                 aria-label="사운드 볼륨"
