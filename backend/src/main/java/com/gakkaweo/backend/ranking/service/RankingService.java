@@ -151,31 +151,7 @@ public class RankingService {
         return new RankingResponse(List.of(), totalPlayers);
       }
 
-      List<RankingEntry> entries = new ArrayList<>();
-      long rank = 1;
-      for (String memberKey : allMembers) {
-        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
-        String detailKey = RedisKeyConstants.rankingDetailKey(date, UUID.fromString(publicIdStr));
-
-        Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
-        if (detail.isEmpty()) {
-          continue;
-        }
-
-        String profileUrl = (String) detail.get("profileUrl");
-
-        entries.add(
-            new RankingEntry(
-                rank,
-                UUID.fromString((String) detail.get("publicId")),
-                (String) detail.get("nickname"),
-                profileUrl == null || profileUrl.isEmpty() ? null : profileUrl,
-                new BigDecimal((String) detail.get("similarity")),
-                Integer.parseInt((String) detail.get("attemptCount"))));
-        rank++;
-      }
-
-      return new RankingResponse(entries, totalPlayers);
+      return new RankingResponse(buildRankingEntries(allMembers, date), totalPlayers);
     } catch (Exception e) {
       log.warn("전체 랭킹 조회 실패: date={}", date, e);
       return new RankingResponse(List.of(), 0);
@@ -197,9 +173,13 @@ public class RankingService {
       return new RankingResponse(List.of(), totalPlayers);
     }
 
+    return new RankingResponse(buildRankingEntries(topMembers, date), totalPlayers);
+  }
+
+  private List<RankingEntry> buildRankingEntries(Set<String> memberKeys, LocalDate date) {
     List<RankingEntry> entries = new ArrayList<>();
     long rank = 1;
-    for (String memberKey : topMembers) {
+    for (String memberKey : memberKeys) {
       String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
       String detailKey = RedisKeyConstants.rankingDetailKey(date, UUID.fromString(publicIdStr));
 
@@ -220,8 +200,7 @@ public class RankingService {
               Integer.parseInt((String) detail.get("attemptCount"))));
       rank++;
     }
-
-    return new RankingResponse(entries, totalPlayers);
+    return entries;
   }
 
   private MyRank lookupMyRank(LocalDate date, UUID memberPublicId) {
@@ -322,6 +301,25 @@ public class RankingService {
 
     log.info("랭킹 캐시 재구축: date={}, sessions={}", date, count);
     return count;
+  }
+
+  public boolean cleanupMemberRanking(UUID publicId) {
+    try {
+      LocalDate today = LocalDate.now(clock);
+      String rankingKey = buildRankingKey(today);
+      String memberKey = RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
+
+      Long removed = redisTemplate.opsForZSet().remove(rankingKey, memberKey);
+      if (removed != null && removed > 0) {
+        redisTemplate.delete(detailKey);
+        return true;
+      }
+      return false;
+    } catch (Exception e) {
+      log.warn("회원 랭킹 정리 실패: publicId={}", publicId, e);
+      return false;
+    }
   }
 
   public void expirePreviousDayRankingKeys(LocalDate date) {
