@@ -29,12 +29,12 @@ public class ServerErrorNotifier {
   public void notify(Exception ex, HttpServletRequest request) {
     try {
       NotificationProperties.ErrorAlert config = notificationProperties.getErrorAlert();
-      if (!config.isEnabled()) {
+      if (!config.enabled()) {
         return;
       }
 
       String dedupKey = ex.getClass().getName() + ":" + request.getRequestURI();
-      if (!deduplicationCache.shouldSend(dedupKey, config.getCooldown())) {
+      if (!deduplicationCache.shouldSend(dedupKey, config.cooldown())) {
         return;
       }
 

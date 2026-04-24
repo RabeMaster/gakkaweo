@@ -13,16 +13,7 @@ public class NotificationProperties {
   private final AuditAlert auditAlert;
   private final ErrorAlert errorAlert;
 
-  @Getter
-  @RequiredArgsConstructor
-  public static class AuditAlert {
-    private final boolean enabled;
-  }
+  public record AuditAlert(boolean enabled) {}
 
-  @Getter
-  @RequiredArgsConstructor
-  public static class ErrorAlert {
-    private final boolean enabled;
-    private final Duration cooldown;
-  }
+  public record ErrorAlert(boolean enabled, Duration cooldown) {}
 }
