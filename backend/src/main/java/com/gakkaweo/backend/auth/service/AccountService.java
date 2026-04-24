@@ -57,7 +57,11 @@ public class AccountService {
 
   public void cleanupRedis(UUID publicId, String accessToken) {
     if (accessToken != null) {
-      authService.logout(accessToken);
+      try {
+        authService.logout(accessToken);
+      } catch (Exception e) {
+        log.warn("탈퇴 회원 로그아웃 실패, Redis 정리 계속: publicId={}", publicId, e);
+      }
     }
 
     if (rankingService.cleanupMemberRanking(publicId)) {
