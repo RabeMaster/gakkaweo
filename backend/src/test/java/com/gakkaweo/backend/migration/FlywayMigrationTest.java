@@ -15,11 +15,11 @@ class FlywayMigrationTest extends IntegrationTestBase {
   @Autowired Flyway flyway;
 
   @Test
-  @DisplayName("V1~V14 전부 적용 완료")
+  @DisplayName("V1~V15 전부 적용 완료")
   void 마이그레이션_적용완료() {
     MigrationInfo[] applied = flyway.info().applied();
-    assertThat(applied).hasSize(14);
-    assertThat(applied[applied.length - 1].getVersion().getVersion()).isEqualTo("14");
+    assertThat(applied).hasSize(15);
+    assertThat(applied[applied.length - 1].getVersion().getVersion()).isEqualTo("15");
   }
 
   @Test
