@@ -2,7 +2,7 @@ package com.gakkaweo.backend.common.exception;
 
 import com.gakkaweo.backend.infra.notification.ServerErrorNotifier;
 import jakarta.servlet.http.HttpServletRequest;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +28,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
   private final ServerErrorNotifier serverErrorNotifier;
+  private final Clock clock;
 
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<?> handleBusinessException(BusinessException e) {
@@ -38,7 +39,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
@@ -51,7 +52,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
@@ -68,7 +69,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
@@ -85,7 +86,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
@@ -99,7 +100,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
@@ -115,7 +116,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             .collect(Collectors.joining(", "));
     log.warn("유효성 검증 실패: {}", message);
     ErrorBody body =
-        new ErrorBody(status.value(), "VALIDATION_FAILED", message, Instant.now().toString());
+        new ErrorBody(status.value(), "VALIDATION_FAILED", message, clock.instant().toString());
     return ResponseEntity.status(status).body(body);
   }
 
@@ -132,7 +133,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             ex.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
@@ -149,7 +150,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorCode.getStatus().value(),
             errorCode.name(),
             ex.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
     return ResponseEntity.status(errorCode.getStatus()).body(body);
   }
 
@@ -166,7 +167,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             status.value(),
             ex.getClass().getSimpleName(),
             ex.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
     return ResponseEntity.status(status).headers(headers).body(errorBody);
   }
 }

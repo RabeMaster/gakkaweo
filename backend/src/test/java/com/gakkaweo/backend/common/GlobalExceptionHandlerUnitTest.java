@@ -9,6 +9,9 @@ import static org.mockito.Mockito.verify;
 import com.gakkaweo.backend.common.exception.ErrorBody;
 import com.gakkaweo.backend.common.exception.GlobalExceptionHandler;
 import com.gakkaweo.backend.infra.notification.ServerErrorNotifier;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -25,7 +28,9 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 class GlobalExceptionHandlerUnitTest {
 
   private final ServerErrorNotifier serverErrorNotifier = mock(ServerErrorNotifier.class);
-  private final GlobalExceptionHandler handler = new GlobalExceptionHandler(serverErrorNotifier);
+  private final Clock clock = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneId.of("UTC"));
+  private final GlobalExceptionHandler handler =
+      new GlobalExceptionHandler(serverErrorNotifier, clock);
 
   private static ResponseEntity<Object> invokeHandleMaxUploadSizeExceeded(
       GlobalExceptionHandler handler,
