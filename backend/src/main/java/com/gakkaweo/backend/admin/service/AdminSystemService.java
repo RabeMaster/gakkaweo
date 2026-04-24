@@ -1,6 +1,5 @@
 package com.gakkaweo.backend.admin.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
 
@@ -13,6 +12,7 @@ import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.admin.entity.Announcement;
 import com.gakkaweo.backend.domain.admin.entity.AnnouncementType;
 import com.gakkaweo.backend.domain.admin.entity.AuditLog;
@@ -212,8 +212,7 @@ public class AdminSystemService {
     if (members != null) {
       for (String memberKey : members) {
         String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
-        String detailKey =
-            RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicIdStr;
+        String detailKey = RedisKeyConstants.rankingDetailKey(today, UUID.fromString(publicIdStr));
         redisTemplate.delete(detailKey);
       }
     }

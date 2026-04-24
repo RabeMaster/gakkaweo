@@ -1,11 +1,11 @@
 package com.gakkaweo.backend.auth.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
 
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
 import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
@@ -71,7 +71,7 @@ public class AccountService {
       LocalDate today = LocalDate.now(clock);
       String rankingKey = RANKING_KEY_PREFIX + today;
       String memberKey = RANKING_MEMBER_PREFIX + publicId;
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
 
       Long removed = redisTemplate.opsForZSet().remove(rankingKey, memberKey);
 

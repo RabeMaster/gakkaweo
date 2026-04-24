@@ -1,14 +1,13 @@
 package com.gakkaweo.backend.auth.service;
 
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.BLACKLIST_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
 
 import com.gakkaweo.backend.auth.dto.AuthResponse;
 import com.gakkaweo.backend.auth.dto.TokenPair;
 import com.gakkaweo.backend.auth.jwt.JwtProvider;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.auth.entity.RefreshToken;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
@@ -134,7 +133,7 @@ public class AuthService {
   public void syncProfileUrlToRedis(UUID publicId, String profileUrl) {
     try {
       LocalDate today = LocalDate.now(clock);
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
 
       if (redisTemplate.hasKey(detailKey)) {
         redisTemplate.opsForHash().put(detailKey, "profileUrl", Objects.toString(profileUrl, ""));
@@ -148,7 +147,7 @@ public class AuthService {
   public void syncNicknameToRedis(UUID publicId, String nickname) {
     try {
       LocalDate today = LocalDate.now(clock);
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
 
       if (redisTemplate.hasKey(detailKey)) {
         redisTemplate.opsForHash().put(detailKey, "nickname", nickname);

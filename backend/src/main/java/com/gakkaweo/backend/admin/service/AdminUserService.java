@@ -1,6 +1,5 @@
 package com.gakkaweo.backend.admin.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
 import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
 
@@ -15,6 +14,7 @@ import com.gakkaweo.backend.admin.dto.UserListResponse;
 import com.gakkaweo.backend.auth.service.ProfileImageService;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
 import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
@@ -189,7 +189,7 @@ public class AdminUserService {
       LocalDate today = LocalDate.now(clock);
       String rankingKey = RANKING_KEY_PREFIX + today;
       String memberKey = RANKING_MEMBER_PREFIX + publicId;
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
 
       Long removed = redisTemplate.opsForZSet().remove(rankingKey, memberKey);
       if (removed != null && removed > 0) {
@@ -232,7 +232,7 @@ public class AdminUserService {
   public void syncNicknameToRedis(UUID publicId, String nickname) {
     try {
       LocalDate today = LocalDate.now(clock);
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
 
       if (redisTemplate.hasKey(detailKey)) {
         redisTemplate.opsForHash().put(detailKey, "nickname", nickname);
@@ -259,7 +259,7 @@ public class AdminUserService {
   private void syncProfileUrlToRedis(UUID publicId, String profileUrl) {
     try {
       LocalDate today = LocalDate.now(clock);
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
 
       if (redisTemplate.hasKey(detailKey)) {
         redisTemplate.opsForHash().put(detailKey, "profileUrl", Objects.toString(profileUrl, ""));
