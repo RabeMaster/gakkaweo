@@ -82,8 +82,23 @@ openApi {
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeTags 'performance'
+    }
     finalizedBy jacocoTestReport
+}
+
+tasks.register('performanceTest', Test) {
+    description = '인덱스 효과 측정용 EXPLAIN ANALYZE 테스트 (@Tag("performance"))'
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags 'performance'
+    }
+    shouldRunAfter tasks.named('test')
+    testLogging {
+        events 'started', 'passed', 'failed'
+        showStandardStreams = true
+    }
 }
 
 jacoco {
