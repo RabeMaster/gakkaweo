@@ -1,7 +1,9 @@
 package com.gakkaweo.backend.support;
 
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,9 +31,11 @@ public class BulkDataFixture {
           "ANNOUNCEMENT_CREATE");
 
   private final JdbcTemplate jdbc;
+  private final Clock clock;
 
-  public BulkDataFixture(JdbcTemplate jdbc) {
+  public BulkDataFixture(JdbcTemplate jdbc, Clock clock) {
     this.jdbc = jdbc;
+    this.clock = clock;
   }
 
   public PopulatedIds populateLargeDataset(
@@ -43,7 +47,7 @@ public class BulkDataFixture {
       int auditLogCount,
       int sentenceUploadCount) {
 
-    Instant base = Instant.now().minus(365, ChronoUnit.DAYS);
+    Instant base = clock.instant().minus(365, ChronoUnit.DAYS);
     List<Long> memberIds = insertMembers(memberCount, bannedCount, base);
     long adminId = memberIds.get(0);
     promoteToAdmin(adminId);
@@ -142,6 +146,7 @@ public class BulkDataFixture {
             + "(public_id, sentence, used_at, scheduled_at, status, created_at)"
             + " VALUES (?, ?, ?, ?, ?, ?)";
     List<Object[]> batch = new ArrayList<>(BATCH);
+    LocalDate today = LocalDate.now(clock);
     for (int i = 0; i < count; i++) {
       addAndMaybeFlush(
           sql,
@@ -149,8 +154,8 @@ public class BulkDataFixture {
           new Object[] {
             UUID.randomUUID(),
             "목데이터 문장 " + i,
-            java.sql.Date.valueOf(java.time.LocalDate.now().minusDays(count - i)),
-            java.sql.Date.valueOf(java.time.LocalDate.now().plusDays(i + 1)),
+            java.sql.Date.valueOf(today.minusDays(count - i)),
+            java.sql.Date.valueOf(today.plusDays(i + 1)),
             "ACTIVE",
             Timestamp.from(base.plusSeconds(i * 60L))
           });
