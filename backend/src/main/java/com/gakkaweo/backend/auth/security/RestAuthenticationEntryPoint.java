@@ -6,7 +6,7 @@ import com.gakkaweo.backend.common.exception.ErrorCode;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.Instant;
+import java.time.Clock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
   private final ObjectMapper objectMapper;
+  private final Clock clock;
 
   @Override
   public void commence(
@@ -31,7 +32,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
 
     response.setStatus(errorCode.getStatus().value());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);

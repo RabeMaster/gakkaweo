@@ -31,6 +31,8 @@ class DailySentenceSchedulerDiscordIntegrationTest extends IntegrationTestBase {
     WIRE_MOCK.start();
   }
 
+  @Autowired DailySentenceScheduler scheduler;
+
   @AfterAll
   static void stopWireMock() {
     WIRE_MOCK.stop();
@@ -40,8 +42,6 @@ class DailySentenceSchedulerDiscordIntegrationTest extends IntegrationTestBase {
   static void overrideWebhookUrl(DynamicPropertyRegistry registry) {
     registry.add("app.notification.discord.webhook-url", () -> WIRE_MOCK.baseUrl() + "/webhook");
   }
-
-  @Autowired DailySentenceScheduler scheduler;
 
   @BeforeEach
   void stubDiscord() {

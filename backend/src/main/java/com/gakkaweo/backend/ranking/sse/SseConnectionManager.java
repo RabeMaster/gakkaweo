@@ -27,13 +27,6 @@ public class SseConnectionManager {
   private final CopyOnWriteArrayList<SseEmitter> emitters = new CopyOnWriteArrayList<>();
   private final RankingService rankingService;
   private final int maxConnections;
-
-  public SseConnectionManager(
-      RankingService rankingService, @Value("${app.sse.max-connections:500}") int maxConnections) {
-    this.rankingService = rankingService;
-    this.maxConnections = maxConnections;
-  }
-
   private final ScheduledExecutorService heartbeatExecutor =
       Executors.newSingleThreadScheduledExecutor(
           r -> {
@@ -41,6 +34,12 @@ public class SseConnectionManager {
             t.setDaemon(true);
             return t;
           });
+
+  public SseConnectionManager(
+      RankingService rankingService, @Value("${app.sse.max-connections:500}") int maxConnections) {
+    this.rankingService = rankingService;
+    this.maxConnections = maxConnections;
+  }
 
   @PostConstruct
   void startHeartbeat() {

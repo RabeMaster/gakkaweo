@@ -1,9 +1,8 @@
 package com.gakkaweo.backend.infra.ai.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.SIMILARITY_CACHE_PREFIX;
-
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.infra.ai.client.AiServiceClient;
 import com.gakkaweo.backend.infra.ai.client.dto.SimilarityResponse;
 import com.gakkaweo.backend.infra.ai.exception.AiServiceException;
@@ -85,7 +84,7 @@ public class SimilarityService implements SimilarityClient {
 
   private String buildCacheKey(Long sentenceId, String normalizedText) {
     String hash = textNormalizer.hashForCache(normalizedText);
-    return SIMILARITY_CACHE_PREFIX + sentenceId + ":" + hash;
+    return RedisKeyConstants.similarityCacheKey(sentenceId, hash);
   }
 
   private BigDecimal getFromCache(String cacheKey) {

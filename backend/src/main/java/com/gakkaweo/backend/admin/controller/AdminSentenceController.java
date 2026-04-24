@@ -30,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -45,7 +44,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/admin/sentences")
 @RequiredArgsConstructor
-@Transactional
 @Tag(name = "Admin: Sentences", description = "어드민 문장 관리")
 @SecurityRequirement(name = "cookieAuth")
 public class AdminSentenceController {
@@ -57,7 +55,6 @@ public class AdminSentenceController {
   @Operation(summary = "문장 목록 조회")
   @AdminErrorResponses
   @GetMapping
-  @Transactional(readOnly = true)
   public ResponseEntity<SentenceListResponse> getSentences(
       @RequestParam(required = false) String status,
       @RequestParam(defaultValue = "0") int page,
@@ -92,7 +89,6 @@ public class AdminSentenceController {
   @Operation(summary = "문장 상세 조회")
   @AdminErrorResponses
   @GetMapping("/{publicId}")
-  @Transactional(readOnly = true)
   public ResponseEntity<SentenceResponse> getSentence(@PathVariable UUID publicId) {
     return ResponseEntity.ok(adminSentenceService.getSentence(publicId));
   }
@@ -152,7 +148,6 @@ public class AdminSentenceController {
   @Operation(summary = "문장별 통계 조회")
   @AdminErrorResponses
   @GetMapping("/{publicId}/stats")
-  @Transactional(readOnly = true)
   public ResponseEntity<SentenceStatsResponse> getSentenceStats(@PathVariable UUID publicId) {
     return ResponseEntity.ok(adminSentenceService.getSentenceStats(publicId));
   }
@@ -160,7 +155,6 @@ public class AdminSentenceController {
   @Operation(summary = "미사용 문장 수 조회")
   @AdminErrorResponses
   @GetMapping("/unused-count")
-  @Transactional(readOnly = true)
   public ResponseEntity<UnusedCountResponse> getUnusedCount() {
     return ResponseEntity.ok(new UnusedCountResponse(adminSentenceService.getUnusedCount()));
   }
@@ -242,7 +236,6 @@ public class AdminSentenceController {
           - `AI_SERVICE_UNAVAILABLE` (503): AI 서비스 불가""")
   @AdminErrorResponses
   @PostMapping("/similarity-test")
-  @Transactional(readOnly = true)
   public ResponseEntity<SimilarityTestResponse> testSimilarity(
       @Valid @RequestBody SimilarityTestRequest request) {
     return ResponseEntity.ok(adminSentenceService.testSimilarity(request));
@@ -251,7 +244,6 @@ public class AdminSentenceController {
   @Operation(summary = "중복 검사")
   @AdminErrorResponses
   @PostMapping("/duplicate-check")
-  @Transactional(readOnly = true)
   public ResponseEntity<DuplicateCheckResponse> checkDuplicate(
       @Valid @RequestBody DuplicateCheckRequest request) {
     return ResponseEntity.ok(adminSentenceService.checkDuplicate(request));

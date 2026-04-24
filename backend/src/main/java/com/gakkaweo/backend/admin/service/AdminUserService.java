@@ -1,9 +1,5 @@
 package com.gakkaweo.backend.admin.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
-
 import com.gakkaweo.backend.admin.dto.AdminUserResponse;
 import com.gakkaweo.backend.admin.dto.ForceNicknameRequest;
 import com.gakkaweo.backend.admin.dto.RoleChangeRequest;
@@ -15,6 +11,7 @@ import com.gakkaweo.backend.admin.dto.UserListResponse;
 import com.gakkaweo.backend.auth.service.ProfileImageService;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
 import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
@@ -26,6 +23,7 @@ import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.domain.member.validation.NicknameValidator;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
+import com.gakkaweo.backend.ranking.service.RankingService;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -61,6 +59,7 @@ public class AdminUserService {
   private final NicknameValidator nicknameValidator;
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
+  private final RankingService rankingService;
   private final Clock clock;
 
   private static Specification<Member> memberFilters(String nickname, Boolean banned) {
@@ -185,19 +184,8 @@ public class AdminUserService {
   }
 
   public void cleanupRedisAfterDelete(UUID publicId) {
-    try {
-      LocalDate today = LocalDate.now(clock);
-      String rankingKey = RANKING_KEY_PREFIX + today;
-      String memberKey = RANKING_MEMBER_PREFIX + publicId;
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
-
-      Long removed = redisTemplate.opsForZSet().remove(rankingKey, memberKey);
-      if (removed != null && removed > 0) {
-        redisTemplate.delete(detailKey);
-        eventPublisher.publishEvent(new RankingUpdateEvent());
-      }
-    } catch (Exception e) {
-      log.warn("강제 탈퇴 Redis 정리 실패: publicId={}", publicId, e);
+    if (rankingService.cleanupMemberRanking(publicId)) {
+      eventPublisher.publishEvent(new RankingUpdateEvent());
     }
   }
 
@@ -232,7 +220,7 @@ public class AdminUserService {
   public void syncNicknameToRedis(UUID publicId, String nickname) {
     try {
       LocalDate today = LocalDate.now(clock);
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
 
       if (redisTemplate.hasKey(detailKey)) {
         redisTemplate.opsForHash().put(detailKey, "nickname", nickname);
@@ -259,7 +247,7 @@ public class AdminUserService {
   private void syncProfileUrlToRedis(UUID publicId, String profileUrl) {
     try {
       LocalDate today = LocalDate.now(clock);
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
 
       if (redisTemplate.hasKey(detailKey)) {
         redisTemplate.opsForHash().put(detailKey, "profileUrl", Objects.toString(profileUrl, ""));

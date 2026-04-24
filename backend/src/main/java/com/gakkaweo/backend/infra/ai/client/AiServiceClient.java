@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.infra.ai.client;
 
+import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.infra.ai.client.dto.SimilarityRequest;
 import com.gakkaweo.backend.infra.ai.client.dto.SimilarityResponse;
 import com.gakkaweo.backend.infra.ai.exception.AiServiceException;
@@ -25,7 +26,7 @@ public class AiServiceClient {
           .retrieve()
           .body(SimilarityResponse.class);
     } catch (RestClientException e) {
-      throw new AiServiceException("AI 서비스 요청 실패", e);
+      throw new AiServiceException(ErrorCode.AI_SERVICE_UNAVAILABLE.getMessage(), e);
     }
   }
 

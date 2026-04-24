@@ -65,7 +65,7 @@ class AiServiceClientTest {
 
     assertThatThrownBy(() -> client.calculateSimilarity("원문", "추측"))
         .isInstanceOf(AiServiceException.class)
-        .hasMessageContaining("AI 서비스 요청 실패");
+        .hasMessageContaining("AI 서비스를 일시적으로 이용할 수 없습니다");
   }
 
   @Test

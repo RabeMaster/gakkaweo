@@ -46,6 +46,16 @@ class OAuth2LoginHandlerTest {
   private OAuth2Properties oAuth2Properties;
   private CookieAuthorizationRequestRepository authorizationRequestRepository;
 
+  private static List<HttpCookie> allSetCookies(MockHttpServletResponse response) {
+    return response.getHeaders(HttpHeaders.SET_COOKIE).stream()
+        .flatMap(header -> HttpCookie.parse(header).stream())
+        .toList();
+  }
+
+  private static HttpCookie findCookie(List<HttpCookie> cookies, String name) {
+    return cookies.stream().filter(c -> name.equals(c.getName())).findFirst().orElse(null);
+  }
+
   @BeforeEach
   void setUp() {
     authService = Mockito.mock(AuthService.class);
@@ -59,6 +69,12 @@ class OAuth2LoginHandlerTest {
     oAuth2Properties = new OAuth2Properties(REDIRECT_URI);
     authorizationRequestRepository =
         new CookieAuthorizationRequestRepository(cookieProperties, new ObjectMapper());
+  }
+
+  private static class NullMessageAuthenticationException extends AuthenticationException {
+    NullMessageAuthenticationException() {
+      super(null);
+    }
   }
 
   @Nested
@@ -140,22 +156,6 @@ class OAuth2LoginHandlerTest {
       HttpCookie authReq = findCookie(allSetCookies(response), "oauth2_auth_request");
       assertThat(authReq).isNotNull();
       assertThat(authReq.getMaxAge()).isZero();
-    }
-  }
-
-  private static List<HttpCookie> allSetCookies(MockHttpServletResponse response) {
-    return response.getHeaders(HttpHeaders.SET_COOKIE).stream()
-        .flatMap(header -> HttpCookie.parse(header).stream())
-        .toList();
-  }
-
-  private static HttpCookie findCookie(List<HttpCookie> cookies, String name) {
-    return cookies.stream().filter(c -> name.equals(c.getName())).findFirst().orElse(null);
-  }
-
-  private static class NullMessageAuthenticationException extends AuthenticationException {
-    NullMessageAuthenticationException() {
-      super(null);
     }
   }
 }

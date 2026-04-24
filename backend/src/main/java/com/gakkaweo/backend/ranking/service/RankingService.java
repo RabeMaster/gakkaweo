@@ -1,12 +1,10 @@
 package com.gakkaweo.backend.ranking.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
 import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -54,9 +52,9 @@ public class RankingService {
   public Integer updateRanking(GameSession session, Member member) {
     try {
       LocalDate today = LocalDate.now(clock);
-      String rankingKey = buildRankingKey(today);
-      String memberKey = RANKING_MEMBER_PREFIX + member.getPublicId();
-      String detailKey = buildDetailKey(today, member.getPublicId());
+      String rankingKey = RedisKeyConstants.rankingKey(today);
+      String memberKey = RedisKeyConstants.memberKey(member.getPublicId());
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, member.getPublicId());
 
       ZonedDateTime startOfDay = today.atStartOfDay(KST);
       long elapsedSeconds = Duration.between(startOfDay, ZonedDateTime.now(clock)).getSeconds();
@@ -138,7 +136,7 @@ public class RankingService {
 
   public RankingResponse getFullRankingsForDate(LocalDate date) {
     try {
-      String rankingKey = buildRankingKey(date);
+      String rankingKey = RedisKeyConstants.rankingKey(date);
 
       Set<String> allMembers = redisTemplate.opsForZSet().reverseRange(rankingKey, 0, -1);
 
@@ -151,31 +149,7 @@ public class RankingService {
         return new RankingResponse(List.of(), totalPlayers);
       }
 
-      List<RankingEntry> entries = new ArrayList<>();
-      long rank = 1;
-      for (String memberKey : allMembers) {
-        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
-        String detailKey = buildDetailKey(date, UUID.fromString(publicIdStr));
-
-        Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
-        if (detail.isEmpty()) {
-          continue;
-        }
-
-        String profileUrl = (String) detail.get("profileUrl");
-
-        entries.add(
-            new RankingEntry(
-                rank,
-                UUID.fromString((String) detail.get("publicId")),
-                (String) detail.get("nickname"),
-                profileUrl == null || profileUrl.isEmpty() ? null : profileUrl,
-                new BigDecimal((String) detail.get("similarity")),
-                Integer.parseInt((String) detail.get("attemptCount"))));
-        rank++;
-      }
-
-      return new RankingResponse(entries, totalPlayers);
+      return new RankingResponse(buildRankingEntries(allMembers, date), totalPlayers);
     } catch (Exception e) {
       log.warn("전체 랭킹 조회 실패: date={}", date, e);
       return new RankingResponse(List.of(), 0);
@@ -183,7 +157,7 @@ public class RankingService {
   }
 
   private RankingResponse getRankingsForDate(LocalDate date) {
-    String rankingKey = buildRankingKey(date);
+    String rankingKey = RedisKeyConstants.rankingKey(date);
 
     Set<String> topMembers =
         redisTemplate.opsForZSet().reverseRange(rankingKey, 0, TOP_RANKING_SIZE - 1);
@@ -197,11 +171,15 @@ public class RankingService {
       return new RankingResponse(List.of(), totalPlayers);
     }
 
+    return new RankingResponse(buildRankingEntries(topMembers, date), totalPlayers);
+  }
+
+  private List<RankingEntry> buildRankingEntries(Set<String> memberKeys, LocalDate date) {
     List<RankingEntry> entries = new ArrayList<>();
     long rank = 1;
-    for (String memberKey : topMembers) {
-      String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
-      String detailKey = buildDetailKey(date, UUID.fromString(publicIdStr));
+    for (String memberKey : memberKeys) {
+      UUID publicId = RedisKeyConstants.extractMemberPublicId(memberKey);
+      String detailKey = RedisKeyConstants.rankingDetailKey(date, publicId);
 
       Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
       if (detail.isEmpty()) {
@@ -220,20 +198,19 @@ public class RankingService {
               Integer.parseInt((String) detail.get("attemptCount"))));
       rank++;
     }
-
-    return new RankingResponse(entries, totalPlayers);
+    return entries;
   }
 
   private MyRank lookupMyRank(LocalDate date, UUID memberPublicId) {
-    String rankingKey = buildRankingKey(date);
-    String memberKey = RANKING_MEMBER_PREFIX + memberPublicId;
+    String rankingKey = RedisKeyConstants.rankingKey(date);
+    String memberKey = RedisKeyConstants.memberKey(memberPublicId);
 
     Long rank = redisTemplate.opsForZSet().reverseRank(rankingKey, memberKey);
     if (rank == null) {
       return null;
     }
 
-    String detailKey = buildDetailKey(date, memberPublicId);
+    String detailKey = RedisKeyConstants.rankingDetailKey(date, memberPublicId);
     Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
     if (detail.isEmpty()) {
       return null;
@@ -247,7 +224,7 @@ public class RankingService {
 
   public RankingSnapshot getAllRankingsForDate(LocalDate date) {
     try {
-      String rankingKey = buildRankingKey(date);
+      String rankingKey = RedisKeyConstants.rankingKey(date);
       Long totalPlayers = redisTemplate.opsForZSet().zCard(rankingKey);
       if (totalPlayers == null || totalPlayers == 0) {
         return new RankingSnapshot(List.of(), 0);
@@ -261,7 +238,7 @@ public class RankingService {
       List<RankingSnapshot.MemberRank> memberRanks = new ArrayList<>();
       int rank = 1;
       for (String memberKey : allMembers) {
-        UUID publicId = UUID.fromString(memberKey.substring(RANKING_MEMBER_PREFIX.length()));
+        UUID publicId = RedisKeyConstants.extractMemberPublicId(memberKey);
         memberRanks.add(new RankingSnapshot.MemberRank(publicId, rank++));
       }
 
@@ -280,7 +257,7 @@ public class RankingService {
 
     List<GameSession> sessions = gameSessionRepository.findAllBySentenceWithMember(sentence);
 
-    String rankingKey = buildRankingKey(date);
+    String rankingKey = RedisKeyConstants.rankingKey(date);
     ZonedDateTime startOfDay = date.atStartOfDay(KST);
     int count = 0;
 
@@ -304,10 +281,10 @@ public class RankingService {
               elapsedSeconds,
               clearedAtSeconds);
 
-      String memberKey = RANKING_MEMBER_PREFIX + member.getPublicId();
+      String memberKey = RedisKeyConstants.memberKey(member.getPublicId());
       redisTemplate.opsForZSet().add(rankingKey, memberKey, score);
 
-      String detailKey = buildDetailKey(date, member.getPublicId());
+      String detailKey = RedisKeyConstants.rankingDetailKey(date, member.getPublicId());
       Map<String, String> detail =
           Map.of(
               "publicId", member.getPublicId().toString(),
@@ -324,15 +301,34 @@ public class RankingService {
     return count;
   }
 
+  public boolean cleanupMemberRanking(UUID publicId) {
+    try {
+      LocalDate today = LocalDate.now(clock);
+      String rankingKey = RedisKeyConstants.rankingKey(today);
+      String memberKey = RedisKeyConstants.memberKey(publicId);
+      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
+
+      Long removed = redisTemplate.opsForZSet().remove(rankingKey, memberKey);
+      if (removed != null && removed > 0) {
+        redisTemplate.delete(detailKey);
+        return true;
+      }
+      return false;
+    } catch (Exception e) {
+      log.warn("회원 랭킹 정리 실패: publicId={}", publicId, e);
+      return false;
+    }
+  }
+
   public void expirePreviousDayRankingKeys(LocalDate date) {
-    String rankingKey = buildRankingKey(date);
+    String rankingKey = RedisKeyConstants.rankingKey(date);
 
     Set<String> members = redisTemplate.opsForZSet().range(rankingKey, 0, -1);
     int detailCount = 0;
     if (members != null) {
       for (String memberKey : members) {
-        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
-        String detailKey = buildDetailKey(date, UUID.fromString(publicIdStr));
+        UUID publicId = RedisKeyConstants.extractMemberPublicId(memberKey);
+        String detailKey = RedisKeyConstants.rankingDetailKey(date, publicId);
         redisTemplate.expire(detailKey, EXPIRE_TTL);
         detailCount++;
       }
@@ -361,13 +357,5 @@ public class RankingService {
     }
     long seconds = Duration.between(startOfDay, session.getClearedAt().atZone(KST)).getSeconds();
     return Math.max(seconds, 0);
-  }
-
-  private String buildRankingKey(LocalDate date) {
-    return RANKING_KEY_PREFIX + date;
-  }
-
-  private String buildDetailKey(LocalDate date, UUID memberPublicId) {
-    return RANKING_DETAIL_PREFIX + date + ":" + RANKING_MEMBER_PREFIX + memberPublicId;
   }
 }

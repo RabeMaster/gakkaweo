@@ -33,6 +33,20 @@ class GameFlowIntegrationTest extends IntegrationTestBase {
 
   @Autowired GameSessionRepository gameSessionRepository;
 
+  private HttpHeaders authedJson(Member member) {
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(member);
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
+  }
+
+  private void submit(UUID sentenceId, String guessText, HttpHeaders headers) {
+    restTemplate.exchange(
+        url("/daily/guess"),
+        HttpMethod.POST,
+        new HttpEntity<>(new GuessRequest(sentenceId, guessText), headers),
+        GuessResponse.class);
+  }
+
   @Nested
   @DisplayName("오늘 문제 조회")
   class Today {
@@ -316,19 +330,5 @@ class GameFlowIntegrationTest extends IntegrationTestBase {
       assertThat(response.getBody().sentenceId()).isEqualTo(sentence.getPublicId());
       assertThat(response.getBody().gameStatus()).isNull();
     }
-  }
-
-  private HttpHeaders authedJson(Member member) {
-    HttpHeaders headers = testAuthHelper.cookieHeaderFor(member);
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    return headers;
-  }
-
-  private void submit(UUID sentenceId, String guessText, HttpHeaders headers) {
-    restTemplate.exchange(
-        url("/daily/guess"),
-        HttpMethod.POST,
-        new HttpEntity<>(new GuessRequest(sentenceId, guessText), headers),
-        GuessResponse.class);
   }
 }

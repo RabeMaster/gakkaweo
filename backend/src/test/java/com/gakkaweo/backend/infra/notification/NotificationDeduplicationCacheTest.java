@@ -14,33 +14,6 @@ import org.junit.jupiter.api.Test;
 @DisplayName("NotificationDeduplicationCache 단위 테스트")
 class NotificationDeduplicationCacheTest {
 
-  private static class MutableClock extends Clock {
-    private Instant now;
-
-    MutableClock(Instant now) {
-      this.now = now;
-    }
-
-    void advance(Duration duration) {
-      this.now = this.now.plus(duration);
-    }
-
-    @Override
-    public ZoneId getZone() {
-      return ZoneId.of("UTC");
-    }
-
-    @Override
-    public Clock withZone(ZoneId zone) {
-      return this;
-    }
-
-    @Override
-    public Instant instant() {
-      return now;
-    }
-  }
-
   private NotificationProperties propsWithCooldown(Duration cooldown) {
     return new NotificationProperties(
         new NotificationProperties.AuditAlert(true),
@@ -109,5 +82,32 @@ class NotificationDeduplicationCacheTest {
 
     assertThat(cache.shouldSend("stale", Duration.ofMinutes(5))).isTrue();
     assertThat(cache.shouldSend("fresh", Duration.ofMinutes(5))).isFalse();
+  }
+
+  private static class MutableClock extends Clock {
+    private Instant now;
+
+    MutableClock(Instant now) {
+      this.now = now;
+    }
+
+    void advance(Duration duration) {
+      this.now = this.now.plus(duration);
+    }
+
+    @Override
+    public ZoneId getZone() {
+      return ZoneId.of("UTC");
+    }
+
+    @Override
+    public Clock withZone(ZoneId zone) {
+      return this;
+    }
+
+    @Override
+    public Instant instant() {
+      return now;
+    }
   }
 }

@@ -1,9 +1,5 @@
 package com.gakkaweo.backend.admin.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
-
 import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
@@ -13,6 +9,7 @@ import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.admin.entity.Announcement;
 import com.gakkaweo.backend.domain.admin.entity.AnnouncementType;
 import com.gakkaweo.backend.domain.admin.entity.AuditLog;
@@ -206,14 +203,13 @@ public class AdminSystemService {
 
   public void resetRankingCache() {
     LocalDate today = LocalDate.now(clock);
-    String rankingKey = RANKING_KEY_PREFIX + today;
+    String rankingKey = RedisKeyConstants.rankingKey(today);
 
     Set<String> members = redisTemplate.opsForZSet().range(rankingKey, 0, -1);
     if (members != null) {
       for (String memberKey : members) {
-        String publicIdStr = memberKey.substring(RANKING_MEMBER_PREFIX.length());
-        String detailKey =
-            RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicIdStr;
+        UUID publicId = RedisKeyConstants.extractMemberPublicId(memberKey);
+        String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
         redisTemplate.delete(detailKey);
       }
     }

@@ -2,6 +2,7 @@ package com.gakkaweo.backend.auth.oauth2.service;
 
 import com.gakkaweo.backend.auth.oauth2.CustomOAuth2User;
 import com.gakkaweo.backend.auth.oauth2.dto.OAuthAttributes;
+import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,11 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     Member member = oAuthMemberService.findOrCreateMember(attributes);
 
     if (Boolean.TRUE.equals(member.getBanned())) {
-      throw new OAuth2AuthenticationException(new OAuth2Error("member_banned", "차단된 계정입니다", null));
+      throw new OAuth2AuthenticationException(
+          new OAuth2Error(
+              ErrorCode.MEMBER_BANNED.name().toLowerCase(),
+              ErrorCode.MEMBER_BANNED.getMessage(),
+              null));
     }
 
     return new CustomOAuth2User(member, oAuth2User.getAttributes());

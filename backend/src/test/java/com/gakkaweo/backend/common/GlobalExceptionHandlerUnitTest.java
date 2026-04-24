@@ -9,6 +9,9 @@ import static org.mockito.Mockito.verify;
 import com.gakkaweo.backend.common.exception.ErrorBody;
 import com.gakkaweo.backend.common.exception.GlobalExceptionHandler;
 import com.gakkaweo.backend.infra.notification.ServerErrorNotifier;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpHeaders;
@@ -25,7 +28,69 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 class GlobalExceptionHandlerUnitTest {
 
   private final ServerErrorNotifier serverErrorNotifier = mock(ServerErrorNotifier.class);
-  private final GlobalExceptionHandler handler = new GlobalExceptionHandler(serverErrorNotifier);
+  private final Clock clock = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneId.of("UTC"));
+  private final GlobalExceptionHandler handler =
+      new GlobalExceptionHandler(serverErrorNotifier, clock);
+
+  private static ResponseEntity<Object> invokeHandleMaxUploadSizeExceeded(
+      GlobalExceptionHandler handler,
+      MaxUploadSizeExceededException ex,
+      HttpStatus status,
+      ServletWebRequest req)
+      throws Exception {
+    var method =
+        GlobalExceptionHandler.class.getDeclaredMethod(
+            "handleMaxUploadSizeExceededException",
+            MaxUploadSizeExceededException.class,
+            HttpHeaders.class,
+            org.springframework.http.HttpStatusCode.class,
+            org.springframework.web.context.request.WebRequest.class);
+    method.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    ResponseEntity<Object> response =
+        (ResponseEntity<Object>) method.invoke(handler, ex, new HttpHeaders(), status, req);
+    return response;
+  }
+
+  private static ResponseEntity<Object> invokeHandleMissingParameter(
+      GlobalExceptionHandler handler,
+      MissingServletRequestParameterException ex,
+      HttpStatus status,
+      ServletWebRequest req)
+      throws Exception {
+    var method =
+        GlobalExceptionHandler.class.getDeclaredMethod(
+            "handleMissingServletRequestParameter",
+            MissingServletRequestParameterException.class,
+            HttpHeaders.class,
+            org.springframework.http.HttpStatusCode.class,
+            org.springframework.web.context.request.WebRequest.class);
+    method.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    ResponseEntity<Object> response =
+        (ResponseEntity<Object>) method.invoke(handler, ex, new HttpHeaders(), status, req);
+    return response;
+  }
+
+  private static ResponseEntity<Object> invokeHandleMethodNotSupported(
+      GlobalExceptionHandler handler,
+      HttpRequestMethodNotSupportedException ex,
+      HttpStatus status,
+      ServletWebRequest req)
+      throws Exception {
+    var method =
+        GlobalExceptionHandler.class.getDeclaredMethod(
+            "handleHttpRequestMethodNotSupported",
+            HttpRequestMethodNotSupportedException.class,
+            HttpHeaders.class,
+            org.springframework.http.HttpStatusCode.class,
+            org.springframework.web.context.request.WebRequest.class);
+    method.setAccessible(true);
+    @SuppressWarnings("unchecked")
+    ResponseEntity<Object> response =
+        (ResponseEntity<Object>) method.invoke(handler, ex, new HttpHeaders(), status, req);
+    return response;
+  }
 
   @Test
   @DisplayName("ObjectOptimisticLockingFailureException - CONCURRENT_MODIFICATION 응답")
@@ -95,65 +160,5 @@ class GlobalExceptionHandlerUnitTest {
     assertThat(response).isNotNull();
     ErrorBody body = (ErrorBody) response.getBody();
     assertThat(body.code()).isEqualTo("METHOD_NOT_ALLOWED");
-  }
-
-  private static ResponseEntity<Object> invokeHandleMaxUploadSizeExceeded(
-      GlobalExceptionHandler handler,
-      MaxUploadSizeExceededException ex,
-      HttpStatus status,
-      ServletWebRequest req)
-      throws Exception {
-    var method =
-        GlobalExceptionHandler.class.getDeclaredMethod(
-            "handleMaxUploadSizeExceededException",
-            MaxUploadSizeExceededException.class,
-            HttpHeaders.class,
-            org.springframework.http.HttpStatusCode.class,
-            org.springframework.web.context.request.WebRequest.class);
-    method.setAccessible(true);
-    @SuppressWarnings("unchecked")
-    ResponseEntity<Object> response =
-        (ResponseEntity<Object>) method.invoke(handler, ex, new HttpHeaders(), status, req);
-    return response;
-  }
-
-  private static ResponseEntity<Object> invokeHandleMissingParameter(
-      GlobalExceptionHandler handler,
-      MissingServletRequestParameterException ex,
-      HttpStatus status,
-      ServletWebRequest req)
-      throws Exception {
-    var method =
-        GlobalExceptionHandler.class.getDeclaredMethod(
-            "handleMissingServletRequestParameter",
-            MissingServletRequestParameterException.class,
-            HttpHeaders.class,
-            org.springframework.http.HttpStatusCode.class,
-            org.springframework.web.context.request.WebRequest.class);
-    method.setAccessible(true);
-    @SuppressWarnings("unchecked")
-    ResponseEntity<Object> response =
-        (ResponseEntity<Object>) method.invoke(handler, ex, new HttpHeaders(), status, req);
-    return response;
-  }
-
-  private static ResponseEntity<Object> invokeHandleMethodNotSupported(
-      GlobalExceptionHandler handler,
-      HttpRequestMethodNotSupportedException ex,
-      HttpStatus status,
-      ServletWebRequest req)
-      throws Exception {
-    var method =
-        GlobalExceptionHandler.class.getDeclaredMethod(
-            "handleHttpRequestMethodNotSupported",
-            HttpRequestMethodNotSupportedException.class,
-            HttpHeaders.class,
-            org.springframework.http.HttpStatusCode.class,
-            org.springframework.web.context.request.WebRequest.class);
-    method.setAccessible(true);
-    @SuppressWarnings("unchecked")
-    ResponseEntity<Object> response =
-        (ResponseEntity<Object>) method.invoke(handler, ex, new HttpHeaders(), status, req);
-    return response;
   }
 }

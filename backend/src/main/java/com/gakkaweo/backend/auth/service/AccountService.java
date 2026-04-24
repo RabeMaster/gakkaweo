@@ -1,9 +1,5 @@
 package com.gakkaweo.backend.auth.service;
 
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_DETAIL_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_KEY_PREFIX;
-import static com.gakkaweo.backend.common.redis.RedisKeyConstants.RANKING_MEMBER_PREFIX;
-
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
@@ -14,13 +10,11 @@ import com.gakkaweo.backend.domain.member.repository.LocalAccountRepository;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.repository.SocialAccountRepository;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
-import java.time.Clock;
-import java.time.LocalDate;
+import com.gakkaweo.backend.ranking.service.RankingService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,9 +30,8 @@ public class AccountService {
   private final SocialAccountRepository socialAccountRepository;
   private final RefreshTokenRepository refreshTokenRepository;
   private final AuthService authService;
-  private final StringRedisTemplate redisTemplate;
+  private final RankingService rankingService;
   private final ApplicationEventPublisher eventPublisher;
-  private final Clock clock;
 
   @Transactional
   public void deleteAccount(UUID publicId) {
@@ -63,26 +56,18 @@ public class AccountService {
   }
 
   public void cleanupRedis(UUID publicId, String accessToken) {
-    try {
-      if (accessToken != null) {
+    if (accessToken != null) {
+      try {
         authService.logout(accessToken);
+      } catch (Exception e) {
+        log.warn("탈퇴 회원 로그아웃 실패, Redis 정리 계속: publicId={}", publicId, e);
       }
-
-      LocalDate today = LocalDate.now(clock);
-      String rankingKey = RANKING_KEY_PREFIX + today;
-      String memberKey = RANKING_MEMBER_PREFIX + publicId;
-      String detailKey = RANKING_DETAIL_PREFIX + today + ":" + RANKING_MEMBER_PREFIX + publicId;
-
-      Long removed = redisTemplate.opsForZSet().remove(rankingKey, memberKey);
-
-      if (removed != null && removed > 0) {
-        redisTemplate.delete(detailKey);
-        eventPublisher.publishEvent(new RankingUpdateEvent());
-      }
-
-      log.info("탈퇴 회원 Redis 정리 완료: publicId={}", publicId);
-    } catch (Exception e) {
-      log.warn("탈퇴 회원 Redis 정리 실패: publicId={}", publicId, e);
     }
+
+    if (rankingService.cleanupMemberRanking(publicId)) {
+      eventPublisher.publishEvent(new RankingUpdateEvent());
+    }
+
+    log.info("탈퇴 회원 Redis 정리 완료: publicId={}", publicId);
   }
 }

@@ -53,22 +53,18 @@ public class AdminDashboardService {
             .findByUsedAt(today)
             .orElseThrow(() -> new BusinessException(ErrorCode.SENTENCE_NOT_FOUND));
 
-    long totalParticipants = gameSessionRepository.countBySentence(sentence);
-    long clearedCount = gameSessionRepository.countClearedBySentence(sentence);
-    long inProgressCount = totalParticipants - clearedCount;
-    BigDecimal avgSimilarity = gameSessionRepository.avgSimilarityBySentence(sentence);
-    double avgAttemptCount = gameSessionRepository.avgAttemptCountBySentence(sentence);
+    SentenceStatsSnapshot stats = collectSentenceStats(sentence);
     long unusedCount = dailySentenceRepository.countUnusedActive();
     int sseCount = sseConnectionManager.getConnectionCount();
 
     return new TodayWidgetResponse(
         sentence.getPublicId(),
         sentence.getSentence(),
-        totalParticipants,
-        clearedCount,
-        inProgressCount,
-        avgSimilarity,
-        avgAttemptCount,
+        stats.totalParticipants(),
+        stats.clearedCount(),
+        stats.totalParticipants() - stats.clearedCount(),
+        stats.avgSimilarity(),
+        stats.avgAttemptCount(),
         unusedCount,
         sseCount);
   }
@@ -91,13 +87,15 @@ public class AdminDashboardService {
             .findByUsedAt(date)
             .orElseThrow(() -> new BusinessException(ErrorCode.SENTENCE_NOT_FOUND));
 
-    long totalParticipants = gameSessionRepository.countBySentence(sentence);
-    long clearedCount = gameSessionRepository.countClearedBySentence(sentence);
-    BigDecimal avgSimilarity = gameSessionRepository.avgSimilarityBySentence(sentence);
-    double avgAttemptCount = gameSessionRepository.avgAttemptCountBySentence(sentence);
+    SentenceStatsSnapshot stats = collectSentenceStats(sentence);
 
     return DateStatsResponse.from(
-        date, sentence, totalParticipants, clearedCount, avgSimilarity, avgAttemptCount);
+        date,
+        sentence,
+        stats.totalParticipants(),
+        stats.clearedCount(),
+        stats.avgSimilarity(),
+        stats.avgAttemptCount());
   }
 
   @Transactional(readOnly = true)
@@ -151,4 +149,19 @@ public class AdminDashboardService {
 
     return new GuessLogResponse(logs);
   }
+
+  private SentenceStatsSnapshot collectSentenceStats(DailySentence sentence) {
+    long totalParticipants = gameSessionRepository.countBySentence(sentence);
+    long clearedCount = gameSessionRepository.countClearedBySentence(sentence);
+    BigDecimal avgSimilarity = gameSessionRepository.avgSimilarityBySentence(sentence);
+    double avgAttemptCount = gameSessionRepository.avgAttemptCountBySentence(sentence);
+    return new SentenceStatsSnapshot(
+        totalParticipants, clearedCount, avgSimilarity, avgAttemptCount);
+  }
+
+  private record SentenceStatsSnapshot(
+      long totalParticipants,
+      long clearedCount,
+      BigDecimal avgSimilarity,
+      double avgAttemptCount) {}
 }
