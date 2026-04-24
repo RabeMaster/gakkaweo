@@ -17,10 +17,10 @@ import org.springframework.web.client.RestTemplate;
 @Import({TestContainerConfig.class, TestClockConfig.class})
 public abstract class IntegrationTestBase {
 
+  protected final RestTemplate restTemplate =
+      new RestTemplateBuilder().errorHandler(new NoOpResponseErrorHandler()).build();
   @LocalServerPort protected int port;
-
   @Autowired protected DatabaseCleaner databaseCleaner;
-
   @Autowired protected TestSimilarityClient testSimilarityClient;
 
   @Autowired(required = false)
@@ -30,9 +30,6 @@ public abstract class IntegrationTestBase {
   protected TestEventCollector testEventCollector;
 
   @Autowired protected Clock clock;
-
-  protected final RestTemplate restTemplate =
-      new RestTemplateBuilder().errorHandler(new NoOpResponseErrorHandler()).build();
 
   @BeforeEach
   void cleanBeforeEach() {

@@ -14,13 +14,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class BulkDataFixture {
 
-  public record PopulatedIds(
-      List<Long> memberIds,
-      List<Long> sentenceIds,
-      List<Long> sessionIds,
-      long adminId,
-      String topAuditAction) {}
-
   private static final int BATCH = 1000;
   private static final List<String> AUDIT_ACTIONS =
       List.of(
@@ -29,7 +22,6 @@ public class BulkDataFixture {
           "SENTENCE_UPLOAD",
           "SENTENCE_DELETE",
           "ANNOUNCEMENT_CREATE");
-
   private final JdbcTemplate jdbc;
   private final Clock clock;
 
@@ -275,4 +267,11 @@ public class BulkDataFixture {
       batch.clear();
     }
   }
+
+  public record PopulatedIds(
+      List<Long> memberIds,
+      List<Long> sentenceIds,
+      List<Long> sessionIds,
+      long adminId,
+      String topAuditAction) {}
 }

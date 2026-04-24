@@ -49,6 +49,10 @@ public class DailySentenceScheduler {
   private final DiscordWebhookClient discordWebhookClient;
   private final Clock clock;
 
+  private static String statusLabel(boolean succeeded) {
+    return succeeded ? "성공" : "실패";
+  }
+
   @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
   public void executeMidnightJob() {
     executeMidnightJob(true);
@@ -237,10 +241,6 @@ public class DailySentenceScheduler {
             new DiscordEmbed.Field("미사용 문장 잔여", String.valueOf(report.unusedCount()), true));
 
     return new DiscordEmbed(title, description, color, fields);
-  }
-
-  private static String statusLabel(boolean succeeded) {
-    return succeeded ? "성공" : "실패";
   }
 
   private void selectTodaySentence(LocalDate today) {

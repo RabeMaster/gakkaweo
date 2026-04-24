@@ -23,11 +23,10 @@ import org.springframework.transaction.support.TransactionTemplate;
 @DisplayName("공지 공개 엔드포인트 통합 테스트")
 class AnnouncementPublicEndpointTest extends IntegrationTestBase {
 
-  @Autowired AnnouncementRepository announcementRepository;
-  @Autowired TransactionTemplate transactionTemplate;
-
   private static final ParameterizedTypeReference<List<ActiveAnnouncementResponse>> RESPONSE_TYPE =
       new ParameterizedTypeReference<>() {};
+  @Autowired AnnouncementRepository announcementRepository;
+  @Autowired TransactionTemplate transactionTemplate;
 
   @Test
   @DisplayName("미인증 호출 - 200 + 활성 공지 반환")

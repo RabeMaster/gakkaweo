@@ -38,6 +38,15 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
   @Autowired TransactionTemplate transactionTemplate;
   @Autowired Clock rankingClock;
 
+  @SuppressWarnings("unused")
+  private static List<String> nicknames(RankingResponse response) {
+    List<String> result = new ArrayList<>();
+    for (RankingResponse.RankingEntry e : response.rankings()) {
+      result.add(e.nickname());
+    }
+    return result;
+  }
+
   @Test
   @DisplayName("GET /ranking/today 미인증 - getRankings 루프 + profileUrl null/empty/값 3분기")
   void 랭킹_조회_미인증() {
@@ -277,14 +286,5 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
         gameSessionRepository.findByMemberAndSentence(member, sentence).orElseThrow();
     rankingService.updateRanking(session, member);
     return member;
-  }
-
-  @SuppressWarnings("unused")
-  private static List<String> nicknames(RankingResponse response) {
-    List<String> result = new ArrayList<>();
-    for (RankingResponse.RankingEntry e : response.rankings()) {
-      result.add(e.nickname());
-    }
-    return result;
   }
 }
