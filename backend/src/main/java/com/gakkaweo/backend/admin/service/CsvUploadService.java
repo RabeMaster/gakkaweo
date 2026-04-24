@@ -29,9 +29,10 @@ public class CsvUploadService {
   private final DailySentenceRepository dailySentenceRepository;
   private final SentenceUploadRepository sentenceUploadRepository;
   private final MemberRepository memberRepository;
+  private final AdminAuditService adminAuditService;
   private final TransactionTemplate transactionTemplate;
 
-  public CsvUploadResponse uploadCsv(MultipartFile file, UUID adminPublicId) {
+  public CsvUploadResponse uploadCsv(MultipartFile file, UUID adminPublicId, String ipAddress) {
     Member admin =
         memberRepository
             .findByPublicId(adminPublicId)
@@ -70,6 +71,14 @@ public class CsvUploadService {
               lines.size(),
               successCount,
               duplicateCount);
+
+          adminAuditService.log(
+              admin,
+              "CSV_UPLOAD",
+              "SENTENCE",
+              null,
+              "success=" + successCount + ", duplicate=" + duplicateCount,
+              ipAddress);
 
           return new CsvUploadResponse(lines.size(), successCount, duplicateCount);
         });

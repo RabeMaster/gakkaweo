@@ -13,7 +13,6 @@ import com.gakkaweo.backend.admin.dto.SentenceUpdateRequest;
 import com.gakkaweo.backend.admin.dto.SimilarityTestRequest;
 import com.gakkaweo.backend.admin.dto.SimilarityTestResponse;
 import com.gakkaweo.backend.admin.dto.UnusedCountResponse;
-import com.gakkaweo.backend.admin.service.AdminAuditService;
 import com.gakkaweo.backend.admin.service.AdminSentenceService;
 import com.gakkaweo.backend.admin.service.CsvUploadService;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
@@ -50,7 +49,6 @@ public class AdminSentenceController {
 
   private final AdminSentenceService adminSentenceService;
   private final CsvUploadService csvUploadService;
-  private final AdminAuditService adminAuditService;
 
   @Operation(summary = "문장 목록 조회")
   @AdminErrorResponses
@@ -75,14 +73,9 @@ public class AdminSentenceController {
       @Valid @RequestBody SentenceCreateRequest request,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    SentenceResponse response = adminSentenceService.createSentence(request);
-    adminAuditService.log(
-        userDetails.publicId(),
-        "SENTENCE_CREATE",
-        "SENTENCE",
-        response.publicId().toString(),
-        request.sentence(),
-        httpRequest.getRemoteAddr());
+    SentenceResponse response =
+        adminSentenceService.createSentence(
+            request, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
@@ -108,14 +101,9 @@ public class AdminSentenceController {
       @Valid @RequestBody SentenceUpdateRequest request,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    SentenceResponse response = adminSentenceService.updateSentence(publicId, request);
-    adminAuditService.log(
-        userDetails.publicId(),
-        "SENTENCE_UPDATE",
-        "SENTENCE",
-        publicId.toString(),
-        request.sentence(),
-        httpRequest.getRemoteAddr());
+    SentenceResponse response =
+        adminSentenceService.updateSentence(
+            publicId, request, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok(response);
   }
 
@@ -134,14 +122,8 @@ public class AdminSentenceController {
       @PathVariable UUID publicId,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    adminSentenceService.deleteSentence(publicId);
-    adminAuditService.log(
-        userDetails.publicId(),
-        "SENTENCE_DELETE",
-        "SENTENCE",
-        publicId.toString(),
-        null,
-        httpRequest.getRemoteAddr());
+    adminSentenceService.deleteSentence(
+        publicId, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok().build();
   }
 
@@ -172,14 +154,8 @@ public class AdminSentenceController {
       @Parameter(description = "CSV 파일 (UTF-8, 줄 단위 문장)") @RequestParam("file") MultipartFile file,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    CsvUploadResponse response = csvUploadService.uploadCsv(file, userDetails.publicId());
-    adminAuditService.log(
-        userDetails.publicId(),
-        "CSV_UPLOAD",
-        "SENTENCE",
-        null,
-        "success=" + response.successCount() + ", duplicate=" + response.duplicateCount(),
-        httpRequest.getRemoteAddr());
+    CsvUploadResponse response =
+        csvUploadService.uploadCsv(file, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
@@ -198,14 +174,9 @@ public class AdminSentenceController {
       @Valid @RequestBody ScheduleRequest request,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    SentenceResponse response = adminSentenceService.schedule(publicId, request);
-    adminAuditService.log(
-        userDetails.publicId(),
-        "SENTENCE_SCHEDULE",
-        "SENTENCE",
-        publicId.toString(),
-        "date=" + request.date(),
-        httpRequest.getRemoteAddr());
+    SentenceResponse response =
+        adminSentenceService.schedule(
+            publicId, request, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok(response);
   }
 
@@ -216,14 +187,9 @@ public class AdminSentenceController {
       @PathVariable UUID publicId,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    SentenceResponse response = adminSentenceService.unschedule(publicId);
-    adminAuditService.log(
-        userDetails.publicId(),
-        "SENTENCE_UNSCHEDULE",
-        "SENTENCE",
-        publicId.toString(),
-        null,
-        httpRequest.getRemoteAddr());
+    SentenceResponse response =
+        adminSentenceService.unschedule(
+            publicId, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok(response);
   }
 
@@ -264,17 +230,9 @@ public class AdminSentenceController {
       @Valid @RequestBody EmergencyReplaceRequest request,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    SentenceResponse response = adminSentenceService.emergencyReplace(request);
-    adminAuditService.log(
-        userDetails.publicId(),
-        "EMERGENCY_REPLACE",
-        "SENTENCE",
-        response.publicId().toString(),
-        "newSentence="
-            + request.newSentencePublicId()
-            + ", returnToPool="
-            + request.returnOldToPool(),
-        httpRequest.getRemoteAddr());
+    SentenceResponse response =
+        adminSentenceService.emergencyReplace(
+            request, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok(response);
   }
 }
