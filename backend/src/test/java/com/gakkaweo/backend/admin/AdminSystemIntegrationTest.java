@@ -8,6 +8,7 @@ import com.gakkaweo.backend.admin.dto.AuditLogListResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
 import com.gakkaweo.backend.common.exception.ErrorBody;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.entity.AuditLog;
 import com.gakkaweo.backend.domain.admin.repository.AuditLogRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
@@ -358,20 +359,20 @@ class AdminSystemIntegrationTest extends IntegrationTestBase {
   @DisplayName("감사 로그 조회 - action 필터 일치 항목만 반환")
   void 감사로그_action_필터() {
     Member admin = testAuthHelper.createAdmin();
-    seedAuditLog(admin, "ACTION_A", clock.instant());
-    seedAuditLog(admin, "ACTION_B", clock.instant());
+    seedAuditLog(admin, AuditAction.SENTENCE_CREATE, clock.instant());
+    seedAuditLog(admin, AuditAction.ROLE_CHANGE, clock.instant());
     HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
 
     ResponseEntity<AuditLogListResponse> response =
         restTemplate.exchange(
-            url("/admin/system/audit-logs?action=ACTION_A"),
+            url("/admin/system/audit-logs?action=SENTENCE_CREATE"),
             HttpMethod.GET,
             new HttpEntity<>(headers),
             AuditLogListResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody().content())
-        .allSatisfy(entry -> assertThat(entry.action()).isEqualTo("ACTION_A"));
+        .allSatisfy(entry -> assertThat(entry.action()).isEqualTo(AuditAction.SENTENCE_CREATE));
     assertThat(response.getBody().totalElements()).isEqualTo(1L);
   }
 
@@ -379,20 +380,37 @@ class AdminSystemIntegrationTest extends IntegrationTestBase {
   @DisplayName("감사 로그 조회 - dateFrom/dateTo 필터")
   void 감사로그_날짜_필터() {
     Member admin = testAuthHelper.createAdmin();
-    seedAuditLog(admin, "ANY", clock.instant());
+    seedAuditLog(admin, AuditAction.USER_BAN, clock.instant());
     HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
     Instant from = Instant.now().minus(Duration.ofMinutes(5));
     Instant to = Instant.now().plus(Duration.ofMinutes(5));
 
     ResponseEntity<AuditLogListResponse> response =
         restTemplate.exchange(
-            url("/admin/system/audit-logs?dateFrom=" + from + "&dateTo=" + to + "&action=ANY"),
+            url("/admin/system/audit-logs?dateFrom=" + from + "&dateTo=" + to + "&action=USER_BAN"),
             HttpMethod.GET,
             new HttpEntity<>(headers),
             AuditLogListResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody().totalElements()).isGreaterThanOrEqualTo(1L);
+  }
+
+  @Test
+  @DisplayName("감사 로그 조회 - 알 수 없는 action 값은 400 VALIDATION_FAILED")
+  void 감사로그_action_잘못된값() {
+    Member admin = testAuthHelper.createAdmin();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+
+    ResponseEntity<ErrorBody> response =
+        restTemplate.exchange(
+            url("/admin/system/audit-logs?action=BOGUS"),
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            ErrorBody.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody().code()).isEqualTo("VALIDATION_FAILED");
   }
 
   private AnnouncementResponse createAnnouncement(String title, String type) {
@@ -445,10 +463,11 @@ class AdminSystemIntegrationTest extends IntegrationTestBase {
         .getBody();
   }
 
-  private void seedAuditLog(Member admin, String action, Instant ignored) {
+  private void seedAuditLog(Member admin, AuditAction action, Instant ignored) {
     transactionTemplate.executeWithoutResult(
         status ->
-            auditLogRepository.save(new AuditLog(admin, action, "TEST", null, null, "127.0.0.1")));
+            auditLogRepository.save(
+                new AuditLog(admin, action, action.targetType(), null, null, "127.0.0.1")));
   }
 
   private HttpHeaders authedJson(Member admin) {

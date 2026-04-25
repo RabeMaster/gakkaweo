@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doThrow;
 import com.gakkaweo.backend.admin.dto.RoleChangeRequest;
 import com.gakkaweo.backend.admin.dto.SentenceCreateRequest;
 import com.gakkaweo.backend.admin.service.AdminAuditService;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.entity.AuditLog;
 import com.gakkaweo.backend.domain.admin.repository.AuditLogRepository;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -44,7 +45,12 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
 
     doThrow(new RuntimeException("audit failure"))
         .when(adminAuditService)
-        .log(any(UUID.class), eq("SENTENCE_CREATE"), anyString(), anyString(), anyString(), any());
+        .log(
+            any(UUID.class),
+            eq(AuditAction.SENTENCE_CREATE),
+            anyString(),
+            anyString(),
+            anyString());
 
     ResponseEntity<Void> response =
         restTemplate.exchange(
@@ -55,7 +61,7 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     assertThat(dailySentenceRepository.existsBySentence("원자성 테스트 문장")).isFalse();
-    assertThat(auditRowsByAction("SENTENCE_CREATE")).isZero();
+    assertThat(auditRowsByAction(AuditAction.SENTENCE_CREATE)).isZero();
   }
 
   @Test
@@ -67,7 +73,7 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
 
     doThrow(new RuntimeException("audit failure"))
         .when(adminAuditService)
-        .log(any(UUID.class), eq("ROLE_CHANGE"), anyString(), anyString(), anyString(), any());
+        .log(any(UUID.class), eq(AuditAction.ROLE_CHANGE), anyString(), anyString(), anyString());
 
     ResponseEntity<Void> response =
         restTemplate.exchange(
@@ -79,10 +85,10 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     Member reloaded = memberRepository.findByPublicId(target.getPublicId()).orElseThrow();
     assertThat(reloaded.getRole()).isEqualTo(MemberRole.USER);
-    assertThat(auditRowsByAction("ROLE_CHANGE")).isZero();
+    assertThat(auditRowsByAction(AuditAction.ROLE_CHANGE)).isZero();
   }
 
-  private long auditRowsByAction(String action) {
+  private long auditRowsByAction(AuditAction action) {
     return auditLogRepository.findAll().stream()
         .map(AuditLog::getAction)
         .filter(action::equals)

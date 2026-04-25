@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 
 import com.gakkaweo.backend.admin.event.AuditLogEvent;
 import com.gakkaweo.backend.admin.event.AuditLogNotificationListener;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.infra.notification.NotificationLevel;
 import com.gakkaweo.backend.infra.notification.client.DiscordWebhookClient;
 import com.gakkaweo.backend.infra.notification.config.NotificationProperties;
@@ -28,9 +29,9 @@ class AuditLogNotificationListenerTest {
         new NotificationProperties.ErrorAlert(true, Duration.ofMinutes(5)));
   }
 
-  private AuditLogEvent event(String action, String detail) {
+  private AuditLogEvent event(AuditAction action, String detail) {
     return new AuditLogEvent(
-        action, "MEMBER", "user-1", "admin-nick", detail, "127.0.0.1", Instant.now());
+        action, action.targetType(), "user-1", "admin-nick", detail, "127.0.0.1", Instant.now());
   }
 
   @Test
@@ -41,7 +42,13 @@ class AuditLogNotificationListenerTest {
     Instant createdAt = Instant.parse("2026-04-22T03:04:05Z");
     AuditLogEvent ev =
         new AuditLogEvent(
-            "USER_BAN", "MEMBER", "user-1", "admin-nick", "계정 정지 사유", "127.0.0.1", createdAt);
+            AuditAction.USER_BAN,
+            AuditAction.USER_BAN.targetType(),
+            "user-1",
+            "admin-nick",
+            "계정 정지 사유",
+            "127.0.0.1",
+            createdAt);
 
     listener.onAuditLog(ev);
 
@@ -62,7 +69,7 @@ class AuditLogNotificationListenerTest {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     AuditLogNotificationListener listener = new AuditLogNotificationListener(client, props(true));
 
-    listener.onAuditLog(event("SENTENCE_CREATE", "문장 등록"));
+    listener.onAuditLog(event(AuditAction.SENTENCE_CREATE, "문장 등록"));
 
     verify(client).send(eq(NotificationLevel.HIGH), any(DiscordEmbed.class));
   }
@@ -73,7 +80,7 @@ class AuditLogNotificationListenerTest {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     AuditLogNotificationListener listener = new AuditLogNotificationListener(client, props(false));
 
-    listener.onAuditLog(event("USER_BAN", "detail"));
+    listener.onAuditLog(event(AuditAction.USER_BAN, "detail"));
 
     verify(client, never()).send(any(), any());
   }
@@ -86,7 +93,7 @@ class AuditLogNotificationListenerTest {
 
     String longDetail = "x".repeat(500);
 
-    listener.onAuditLog(event("USER_BAN", longDetail));
+    listener.onAuditLog(event(AuditAction.USER_BAN, longDetail));
 
     ArgumentCaptor<DiscordEmbed> embedCaptor = ArgumentCaptor.forClass(DiscordEmbed.class);
     verify(client).send(eq(NotificationLevel.HIGH), embedCaptor.capture());
@@ -107,7 +114,13 @@ class AuditLogNotificationListenerTest {
     AuditLogNotificationListener listener = new AuditLogNotificationListener(client, props(true));
     AuditLogEvent ev =
         new AuditLogEvent(
-            "SYSTEM_RESET", "SYSTEM", null, "admin-nick", null, "127.0.0.1", Instant.now());
+            AuditAction.RANKING_CACHE_RESET,
+            AuditAction.RANKING_CACHE_RESET.targetType(),
+            null,
+            "admin-nick",
+            null,
+            "127.0.0.1",
+            Instant.now());
 
     listener.onAuditLog(ev);
 
@@ -129,7 +142,7 @@ class AuditLogNotificationListenerTest {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     AuditLogNotificationListener listener = new AuditLogNotificationListener(client, props(true));
 
-    listener.onAuditLog(event("USER_BAN", null));
+    listener.onAuditLog(event(AuditAction.USER_BAN, null));
 
     ArgumentCaptor<DiscordEmbed> embedCaptor = ArgumentCaptor.forClass(DiscordEmbed.class);
     verify(client).send(eq(NotificationLevel.HIGH), embedCaptor.capture());

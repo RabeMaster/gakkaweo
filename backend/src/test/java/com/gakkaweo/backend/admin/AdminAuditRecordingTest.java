@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.gakkaweo.backend.admin.dto.RoleChangeRequest;
 import com.gakkaweo.backend.admin.dto.SentenceCreateRequest;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.entity.AuditLog;
+import com.gakkaweo.backend.domain.admin.entity.AuditTargetType;
 import com.gakkaweo.backend.domain.admin.repository.AuditLogRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.support.IntegrationTestBase;
@@ -35,8 +37,8 @@ class AdminAuditRecordingTest extends IntegrationTestBase {
         new HttpEntity<>(new RoleChangeRequest("ADMIN"), headers),
         Void.class);
 
-    AuditLog logged = assertSingleLog("ROLE_CHANGE");
-    assertThat(logged.getTargetType()).isEqualTo("MEMBER");
+    AuditLog logged = assertSingleLog(AuditAction.ROLE_CHANGE);
+    assertThat(logged.getTargetType()).isEqualTo(AuditTargetType.MEMBER);
     assertThat(logged.getTargetId()).isEqualTo(target.getPublicId().toString());
     assertThat(logged.getDetail()).contains("ADMIN");
   }
@@ -54,7 +56,7 @@ class AdminAuditRecordingTest extends IntegrationTestBase {
         new HttpEntity<>(headers),
         Void.class);
 
-    AuditLog logged = assertSingleLog("USER_BAN");
+    AuditLog logged = assertSingleLog(AuditAction.USER_BAN);
     assertThat(logged.getTargetId()).isEqualTo(target.getPublicId().toString());
   }
 
@@ -70,8 +72,8 @@ class AdminAuditRecordingTest extends IntegrationTestBase {
         new HttpEntity<>(new SentenceCreateRequest("테스트 문장"), headers),
         Void.class);
 
-    AuditLog logged = assertSingleLog("SENTENCE_CREATE");
-    assertThat(logged.getTargetType()).isEqualTo("SENTENCE");
+    AuditLog logged = assertSingleLog(AuditAction.SENTENCE_CREATE);
+    assertThat(logged.getTargetType()).isEqualTo(AuditTargetType.SENTENCE);
     assertThat(logged.getDetail()).isEqualTo("테스트 문장");
   }
 
@@ -88,13 +90,13 @@ class AdminAuditRecordingTest extends IntegrationTestBase {
         new HttpEntity<>(headers),
         Void.class);
 
-    AuditLog logged = assertSingleLog("RANKING_CACHE_RESET");
-    assertThat(logged.getTargetType()).isEqualTo("SYSTEM");
+    AuditLog logged = assertSingleLog(AuditAction.RANKING_CACHE_RESET);
+    assertThat(logged.getTargetType()).isEqualTo(AuditTargetType.SYSTEM);
   }
 
-  private AuditLog assertSingleLog(String action) {
+  private AuditLog assertSingleLog(AuditAction action) {
     List<AuditLog> logs =
-        auditLogRepository.findAll().stream().filter(l -> action.equals(l.getAction())).toList();
+        auditLogRepository.findAll().stream().filter(l -> action == l.getAction()).toList();
     assertThat(logs).hasSize(1);
     return logs.get(0);
   }
