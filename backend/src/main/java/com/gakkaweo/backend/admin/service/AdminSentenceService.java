@@ -14,6 +14,7 @@ import com.gakkaweo.backend.admin.dto.SimilarityTestResponse;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -95,8 +96,7 @@ public class AdminSentenceService {
     log.info("문장 등록: publicId={}", entity.getPublicId());
     adminAuditService.log(
         adminPublicId,
-        "SENTENCE_CREATE",
-        "SENTENCE",
+        AuditAction.SENTENCE_CREATE,
         entity.getPublicId().toString(),
         sentence,
         ipAddress);
@@ -126,7 +126,7 @@ public class AdminSentenceService {
 
     entity.setSentence(newSentence);
     adminAuditService.log(
-        adminPublicId, "SENTENCE_UPDATE", "SENTENCE", publicId.toString(), newSentence, ipAddress);
+        adminPublicId, AuditAction.SENTENCE_UPDATE, publicId.toString(), newSentence, ipAddress);
     return SentenceResponse.from(entity);
   }
 
@@ -141,7 +141,7 @@ public class AdminSentenceService {
     dailySentenceRepository.delete(entity);
     log.info("문장 삭제: publicId={}", publicId);
     adminAuditService.log(
-        adminPublicId, "SENTENCE_DELETE", "SENTENCE", publicId.toString(), null, ipAddress);
+        adminPublicId, AuditAction.SENTENCE_DELETE, publicId.toString(), null, ipAddress);
   }
 
   @Transactional(readOnly = true)
@@ -184,8 +184,7 @@ public class AdminSentenceService {
     entity.setScheduledAt(request.date());
     adminAuditService.log(
         adminPublicId,
-        "SENTENCE_SCHEDULE",
-        "SENTENCE",
+        AuditAction.SENTENCE_SCHEDULE,
         publicId.toString(),
         "date=" + request.date(),
         ipAddress);
@@ -197,7 +196,7 @@ public class AdminSentenceService {
     DailySentence entity = findByPublicIdOrThrow(publicId);
     entity.setScheduledAt(null);
     adminAuditService.log(
-        adminPublicId, "SENTENCE_UNSCHEDULE", "SENTENCE", publicId.toString(), null, ipAddress);
+        adminPublicId, AuditAction.SENTENCE_UNSCHEDULE, publicId.toString(), null, ipAddress);
     return SentenceResponse.from(entity);
   }
 
@@ -275,8 +274,7 @@ public class AdminSentenceService {
 
               adminAuditService.log(
                   adminPublicId,
-                  "EMERGENCY_REPLACE",
-                  "SENTENCE",
+                  AuditAction.EMERGENCY_REPLACE,
                   newSentence.getPublicId().toString(),
                   "newSentence="
                       + request.newSentencePublicId()

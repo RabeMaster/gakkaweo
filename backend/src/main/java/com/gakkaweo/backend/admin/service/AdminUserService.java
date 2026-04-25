@@ -12,6 +12,7 @@ import com.gakkaweo.backend.auth.service.ProfileImageService;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
 import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
@@ -139,8 +140,7 @@ public class AdminUserService {
     member.setRole(newRole);
     adminAuditService.log(
         adminPublicId,
-        "ROLE_CHANGE",
-        "MEMBER",
+        AuditAction.ROLE_CHANGE,
         targetPublicId.toString(),
         "newRole=" + request.role(),
         ipAddress);
@@ -163,7 +163,7 @@ public class AdminUserService {
 
     log.info("사용자 차단: publicId={}", targetPublicId);
     adminAuditService.log(
-        adminPublicId, "USER_BAN", "MEMBER", targetPublicId.toString(), null, ipAddress);
+        adminPublicId, AuditAction.USER_BAN, targetPublicId.toString(), null, ipAddress);
   }
 
   @Transactional
@@ -176,7 +176,7 @@ public class AdminUserService {
 
     log.info("사용자 차단 해제: publicId={}", targetPublicId);
     adminAuditService.log(
-        adminPublicId, "USER_UNBAN", "MEMBER", targetPublicId.toString(), null, ipAddress);
+        adminPublicId, AuditAction.USER_UNBAN, targetPublicId.toString(), null, ipAddress);
   }
 
   @Transactional
@@ -194,7 +194,7 @@ public class AdminUserService {
 
     log.info("관리자 강제 탈퇴: publicId={}", targetPublicId);
     adminAuditService.log(
-        adminPublicId, "USER_FORCE_DELETE", "MEMBER", targetPublicId.toString(), null, ipAddress);
+        adminPublicId, AuditAction.USER_FORCE_DELETE, targetPublicId.toString(), null, ipAddress);
   }
 
   public void cleanupRedisAfterDelete(UUID publicId) {
@@ -230,8 +230,7 @@ public class AdminUserService {
 
     adminAuditService.log(
         adminPublicId,
-        "USER_FORCE_NICKNAME",
-        "MEMBER",
+        AuditAction.USER_FORCE_NICKNAME,
         targetPublicId.toString(),
         "newNickname=" + member.getNickname(),
         ipAddress);
@@ -261,8 +260,7 @@ public class AdminUserService {
     member.setProfileUrl(null);
     adminAuditService.log(
         adminPublicId,
-        "USER_FORCE_PROFILE_DELETE",
-        "MEMBER",
+        AuditAction.USER_FORCE_PROFILE_DELETE,
         targetPublicId.toString(),
         null,
         ipAddress);

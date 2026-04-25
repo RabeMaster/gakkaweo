@@ -1,11 +1,13 @@
 package com.gakkaweo.backend.domain.admin.entity;
 
+import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
 import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -31,11 +33,13 @@ public class AuditLog {
   @JoinColumn(name = "admin_id")
   private Member admin;
 
+  @Enumerated(STRING)
   @Column(nullable = false, length = 100)
-  private String action;
+  private AuditAction action;
 
+  @Enumerated(STRING)
   @Column(nullable = false, length = 50)
-  private String targetType;
+  private AuditTargetType targetType;
 
   @Column(length = 255)
   private String targetId;
@@ -50,8 +54,8 @@ public class AuditLog {
 
   public AuditLog(
       Member admin,
-      String action,
-      String targetType,
+      AuditAction action,
+      AuditTargetType targetType,
       String targetId,
       String detail,
       String ipAddress) {

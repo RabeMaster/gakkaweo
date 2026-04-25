@@ -3,6 +3,7 @@ package com.gakkaweo.backend.admin.service;
 import com.gakkaweo.backend.admin.event.AuditLogEvent;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.entity.AuditLog;
 import com.gakkaweo.backend.domain.admin.repository.AuditLogRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
@@ -27,37 +28,34 @@ public class AdminAuditService {
 
   @Transactional
   public void log(
-      Member admin,
-      String action,
-      String targetType,
-      String targetId,
-      String detail,
-      String ipAddress) {
-    AuditLog auditLog = new AuditLog(admin, action, targetType, targetId, detail, ipAddress);
+      Member admin, AuditAction action, String targetId, String detail, String ipAddress) {
+    AuditLog auditLog =
+        new AuditLog(admin, action, action.targetType(), targetId, detail, ipAddress);
     auditLogRepository.save(auditLog);
     log.info(
         "감사 로그: admin={}, action={}, targetType={}, targetId={}",
         admin.getNickname(),
         action,
-        targetType,
+        action.targetType(),
         targetId);
     eventPublisher.publishEvent(
         new AuditLogEvent(
-            action, targetType, targetId, admin.getNickname(), detail, ipAddress, clock.instant()));
+            action,
+            action.targetType(),
+            targetId,
+            admin.getNickname(),
+            detail,
+            ipAddress,
+            clock.instant()));
   }
 
   @Transactional
   public void log(
-      UUID adminPublicId,
-      String action,
-      String targetType,
-      String targetId,
-      String detail,
-      String ipAddress) {
+      UUID adminPublicId, AuditAction action, String targetId, String detail, String ipAddress) {
     Member admin =
         memberRepository
             .findByPublicId(adminPublicId)
             .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-    log(admin, action, targetType, targetId, detail, ipAddress);
+    log(admin, action, targetId, detail, ipAddress);
   }
 }
