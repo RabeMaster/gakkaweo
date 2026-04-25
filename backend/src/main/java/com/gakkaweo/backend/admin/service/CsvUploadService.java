@@ -3,6 +3,7 @@ package com.gakkaweo.backend.admin.service;
 import com.gakkaweo.backend.admin.dto.CsvUploadResponse;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.entity.SentenceUpload;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
@@ -74,8 +75,7 @@ public class CsvUploadService {
 
           adminAuditService.log(
               admin,
-              "CSV_UPLOAD",
-              "SENTENCE",
+              AuditAction.CSV_UPLOAD,
               null,
               "success=" + successCount + ", duplicate=" + duplicateCount,
               ipAddress);

@@ -12,6 +12,7 @@ import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.admin.entity.Announcement;
 import com.gakkaweo.backend.domain.admin.entity.AnnouncementType;
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.entity.AuditLog;
 import com.gakkaweo.backend.domain.admin.repository.AnnouncementRepository;
 import com.gakkaweo.backend.domain.admin.repository.AuditLogRepository;
@@ -66,13 +67,23 @@ public class AdminSystemService {
 
   private static Specification<AuditLog> auditLogFilters(
       String action, Instant dateFrom, Instant dateTo) {
+    final AuditAction actionEnum;
+    if (action != null && !action.isBlank()) {
+      try {
+        actionEnum = AuditAction.valueOf(action);
+      } catch (IllegalArgumentException e) {
+        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+      }
+    } else {
+      actionEnum = null;
+    }
     return (root, query, cb) -> {
       if (Long.class != query.getResultType()) {
         root.fetch("admin", JoinType.LEFT);
       }
       List<Predicate> predicates = new ArrayList<>();
-      if (action != null && !action.isBlank()) {
-        predicates.add(cb.equal(root.get("action"), action));
+      if (actionEnum != null) {
+        predicates.add(cb.equal(root.get("action"), actionEnum));
       }
       if (dateFrom != null) {
         predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), dateFrom));
@@ -111,8 +122,7 @@ public class AdminSystemService {
               announcementRepository.save(announcement);
               adminAuditService.log(
                   admin,
-                  "ANNOUNCEMENT_CREATE",
-                  "ANNOUNCEMENT",
+                  AuditAction.ANNOUNCEMENT_CREATE,
                   announcement.getId().toString(),
                   request.title(),
                   ipAddress);
@@ -159,12 +169,7 @@ public class AdminSystemService {
               validateAnnouncementDates(announcement.getStartsAt(), announcement.getEndsAt());
               announcementRepository.save(announcement);
               adminAuditService.log(
-                  adminPublicId,
-                  "ANNOUNCEMENT_UPDATE",
-                  "ANNOUNCEMENT",
-                  id.toString(),
-                  null,
-                  ipAddress);
+                  adminPublicId, AuditAction.ANNOUNCEMENT_UPDATE, id.toString(), null, ipAddress);
               return AnnouncementResponse.from(announcement);
             });
 
@@ -190,12 +195,7 @@ public class AdminSystemService {
                   new AnnouncementEvent(id, announcement.getTitle(), null, announcement.getType());
               announcementRepository.delete(announcement);
               adminAuditService.log(
-                  adminPublicId,
-                  "ANNOUNCEMENT_DELETE",
-                  "ANNOUNCEMENT",
-                  id.toString(),
-                  null,
-                  ipAddress);
+                  adminPublicId, AuditAction.ANNOUNCEMENT_DELETE, id.toString(), null, ipAddress);
               return ev;
             });
     eventPublisher.publishEvent(event);
@@ -247,13 +247,13 @@ public class AdminSystemService {
     int rebuilt = rankingService.rebuildRankingCache(today);
     eventPublisher.publishEvent(new RankingUpdateEvent());
     log.info("랭킹 캐시 리셋 및 재구축: date={}, rebuilt={}", today, rebuilt);
-    adminAuditService.log(adminPublicId, "RANKING_CACHE_RESET", "SYSTEM", null, null, ipAddress);
+    adminAuditService.log(adminPublicId, AuditAction.RANKING_CACHE_RESET, null, null, ipAddress);
   }
 
   public void resetRateLimit(UUID adminPublicId, String ipAddress) {
     bucketStore.clearAllBuckets();
     log.info("Rate limit 버킷 전체 초기화");
-    adminAuditService.log(adminPublicId, "RATE_LIMIT_RESET", "SYSTEM", null, null, ipAddress);
+    adminAuditService.log(adminPublicId, AuditAction.RATE_LIMIT_RESET, null, null, ipAddress);
   }
 
   @Transactional(readOnly = true)

@@ -31,7 +31,7 @@ public class AuditLogNotificationListener {
 
   private DiscordEmbed buildEmbed(AuditLogEvent event) {
     List<DiscordEmbed.Field> fields = new ArrayList<>();
-    fields.add(new DiscordEmbed.Field("Action", event.action(), true));
+    fields.add(new DiscordEmbed.Field("Action", event.action().name(), true));
     fields.add(new DiscordEmbed.Field("Admin", safe(event.adminNickname()), true));
     fields.add(new DiscordEmbed.Field("Target", formatTarget(event), true));
     fields.add(new DiscordEmbed.Field("IP", safe(event.ipAddress()), true));
@@ -42,7 +42,7 @@ public class AuditLogNotificationListener {
   }
 
   private String formatTarget(AuditLogEvent event) {
-    String targetType = safe(event.targetType());
+    String targetType = event.targetType().name();
     String targetId = event.targetId();
     if (targetId == null || targetId.isBlank()) {
       return targetType;
