@@ -61,6 +61,7 @@ public class AdminSystemService {
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final TransactionTemplate transactionTemplate;
+  private final AdminAuditService adminAuditService;
   private final Clock clock;
 
   private static Specification<AuditLog> auditLogFilters(
@@ -91,7 +92,7 @@ public class AdminSystemService {
   }
 
   public AnnouncementResponse createAnnouncement(
-      AnnouncementCreateRequest request, UUID adminPublicId) {
+      AnnouncementCreateRequest request, UUID adminPublicId, String ipAddress) {
     AnnouncementType type = parseAnnouncementType(request.type());
     validateAnnouncementDates(request.startsAt(), request.endsAt());
 
@@ -108,6 +109,13 @@ public class AdminSystemService {
                       request.startsAt(),
                       request.endsAt());
               announcementRepository.save(announcement);
+              adminAuditService.log(
+                  admin,
+                  "ANNOUNCEMENT_CREATE",
+                  "ANNOUNCEMENT",
+                  announcement.getId().toString(),
+                  request.title(),
+                  ipAddress);
               return AnnouncementResponse.from(announcement);
             });
 
@@ -119,7 +127,8 @@ public class AdminSystemService {
     return response;
   }
 
-  public AnnouncementResponse updateAnnouncement(Long id, AnnouncementUpdateRequest request) {
+  public AnnouncementResponse updateAnnouncement(
+      Long id, AnnouncementUpdateRequest request, UUID adminPublicId, String ipAddress) {
     if (request.type() != null) {
       parseAnnouncementType(request.type());
     }
@@ -149,6 +158,13 @@ public class AdminSystemService {
               }
               validateAnnouncementDates(announcement.getStartsAt(), announcement.getEndsAt());
               announcementRepository.save(announcement);
+              adminAuditService.log(
+                  adminPublicId,
+                  "ANNOUNCEMENT_UPDATE",
+                  "ANNOUNCEMENT",
+                  id.toString(),
+                  null,
+                  ipAddress);
               return AnnouncementResponse.from(announcement);
             });
 
@@ -165,11 +181,24 @@ public class AdminSystemService {
     return response;
   }
 
-  public void deleteAnnouncement(Long id) {
-    Announcement announcement = findAnnouncement(id);
-    transactionTemplate.executeWithoutResult(status -> announcementRepository.delete(announcement));
-    eventPublisher.publishEvent(
-        new AnnouncementEvent(id, announcement.getTitle(), null, announcement.getType()));
+  public void deleteAnnouncement(Long id, UUID adminPublicId, String ipAddress) {
+    AnnouncementEvent event =
+        transactionTemplate.execute(
+            status -> {
+              Announcement announcement = findAnnouncement(id);
+              AnnouncementEvent ev =
+                  new AnnouncementEvent(id, announcement.getTitle(), null, announcement.getType());
+              announcementRepository.delete(announcement);
+              adminAuditService.log(
+                  adminPublicId,
+                  "ANNOUNCEMENT_DELETE",
+                  "ANNOUNCEMENT",
+                  id.toString(),
+                  null,
+                  ipAddress);
+              return ev;
+            });
+    eventPublisher.publishEvent(event);
   }
 
   public SystemStatusResponse getSystemStatus() {
@@ -201,7 +230,7 @@ public class AdminSystemService {
         unusedSentences);
   }
 
-  public void resetRankingCache() {
+  public void resetRankingCache(UUID adminPublicId, String ipAddress) {
     LocalDate today = LocalDate.now(clock);
     String rankingKey = RedisKeyConstants.rankingKey(today);
 
@@ -218,11 +247,13 @@ public class AdminSystemService {
     int rebuilt = rankingService.rebuildRankingCache(today);
     eventPublisher.publishEvent(new RankingUpdateEvent());
     log.info("랭킹 캐시 리셋 및 재구축: date={}, rebuilt={}", today, rebuilt);
+    adminAuditService.log(adminPublicId, "RANKING_CACHE_RESET", "SYSTEM", null, null, ipAddress);
   }
 
-  public void resetRateLimit() {
+  public void resetRateLimit(UUID adminPublicId, String ipAddress) {
     bucketStore.clearAllBuckets();
     log.info("Rate limit 버킷 전체 초기화");
+    adminAuditService.log(adminPublicId, "RATE_LIMIT_RESET", "SYSTEM", null, null, ipAddress);
   }
 
   @Transactional(readOnly = true)

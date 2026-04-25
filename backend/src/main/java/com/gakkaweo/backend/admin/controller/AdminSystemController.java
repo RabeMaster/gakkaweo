@@ -5,7 +5,6 @@ import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
 import com.gakkaweo.backend.admin.dto.AuditLogListResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
-import com.gakkaweo.backend.admin.service.AdminAuditService;
 import com.gakkaweo.backend.admin.service.AdminSystemService;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.config.openapi.AdminErrorResponses;
@@ -36,13 +35,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/admin/system")
 @RequiredArgsConstructor
-@Transactional
 @Tag(name = "Admin: System", description = "어드민 시스템 관리")
 @SecurityRequirement(name = "cookieAuth")
 public class AdminSystemController {
 
   private final AdminSystemService adminSystemService;
-  private final AdminAuditService adminAuditService;
 
   @Operation(summary = "공지 목록 조회")
   @AdminErrorResponses
@@ -62,14 +59,8 @@ public class AdminSystemController {
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
     AnnouncementResponse response =
-        adminSystemService.createAnnouncement(request, userDetails.publicId());
-    adminAuditService.log(
-        userDetails.publicId(),
-        "ANNOUNCEMENT_CREATE",
-        "ANNOUNCEMENT",
-        response.id().toString(),
-        request.title(),
-        httpRequest.getRemoteAddr());
+        adminSystemService.createAnnouncement(
+            request, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
@@ -86,14 +77,9 @@ public class AdminSystemController {
       @Valid @RequestBody AnnouncementUpdateRequest request,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    AnnouncementResponse response = adminSystemService.updateAnnouncement(id, request);
-    adminAuditService.log(
-        userDetails.publicId(),
-        "ANNOUNCEMENT_UPDATE",
-        "ANNOUNCEMENT",
-        id.toString(),
-        null,
-        httpRequest.getRemoteAddr());
+    AnnouncementResponse response =
+        adminSystemService.updateAnnouncement(
+            id, request, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok(response);
   }
 
@@ -109,14 +95,7 @@ public class AdminSystemController {
       @PathVariable Long id,
       @AuthenticationPrincipal CustomUserDetails userDetails,
       HttpServletRequest httpRequest) {
-    adminSystemService.deleteAnnouncement(id);
-    adminAuditService.log(
-        userDetails.publicId(),
-        "ANNOUNCEMENT_DELETE",
-        "ANNOUNCEMENT",
-        id.toString(),
-        null,
-        httpRequest.getRemoteAddr());
+    adminSystemService.deleteAnnouncement(id, userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok().build();
   }
 
@@ -133,14 +112,7 @@ public class AdminSystemController {
   @PostMapping("/ranking-cache/reset")
   public ResponseEntity<Void> resetRankingCache(
       @AuthenticationPrincipal CustomUserDetails userDetails, HttpServletRequest httpRequest) {
-    adminSystemService.resetRankingCache();
-    adminAuditService.log(
-        userDetails.publicId(),
-        "RANKING_CACHE_RESET",
-        "SYSTEM",
-        null,
-        null,
-        httpRequest.getRemoteAddr());
+    adminSystemService.resetRankingCache(userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok().build();
   }
 
@@ -149,14 +121,7 @@ public class AdminSystemController {
   @PostMapping("/rate-limit/reset")
   public ResponseEntity<Void> resetRateLimit(
       @AuthenticationPrincipal CustomUserDetails userDetails, HttpServletRequest httpRequest) {
-    adminSystemService.resetRateLimit();
-    adminAuditService.log(
-        userDetails.publicId(),
-        "RATE_LIMIT_RESET",
-        "SYSTEM",
-        null,
-        null,
-        httpRequest.getRemoteAddr());
+    adminSystemService.resetRateLimit(userDetails.publicId(), httpRequest.getRemoteAddr());
     return ResponseEntity.ok().build();
   }
 

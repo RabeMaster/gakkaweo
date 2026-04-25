@@ -51,6 +51,7 @@ public class AdminSentenceService {
   private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final TransactionTemplate transactionTemplate;
+  private final AdminAuditService adminAuditService;
   private final Clock clock;
 
   @Transactional(readOnly = true)
@@ -82,7 +83,8 @@ public class AdminSentenceService {
   }
 
   @Transactional
-  public SentenceResponse createSentence(SentenceCreateRequest request) {
+  public SentenceResponse createSentence(
+      SentenceCreateRequest request, UUID adminPublicId, String ipAddress) {
     String sentence = request.sentence().strip();
     if (dailySentenceRepository.existsBySentence(sentence)) {
       throw new BusinessException(ErrorCode.SENTENCE_DUPLICATE);
@@ -91,6 +93,13 @@ public class AdminSentenceService {
     DailySentence entity = new DailySentence(sentence);
     dailySentenceRepository.save(entity);
     log.info("문장 등록: publicId={}", entity.getPublicId());
+    adminAuditService.log(
+        adminPublicId,
+        "SENTENCE_CREATE",
+        "SENTENCE",
+        entity.getPublicId().toString(),
+        sentence,
+        ipAddress);
     return SentenceResponse.from(entity);
   }
 
@@ -101,7 +110,8 @@ public class AdminSentenceService {
   }
 
   @Transactional
-  public SentenceResponse updateSentence(UUID publicId, SentenceUpdateRequest request) {
+  public SentenceResponse updateSentence(
+      UUID publicId, SentenceUpdateRequest request, UUID adminPublicId, String ipAddress) {
     DailySentence entity = findByPublicIdOrThrow(publicId);
 
     if (entity.getUsedAt() != null) {
@@ -115,11 +125,13 @@ public class AdminSentenceService {
     }
 
     entity.setSentence(newSentence);
+    adminAuditService.log(
+        adminPublicId, "SENTENCE_UPDATE", "SENTENCE", publicId.toString(), newSentence, ipAddress);
     return SentenceResponse.from(entity);
   }
 
   @Transactional
-  public void deleteSentence(UUID publicId) {
+  public void deleteSentence(UUID publicId, UUID adminPublicId, String ipAddress) {
     DailySentence entity = findByPublicIdOrThrow(publicId);
 
     if (entity.getUsedAt() != null) {
@@ -128,6 +140,8 @@ public class AdminSentenceService {
 
     dailySentenceRepository.delete(entity);
     log.info("문장 삭제: publicId={}", publicId);
+    adminAuditService.log(
+        adminPublicId, "SENTENCE_DELETE", "SENTENCE", publicId.toString(), null, ipAddress);
   }
 
   @Transactional(readOnly = true)
@@ -150,7 +164,8 @@ public class AdminSentenceService {
   }
 
   @Transactional
-  public SentenceResponse schedule(UUID publicId, ScheduleRequest request) {
+  public SentenceResponse schedule(
+      UUID publicId, ScheduleRequest request, UUID adminPublicId, String ipAddress) {
     if (request.date().isBefore(LocalDate.now(clock))) {
       throw new BusinessException(ErrorCode.VALIDATION_FAILED);
     }
@@ -167,13 +182,22 @@ public class AdminSentenceService {
     }
 
     entity.setScheduledAt(request.date());
+    adminAuditService.log(
+        adminPublicId,
+        "SENTENCE_SCHEDULE",
+        "SENTENCE",
+        publicId.toString(),
+        "date=" + request.date(),
+        ipAddress);
     return SentenceResponse.from(entity);
   }
 
   @Transactional
-  public SentenceResponse unschedule(UUID publicId) {
+  public SentenceResponse unschedule(UUID publicId, UUID adminPublicId, String ipAddress) {
     DailySentence entity = findByPublicIdOrThrow(publicId);
     entity.setScheduledAt(null);
+    adminAuditService.log(
+        adminPublicId, "SENTENCE_UNSCHEDULE", "SENTENCE", publicId.toString(), null, ipAddress);
     return SentenceResponse.from(entity);
   }
 
@@ -203,7 +227,8 @@ public class AdminSentenceService {
     return new DuplicateCheckResponse(!similarEntries.isEmpty(), similarEntries);
   }
 
-  public SentenceResponse emergencyReplace(EmergencyReplaceRequest request) {
+  public SentenceResponse emergencyReplace(
+      EmergencyReplaceRequest request, UUID adminPublicId, String ipAddress) {
     LocalDate today = LocalDate.now(clock);
 
     UUID newPublicId =
@@ -247,6 +272,17 @@ public class AdminSentenceService {
                   currentSentence.getPublicId(),
                   newSentence.getPublicId(),
                   request.returnOldToPool());
+
+              adminAuditService.log(
+                  adminPublicId,
+                  "EMERGENCY_REPLACE",
+                  "SENTENCE",
+                  newSentence.getPublicId().toString(),
+                  "newSentence="
+                      + request.newSentencePublicId()
+                      + ", returnToPool="
+                      + request.returnOldToPool(),
+                  ipAddress);
 
               return newSentence.getPublicId();
             });
