@@ -10,6 +10,7 @@ import io.github.resilience4j.retry.RetryRegistry;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -102,7 +103,7 @@ public class RedisCleanupScheduler {
   }
 
   private int purgeStaleKeys(String pattern, LocalDate cutoff) {
-    int deleted = 0;
+    List<String> targets = new ArrayList<>();
     try (Cursor<String> cursor = openCursor(pattern)) {
       while (cursor.hasNext()) {
         String key = cursor.next();
@@ -112,15 +113,17 @@ public class RedisCleanupScheduler {
           continue;
         }
         if (!keyDate.isAfter(cutoff)) {
-          Boolean removed = redisTemplate.delete(key);
-          if (removed) {
-            log.info("Redis 누수 키 삭제: {}", key);
-            deleted++;
-          }
+          targets.add(key);
         }
       }
     }
-    return deleted;
+    if (targets.isEmpty()) {
+      return 0;
+    }
+    Long removed = redisTemplate.delete(targets);
+    int count = removed == null ? 0 : removed.intValue();
+    log.info("Redis 누수 키 삭제: pattern={}, count={}", pattern, count);
+    return count;
   }
 
   private Cursor<String> openCursor(String pattern) {
