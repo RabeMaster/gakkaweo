@@ -7990,11 +7990,37 @@
           "action": {
             "type": "string",
             "description": "수행 액션",
-            "example": "FORCE_NICKNAME"
+            "enum": [
+              "SENTENCE_CREATE",
+              "SENTENCE_UPDATE",
+              "SENTENCE_DELETE",
+              "SENTENCE_SCHEDULE",
+              "SENTENCE_UNSCHEDULE",
+              "EMERGENCY_REPLACE",
+              "CSV_UPLOAD",
+              "ROLE_CHANGE",
+              "USER_BAN",
+              "USER_UNBAN",
+              "USER_FORCE_DELETE",
+              "USER_FORCE_NICKNAME",
+              "USER_FORCE_PROFILE_DELETE",
+              "ANNOUNCEMENT_CREATE",
+              "ANNOUNCEMENT_UPDATE",
+              "ANNOUNCEMENT_DELETE",
+              "RANKING_CACHE_RESET",
+              "RATE_LIMIT_RESET"
+            ],
+            "example": "USER_FORCE_NICKNAME"
           },
           "targetType": {
             "type": "string",
             "description": "대상 유형",
+            "enum": [
+              "MEMBER",
+              "SENTENCE",
+              "ANNOUNCEMENT",
+              "SYSTEM"
+            ],
             "example": "MEMBER"
           },
           "targetId": {
