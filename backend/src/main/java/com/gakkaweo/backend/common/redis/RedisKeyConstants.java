@@ -1,17 +1,26 @@
 package com.gakkaweo.backend.common.redis;
 
 import java.time.LocalDate;
+import java.util.Set;
 import java.util.UUID;
 
 public final class RedisKeyConstants {
 
-  private static final String BLACKLIST_PREFIX = "blacklist:jti:";
-  private static final String RANKING_KEY_PREFIX = "ranking:";
-  private static final String RANKING_DETAIL_PREFIX = "ranking_detail:";
+  public static final String BLACKLIST_PREFIX = "blacklist:jti:";
+  public static final String RANKING_KEY_PREFIX = "ranking:";
+  public static final String RANKING_DETAIL_PREFIX = "ranking_detail:";
+  public static final String SIMILARITY_CACHE_PREFIX = "similarity:";
+
   private static final String RANKING_MEMBER_PREFIX = "member:";
-  private static final String SIMILARITY_CACHE_PREFIX = "similarity:";
+
+  private static final Set<String> KNOWN_PREFIXES =
+      Set.of(BLACKLIST_PREFIX, RANKING_KEY_PREFIX, RANKING_DETAIL_PREFIX, SIMILARITY_CACHE_PREFIX);
 
   private RedisKeyConstants() {}
+
+  public static Set<String> knownPrefixes() {
+    return KNOWN_PREFIXES;
+  }
 
   public static String blacklistKey(String jti) {
     return BLACKLIST_PREFIX + jti;
