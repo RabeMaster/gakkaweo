@@ -98,7 +98,7 @@ public class AdminSentenceService {
         "SENTENCE_CREATE",
         "SENTENCE",
         entity.getPublicId().toString(),
-        request.sentence(),
+        sentence,
         ipAddress);
     return SentenceResponse.from(entity);
   }
@@ -126,12 +126,7 @@ public class AdminSentenceService {
 
     entity.setSentence(newSentence);
     adminAuditService.log(
-        adminPublicId,
-        "SENTENCE_UPDATE",
-        "SENTENCE",
-        publicId.toString(),
-        request.sentence(),
-        ipAddress);
+        adminPublicId, "SENTENCE_UPDATE", "SENTENCE", publicId.toString(), newSentence, ipAddress);
     return SentenceResponse.from(entity);
   }
 

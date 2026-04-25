@@ -9,6 +9,7 @@ import static org.mockito.Mockito.doThrow;
 import com.gakkaweo.backend.admin.dto.RoleChangeRequest;
 import com.gakkaweo.backend.admin.dto.SentenceCreateRequest;
 import com.gakkaweo.backend.admin.service.AdminAuditService;
+import com.gakkaweo.backend.domain.admin.entity.AuditLog;
 import com.gakkaweo.backend.domain.admin.repository.AuditLogRepository;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
@@ -54,7 +55,7 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     assertThat(dailySentenceRepository.existsBySentence("원자성 테스트 문장")).isFalse();
-    assertThat(auditLogRepository.count()).isZero();
+    assertThat(auditRowsByAction("SENTENCE_CREATE")).isZero();
   }
 
   @Test
@@ -78,7 +79,14 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
     Member reloaded = memberRepository.findByPublicId(target.getPublicId()).orElseThrow();
     assertThat(reloaded.getRole()).isEqualTo(MemberRole.USER);
-    assertThat(auditLogRepository.count()).isZero();
+    assertThat(auditRowsByAction("ROLE_CHANGE")).isZero();
+  }
+
+  private long auditRowsByAction(String action) {
+    return auditLogRepository.findAll().stream()
+        .map(AuditLog::getAction)
+        .filter(action::equals)
+        .count();
   }
 
   private HttpHeaders authedJson(Member admin) {
