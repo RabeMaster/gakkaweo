@@ -8,19 +8,28 @@ import com.gakkaweo.backend.admin.dto.AuditLogListResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
 import com.gakkaweo.backend.common.exception.ErrorBody;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.entity.AuditLog;
 import com.gakkaweo.backend.domain.admin.repository.AuditLogRepository;
+import com.gakkaweo.backend.domain.game.entity.DailySentence;
+import com.gakkaweo.backend.domain.game.entity.GameSession;
+import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
+import com.gakkaweo.backend.ranking.service.RankingService;
 import com.gakkaweo.backend.support.IntegrationTestBase;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -32,9 +41,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 @DisplayName("Admin 시스템 관리 통합 테스트")
 class AdminSystemIntegrationTest extends IntegrationTestBase {
 
+  private static final long LIVE_TTL_SECONDS = 30 * 3600L;
+  private static final long TTL_TOLERANCE_SECONDS = 60L;
+
   @Autowired Clock clock;
   @Autowired AuditLogRepository auditLogRepository;
   @Autowired TransactionTemplate transactionTemplate;
+  @Autowired StringRedisTemplate redisTemplate;
+  @Autowired RankingService rankingService;
+  @Autowired GameSessionRepository gameSessionRepository;
 
   @Test
   @DisplayName("공지 등록 - 201 + 목록 조회")
@@ -110,6 +125,42 @@ class AdminSystemIntegrationTest extends IntegrationTestBase {
             Void.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  @DisplayName("랭킹 캐시 리셋 - 재구축된 today 키에 30h TTL 부여")
+  void 랭킹캐시_리셋_TTL_부여() {
+    DailySentence sentence = testAuthHelper.createTodaySentence("오늘 문장");
+    Member player = testAuthHelper.createMember();
+
+    transactionTemplate.executeWithoutResult(
+        status -> {
+          GameSession session = new GameSession(player, sentence);
+          session.updateBestSimilarity(new BigDecimal("80.0"));
+          gameSessionRepository.save(session);
+        });
+
+    Member admin = testAuthHelper.createAdmin();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+
+    ResponseEntity<Void> response =
+        restTemplate.exchange(
+            url("/admin/system/ranking-cache/reset"),
+            HttpMethod.POST,
+            new HttpEntity<>(headers),
+            Void.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    LocalDate today = LocalDate.now(clock);
+    String rankingKey = RedisKeyConstants.rankingKey(today);
+    String detailKey = RedisKeyConstants.rankingDetailKey(today, player.getPublicId());
+
+    Long rankingTtl = redisTemplate.getExpire(rankingKey, TimeUnit.SECONDS);
+    Long detailTtl = redisTemplate.getExpire(detailKey, TimeUnit.SECONDS);
+
+    assertThat(rankingTtl).isBetween(LIVE_TTL_SECONDS - TTL_TOLERANCE_SECONDS, LIVE_TTL_SECONDS);
+    assertThat(detailTtl).isBetween(LIVE_TTL_SECONDS - TTL_TOLERANCE_SECONDS, LIVE_TTL_SECONDS);
   }
 
   @Test

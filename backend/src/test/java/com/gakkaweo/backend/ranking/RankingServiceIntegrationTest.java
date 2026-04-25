@@ -3,6 +3,7 @@ package com.gakkaweo.backend.ranking;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.gakkaweo.backend.admin.dto.FullRankingResponse;
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
@@ -18,9 +19,11 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -31,12 +34,16 @@ import org.springframework.transaction.support.TransactionTemplate;
 @DisplayName("RankingService 통합 테스트 (Redis 데이터 포함 경로)")
 class RankingServiceIntegrationTest extends IntegrationTestBase {
 
+  private static final long LIVE_TTL_SECONDS = 30 * 3600L;
+  private static final long TTL_TOLERANCE_SECONDS = 60L;
+
   @Autowired RankingService rankingService;
   @Autowired MemberRepository memberRepository;
   @Autowired DailySentenceRepository dailySentenceRepository;
   @Autowired GameSessionRepository gameSessionRepository;
   @Autowired TransactionTemplate transactionTemplate;
   @Autowired Clock rankingClock;
+  @Autowired StringRedisTemplate redisTemplate;
 
   @SuppressWarnings("unused")
   private static List<String> nicknames(RankingResponse response) {
@@ -258,6 +265,46 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
 
     LocalDate today = LocalDate.now(rankingClock);
     rankingService.expirePreviousDayRankingKeys(today);
+  }
+
+  @Test
+  @DisplayName("updateRanking - ranking/detail 키에 30h TTL 부여")
+  void updateRanking_TTL_부여() {
+    DailySentence sentence = testAuthHelper.createTodaySentence("오늘 문장");
+    Member member = seedRanking(sentence, "참여자", null, new BigDecimal("80.0"), false);
+
+    LocalDate today = LocalDate.now(rankingClock);
+    String rankingKey = RedisKeyConstants.rankingKey(today);
+    String detailKey = RedisKeyConstants.rankingDetailKey(today, member.getPublicId());
+
+    Long rankingTtl = redisTemplate.getExpire(rankingKey, TimeUnit.SECONDS);
+    Long detailTtl = redisTemplate.getExpire(detailKey, TimeUnit.SECONDS);
+
+    assertThat(rankingTtl).isBetween(LIVE_TTL_SECONDS - TTL_TOLERANCE_SECONDS, LIVE_TTL_SECONDS);
+    assertThat(detailTtl).isBetween(LIVE_TTL_SECONDS - TTL_TOLERANCE_SECONDS, LIVE_TTL_SECONDS);
+  }
+
+  @Test
+  @DisplayName("rebuildRankingCache - 재구축 후 ranking/detail 키에 30h TTL 부여")
+  void rebuildRankingCache_TTL_부여() {
+    DailySentence sentence = testAuthHelper.createTodaySentence("오늘 문장");
+    Member member = seedRanking(sentence, "재구축자", null, new BigDecimal("90.0"), false);
+
+    LocalDate today = LocalDate.now(rankingClock);
+    String rankingKey = RedisKeyConstants.rankingKey(today);
+    String detailKey = RedisKeyConstants.rankingDetailKey(today, member.getPublicId());
+
+    redisTemplate.persist(rankingKey);
+    redisTemplate.persist(detailKey);
+    assertThat(redisTemplate.getExpire(rankingKey, TimeUnit.SECONDS)).isEqualTo(-1L);
+    assertThat(redisTemplate.getExpire(detailKey, TimeUnit.SECONDS)).isEqualTo(-1L);
+
+    rankingService.rebuildRankingCache(today);
+
+    Long rankingTtl = redisTemplate.getExpire(rankingKey, TimeUnit.SECONDS);
+    Long detailTtl = redisTemplate.getExpire(detailKey, TimeUnit.SECONDS);
+    assertThat(rankingTtl).isBetween(LIVE_TTL_SECONDS - TTL_TOLERANCE_SECONDS, LIVE_TTL_SECONDS);
+    assertThat(detailTtl).isBetween(LIVE_TTL_SECONDS - TTL_TOLERANCE_SECONDS, LIVE_TTL_SECONDS);
   }
 
   private Member seedRanking(

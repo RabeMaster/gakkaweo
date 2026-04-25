@@ -41,6 +41,7 @@ public class RankingService {
 
   private static final int TOP_RANKING_SIZE = 10;
   private static final Duration EXPIRE_TTL = Duration.ofHours(1);
+  private static final Duration LIVE_TTL = Duration.ofHours(30);
   private static final BigDecimal PERFECT_SIMILARITY = new BigDecimal("100");
 
   private final StringRedisTemplate redisTemplate;
@@ -77,6 +78,9 @@ public class RankingService {
               "attemptCount", String.valueOf(session.getAttemptCount()),
               "elapsedSeconds", String.valueOf(elapsedSeconds));
       redisTemplate.opsForHash().putAll(detailKey, detail);
+
+      redisTemplate.expire(rankingKey, LIVE_TTL);
+      redisTemplate.expire(detailKey, LIVE_TTL);
 
       Long rank = redisTemplate.opsForZSet().reverseRank(rankingKey, memberKey);
       if (rank != null) {
@@ -294,7 +298,12 @@ public class RankingService {
               "attemptCount", String.valueOf(session.getAttemptCount()),
               "elapsedSeconds", String.valueOf(elapsedSeconds));
       redisTemplate.opsForHash().putAll(detailKey, detail);
+      redisTemplate.expire(detailKey, LIVE_TTL);
       count++;
+    }
+
+    if (count > 0) {
+      redisTemplate.expire(rankingKey, LIVE_TTL);
     }
 
     log.info("랭킹 캐시 재구축: date={}, sessions={}", date, count);

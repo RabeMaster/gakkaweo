@@ -119,6 +119,13 @@ app:
   openapi:
     docs-mode: ${APP_OPENAPI_DOCS_MODE:false}
 
+  redis:
+    cleanup:
+      enabled: ${REDIS_CLEANUP_ENABLED:true}
+      scan-batch-size: ${REDIS_CLEANUP_SCAN_BATCH_SIZE:500}
+      purge-older-than-days: ${REDIS_CLEANUP_PURGE_OLDER_THAN_DAYS:2}
+      notify-on-zero: ${REDIS_CLEANUP_NOTIFY_ON_ZERO:false}
+
 springdoc:
   api-docs:
     groups:
@@ -156,6 +163,16 @@ resilience4j:
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
       schedulerSelectToday:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+      redisCleanupOrphanScan:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+      redisCleanupRankingPurge:
         max-attempts: 3
         wait-duration: 2s
         enable-exponential-backoff: true
