@@ -50,14 +50,22 @@ public class AdminSentenceController {
   private final AdminSentenceService adminSentenceService;
   private final CsvUploadService csvUploadService;
 
-  @Operation(summary = "문장 목록 조회")
+  @Operation(
+      summary = "문장 목록 조회",
+      description =
+          """
+          정렬 (`sort=field,dir`):
+          - 가능 필드: `createdAt`, `status`, `usedAt`, `scheduledAt`, `sentence`
+          - 기본값: `createdAt,desc`
+          - 잘못된 필드/방향: 400 `VALIDATION_FAILED`""")
   @AdminErrorResponses
   @GetMapping
   public ResponseEntity<SentenceListResponse> getSentences(
       @RequestParam(required = false) String status,
+      @RequestParam(required = false) String sort,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return ResponseEntity.ok(adminSentenceService.getSentences(status, page, size));
+    return ResponseEntity.ok(adminSentenceService.getSentences(status, sort, page, size));
   }
 
   @Operation(

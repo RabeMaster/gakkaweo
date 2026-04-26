@@ -8,6 +8,8 @@ import com.gakkaweo.backend.admin.dto.UserDetailResponse.ActivitySummary;
 import com.gakkaweo.backend.admin.dto.UserGameHistoryResponse;
 import com.gakkaweo.backend.admin.dto.UserGameHistoryResponse.GameHistoryEntry;
 import com.gakkaweo.backend.admin.dto.UserListResponse;
+import com.gakkaweo.backend.admin.sort.SortRequestParser;
+import com.gakkaweo.backend.admin.sort.UserSortField;
 import com.gakkaweo.backend.auth.service.ProfileImageService;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
@@ -79,11 +81,15 @@ public class AdminUserService {
   }
 
   @Transactional(readOnly = true)
-  public UserListResponse getUsers(String nickname, Boolean banned, int page, int size) {
+  public UserListResponse getUsers(
+      String nickname, Boolean banned, String sort, int page, int size) {
+    Sort sortSpec =
+        SortRequestParser.parse(
+                sort, UserSortField.class, UserSortField.CREATED_AT, Sort.Direction.DESC)
+            .and(Sort.by(Sort.Direction.DESC, "id"));
     Page<Member> pageResult =
         memberRepository.findAll(
-            memberFilters(nickname, banned),
-            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+            memberFilters(nickname, banned), PageRequest.of(page, size, sortSpec));
 
     return new UserListResponse(
         pageResult.getContent().stream().map(this::toUserResponse).toList(),

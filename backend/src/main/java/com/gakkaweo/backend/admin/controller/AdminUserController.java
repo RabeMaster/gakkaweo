@@ -40,16 +40,24 @@ public class AdminUserController {
 
   private final AdminUserService adminUserService;
 
-  @Operation(summary = "사용자 목록 조회")
+  @Operation(
+      summary = "사용자 목록 조회",
+      description =
+          """
+          정렬 (`sort=field,dir`):
+          - 가능 필드: `createdAt`, `nickname`, `role`, `banned`
+          - 기본값: `createdAt,desc`
+          - 잘못된 필드/방향: 400 `VALIDATION_FAILED`""")
   @AdminErrorResponses
   @GetMapping
   @Transactional(readOnly = true)
   public ResponseEntity<UserListResponse> getUsers(
       @RequestParam(required = false) String nickname,
       @RequestParam(required = false) Boolean banned,
+      @RequestParam(required = false) String sort,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return ResponseEntity.ok(adminUserService.getUsers(nickname, banned, page, size));
+    return ResponseEntity.ok(adminUserService.getUsers(nickname, banned, sort, page, size));
   }
 
   @Operation(summary = "사용자 상세 조회")

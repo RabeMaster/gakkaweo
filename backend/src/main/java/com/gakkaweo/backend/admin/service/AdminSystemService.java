@@ -7,6 +7,8 @@ import com.gakkaweo.backend.admin.dto.AuditLogListResponse;
 import com.gakkaweo.backend.admin.dto.AuditLogResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
+import com.gakkaweo.backend.admin.sort.AuditLogSortField;
+import com.gakkaweo.backend.admin.sort.SortRequestParser;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
@@ -258,11 +260,14 @@ public class AdminSystemService {
 
   @Transactional(readOnly = true)
   public AuditLogListResponse getAuditLogs(
-      String action, Instant dateFrom, Instant dateTo, int page, int size) {
+      String action, Instant dateFrom, Instant dateTo, String sort, int page, int size) {
+    Sort sortSpec =
+        SortRequestParser.parse(
+                sort, AuditLogSortField.class, AuditLogSortField.CREATED_AT, Sort.Direction.DESC)
+            .and(Sort.by(Sort.Direction.DESC, "id"));
     Page<AuditLog> pageResult =
         auditLogRepository.findAll(
-            auditLogFilters(action, dateFrom, dateTo),
-            PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+            auditLogFilters(action, dateFrom, dateTo), PageRequest.of(page, size, sortSpec));
 
     return new AuditLogListResponse(
         pageResult.getContent().stream().map(AuditLogResponse::from).toList(),
