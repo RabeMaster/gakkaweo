@@ -282,6 +282,12 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **레이아웃**: 사이드바(w-56, 고정) + 콘텐츠 영역(flex-1). `flex gap-6 items-start`
 - **사이드바**: `border-4 shadow-brutal`. 탭: 대시보드/문장/사용자/시스템. 활성 탭 `bg-yellow-300 text-black`
 - **테이블**: `border-4 shadow-brutal` 래퍼. 헤더 `border-b-4 bg-gray-100 dark:bg-gray-800`. 행 `border-b-2 border-black/20` + hover `bg-yellow-50`
+- **테이블 정렬 헤더**: `features/admin/components/SortableHeader.tsx` + `useSortState()` 훅. 정렬 가능 컬럼만 `<SortableHeader>` 사용, 정렬 불가 컬럼은 정적 `<th>` 유지
+  - **비활성 인디케이터**: 라벨 옆 회색 `⇅` 아이콘 항상 노출하여 정렬 가능함을 시각화. hover 시 셀 배경 `bg-yellow-100 dark:bg-yellow-900/30` + 라벨 underline
+  - **활성 인디케이터**: 셀 배경 `bg-yellow-300 dark:bg-yellow-600` + 라벨 `underline underline-offset-4` + 방향 박스(`border-2 border-black bg-white` 안에 ▲/▼). 좌측 라인은 사용하지 않음
+  - **클릭 동작**: 같은 필드 재클릭 시 방향 토글, 다른 필드 클릭 시 `desc`로 진입. 정렬 변경 시 `setPage(0)` 리셋 필수
+  - **a11y**: `<th scope="col" aria-sort="ascending|descending|none">` + 헤더 라벨은 `<button type="button">` 래핑. 버튼 `title` 속성으로 호버 안내(`클릭하여 정렬` / `오름차순/내림차순 정렬 중`)
+  - **백엔드 계약**: `?sort=field,dir` (Spring 표준). 화이트리스트 외 필드/방향은 400. 도메인별 enum (`UserSortField`/`SentenceSortField`/`AuditLogSortField`)이 단일 진실
 - **위젯 카드**: `border-4 shadow-brutal-sm`. 라벨 `text-xs uppercase tracking-wide`. 수치 `text-3xl font-black tabular-nums`
 - **상태 배지**: `px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white`. ACTIVE=green-400, USED=blue-300, DISABLED=gray-300, ADMIN=red, USER=blue, 차단=gray-800
 - **다이얼로그**: `border-4 shadow-brutal max-w-lg`. 헤더 `border-b-4 px-6 py-5`. 푸터 `border-t-4`. `role="dialog" aria-modal="true"` + Escape 닫기 필수
