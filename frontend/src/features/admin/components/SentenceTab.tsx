@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
 import { useSentences, useDeleteSentence } from "@/features/admin/hooks/useAdminSentences";
+import { useSortState } from "@/features/admin/hooks/useSortState";
+import { SortableHeader } from "@/features/admin/components/SortableHeader";
 import { SentenceDetailDialog } from "@/features/admin/components/SentenceDetailDialog";
 import { CsvUploadDialog } from "@/features/admin/components/CsvUploadDialog";
 import { SimilarityTestDialog } from "@/features/admin/components/SimilarityTestDialog";
@@ -30,10 +32,16 @@ export function SentenceTab() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCsvOpen, setIsCsvOpen] = useState(false);
   const [isSimilarityOpen, setIsSimilarityOpen] = useState(false);
+  const { sort, toggleSort } = useSortState();
 
-  const { data, isLoading } = useSentences(statusFilter || undefined, page);
+  const { data, isLoading } = useSentences(statusFilter || undefined, sort, page);
   const deleteMutation = useDeleteSentence();
   const { addToast } = useToastStore();
+
+  function handleSortChange(field: string) {
+    toggleSort(field);
+    setPage(0);
+  }
 
   function handleDelete(publicId: string) {
     if (!window.confirm("정말 삭제하시겠습니까?")) {
@@ -87,10 +95,35 @@ export function SentenceTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-4 border-black dark:border-white bg-gray-100 dark:bg-gray-800">
-                  <th className="text-left px-4 py-3 font-black">문장</th>
-                  <th className="text-center px-3 py-3 font-black w-24">상태</th>
-                  <th className="text-center px-3 py-3 font-black w-28">출제일</th>
-                  <th className="text-center px-3 py-3 font-black w-28">예약일</th>
+                  <SortableHeader
+                    field="sentence"
+                    label="문장"
+                    align="left"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-4 py-3"
+                  />
+                  <SortableHeader
+                    field="status"
+                    label="상태"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-3 py-3 w-24"
+                  />
+                  <SortableHeader
+                    field="usedAt"
+                    label="출제일"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-3 py-3 w-28"
+                  />
+                  <SortableHeader
+                    field="scheduledAt"
+                    label="예약일"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-3 py-3 w-28"
+                  />
                   <th className="text-center px-3 py-3 font-black w-36">액션</th>
                 </tr>
               </thead>

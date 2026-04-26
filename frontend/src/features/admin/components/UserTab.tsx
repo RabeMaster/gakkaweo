@@ -3,6 +3,8 @@ import type { FormEvent } from "react";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { useUsers } from "@/features/admin/hooks/useAdminUsers";
+import { useSortState } from "@/features/admin/hooks/useSortState";
+import { SortableHeader } from "@/features/admin/components/SortableHeader";
 import { UserDetailDialog } from "@/features/admin/components/UserDetailDialog";
 import { Pagination } from "@/features/admin/components/Pagination";
 import { resolveProfileUrl } from "@/shared/utils/url";
@@ -30,12 +32,18 @@ export function UserTab() {
   const [bannedFilter, setBannedFilter] = useState<boolean | undefined>(undefined);
   const [page, setPage] = useState(0);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const { sort, toggleSort } = useSortState();
 
-  const { data, isLoading } = useUsers(submittedSearch || undefined, bannedFilter, page);
+  const { data, isLoading } = useUsers(submittedSearch || undefined, bannedFilter, sort, page);
 
   function handleSearch(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmittedSearch(search);
+    setPage(0);
+  }
+
+  function handleSortChange(field: string) {
+    toggleSort(field);
     setPage(0);
   }
 
@@ -76,11 +84,36 @@ export function UserTab() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b-4 border-black dark:border-white bg-gray-100 dark:bg-gray-800">
-                  <th className="text-left px-4 py-3 font-black">사용자</th>
+                  <SortableHeader
+                    field="nickname"
+                    label="사용자"
+                    align="left"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-4 py-3"
+                  />
                   <th className="text-center px-3 py-3 font-black w-24">프로바이더</th>
-                  <th className="text-center px-3 py-3 font-black w-24">역할</th>
-                  <th className="text-center px-3 py-3 font-black w-20">상태</th>
-                  <th className="text-center px-3 py-3 font-black w-32">가입일</th>
+                  <SortableHeader
+                    field="role"
+                    label="역할"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-3 py-3 w-24"
+                  />
+                  <SortableHeader
+                    field="banned"
+                    label="상태"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-3 py-3 w-20"
+                  />
+                  <SortableHeader
+                    field="createdAt"
+                    label="가입일"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-3 py-3 w-32"
+                  />
                   <th className="text-center px-3 py-3 font-black w-20">액션</th>
                 </tr>
               </thead>
