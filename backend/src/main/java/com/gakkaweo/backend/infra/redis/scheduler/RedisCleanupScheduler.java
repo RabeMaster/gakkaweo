@@ -9,10 +9,10 @@ import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryRegistry;
 import java.time.Clock;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.Cursor;
@@ -64,8 +64,16 @@ public class RedisCleanupScheduler {
     try {
       purgeRetry.executeRunnable(
           () -> {
-            purgedRanking[0] = purgeStaleKeys(RedisKeyConstants.RANKING_KEY_PREFIX + "*", cutoff);
-            purgedDetail[0] = purgeStaleKeys(RedisKeyConstants.RANKING_DETAIL_PREFIX + "*", cutoff);
+            purgedRanking[0] =
+                purgeStaleKeys(
+                    RedisKeyConstants.rankingScanPattern(),
+                    RedisKeyConstants::extractDateFromRankingKey,
+                    cutoff);
+            purgedDetail[0] =
+                purgeStaleKeys(
+                    RedisKeyConstants.rankingDetailScanPattern(),
+                    RedisKeyConstants::extractDateFromDetailKey,
+                    cutoff);
           });
     } catch (Exception e) {
       purgeFailed = true;
@@ -102,12 +110,13 @@ public class RedisCleanupScheduler {
     return count;
   }
 
-  private int purgeStaleKeys(String pattern, LocalDate cutoff) {
+  private int purgeStaleKeys(
+      String pattern, Function<String, LocalDate> dateExtractor, LocalDate cutoff) {
     List<String> targets = new ArrayList<>();
     try (Cursor<String> cursor = openCursor(pattern)) {
       while (cursor.hasNext()) {
         String key = cursor.next();
-        LocalDate keyDate = extractDate(key);
+        LocalDate keyDate = dateExtractor.apply(key);
         if (keyDate == null) {
           log.warn("Redis 키 날짜 파싱 실패 (orphan으로 분류 권장): {}", key);
           continue;
@@ -139,24 +148,6 @@ public class RedisCleanupScheduler {
       }
     }
     return false;
-  }
-
-  private LocalDate extractDate(String key) {
-    String body;
-    if (key.startsWith(RedisKeyConstants.RANKING_DETAIL_PREFIX)) {
-      body = key.substring(RedisKeyConstants.RANKING_DETAIL_PREFIX.length());
-    } else if (key.startsWith(RedisKeyConstants.RANKING_KEY_PREFIX)) {
-      body = key.substring(RedisKeyConstants.RANKING_KEY_PREFIX.length());
-    } else {
-      return null;
-    }
-    int colonIdx = body.indexOf(':');
-    String datePart = colonIdx == -1 ? body : body.substring(0, colonIdx);
-    try {
-      return LocalDate.parse(datePart);
-    } catch (DateTimeParseException e) {
-      return null;
-    }
   }
 
   private void notifyDiscord(RedisCleanupReport report) {
