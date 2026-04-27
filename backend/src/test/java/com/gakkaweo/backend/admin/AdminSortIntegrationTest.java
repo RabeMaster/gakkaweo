@@ -13,6 +13,7 @@ import com.gakkaweo.backend.common.exception.ErrorBody;
 import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.support.IntegrationTestBase;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -151,12 +152,13 @@ class AdminSortIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @DisplayName("문장 목록 - usedAt 내림차순 정렬 - 200")
-    void 문장_출제일_내림차순() {
+    @DisplayName("문장 목록 - usedAt 내림차순 정렬 - 출제일 최신순 + NULL은 마지막")
+    void 문장_출제일_내림차순_NULL_마지막() {
       Member admin = testAuthHelper.createAdmin();
-      testAuthHelper.createTodaySentence("출제된 문장");
-      testAuthHelper.createActiveSentence("미출제 문장 1");
-      testAuthHelper.createActiveSentence("미출제 문장 2");
+      testAuthHelper.createUsedSentence("이전 출제", LocalDate.of(2026, 1, 1));
+      testAuthHelper.createUsedSentence("최근 출제", LocalDate.of(2026, 4, 1));
+      testAuthHelper.createActiveSentence("미출제 1");
+      testAuthHelper.createActiveSentence("미출제 2");
 
       ResponseEntity<SentenceListResponse> response =
           restTemplate.exchange(
@@ -166,7 +168,37 @@ class AdminSortIntegrationTest extends IntegrationTestBase {
               SentenceListResponse.class);
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-      assertThat(response.getBody().sentences()).isNotEmpty();
+      List<SentenceResponse> sentences = response.getBody().sentences();
+      assertThat(sentences).hasSize(4);
+      assertThat(sentences.get(0).usedAt()).isEqualTo(LocalDate.of(2026, 4, 1));
+      assertThat(sentences.get(1).usedAt()).isEqualTo(LocalDate.of(2026, 1, 1));
+      assertThat(sentences.get(2).usedAt()).isNull();
+      assertThat(sentences.get(3).usedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("문장 목록 - scheduledAt 내림차순 정렬 - 예약일 최신순 + NULL은 마지막")
+    void 문장_예약일_내림차순_NULL_마지막() {
+      Member admin = testAuthHelper.createAdmin();
+      testAuthHelper.createScheduledSentence("이른 예약", LocalDate.of(2026, 5, 1));
+      testAuthHelper.createScheduledSentence("늦은 예약", LocalDate.of(2026, 6, 1));
+      testAuthHelper.createActiveSentence("미예약 1");
+      testAuthHelper.createActiveSentence("미예약 2");
+
+      ResponseEntity<SentenceListResponse> response =
+          restTemplate.exchange(
+              url("/admin/sentences?sort=scheduledAt,desc&page=0&size=20"),
+              HttpMethod.GET,
+              new HttpEntity<>(testAuthHelper.cookieHeaderFor(admin)),
+              SentenceListResponse.class);
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+      List<SentenceResponse> sentences = response.getBody().sentences();
+      assertThat(sentences).hasSize(4);
+      assertThat(sentences.get(0).scheduledAt()).isEqualTo(LocalDate.of(2026, 6, 1));
+      assertThat(sentences.get(1).scheduledAt()).isEqualTo(LocalDate.of(2026, 5, 1));
+      assertThat(sentences.get(2).scheduledAt()).isNull();
+      assertThat(sentences.get(3).scheduledAt()).isNull();
     }
 
     @Test
