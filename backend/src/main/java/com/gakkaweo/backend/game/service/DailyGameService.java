@@ -4,6 +4,7 @@ import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.domain.game.GameConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.entity.GuessHistory;
@@ -56,7 +57,7 @@ public class DailyGameService {
   private final Clock clock;
 
   private static boolean isPerfect(BigDecimal similarity) {
-    return similarity.compareTo(new BigDecimal("100")) >= 0;
+    return similarity.compareTo(GameConstants.PERFECT_SIMILARITY) >= 0;
   }
 
   @Transactional(readOnly = true)

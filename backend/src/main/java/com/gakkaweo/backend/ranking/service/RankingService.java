@@ -5,6 +5,7 @@ import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
+import com.gakkaweo.backend.domain.game.GameConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -42,7 +43,6 @@ public class RankingService {
   private static final int TOP_RANKING_SIZE = 10;
   private static final Duration EXPIRE_TTL = Duration.ofHours(1);
   private static final Duration LIVE_TTL = Duration.ofHours(30);
-  private static final BigDecimal PERFECT_SIMILARITY = new BigDecimal("100");
 
   private final StringRedisTemplate redisTemplate;
   private final DailySentenceRepository dailySentenceRepository;
@@ -352,7 +352,7 @@ public class RankingService {
       BigDecimal similarity, int attemptCount, long elapsedSeconds, Long clearedAtSeconds) {
     long similarityComponent = similarity.multiply(BigDecimal.TEN).longValue() * 1_000_000_000L;
 
-    if (clearedAtSeconds != null && similarity.compareTo(PERFECT_SIMILARITY) >= 0) {
+    if (clearedAtSeconds != null && similarity.compareTo(GameConstants.PERFECT_SIMILARITY) >= 0) {
       return similarityComponent - clearedAtSeconds;
     }
 
