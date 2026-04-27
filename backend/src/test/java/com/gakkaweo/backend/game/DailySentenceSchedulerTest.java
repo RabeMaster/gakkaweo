@@ -118,6 +118,53 @@ class DailySentenceSchedulerTest extends IntegrationTestBase {
   }
 
   @Test
+  @DisplayName("executeMidnightJob - 두 번 호출해도 finalRank/totalPlayers 동일 (멱등)")
+  void 스냅샷_저장_멱등성() {
+    TestClock testClock = (TestClock) schedulerClock;
+    LocalDate yesterday = LocalDate.now(testClock);
+
+    Member member = testAuthHelper.createMember();
+    DailySentence yesterdaySentence =
+        transactionTemplate.execute(
+            status -> {
+              DailySentence s = new DailySentence("어제 정답 문장 멱등");
+              s.setUsedAt(yesterday);
+              s.setStatus(DailySentenceStatus.USED);
+              dailySentenceRepository.save(s);
+              GameSession session = new GameSession(member, s);
+              session.updateBestSimilarity(new BigDecimal("100.0"));
+              session.markCleared(testClock.instant());
+              gameSessionRepository.save(session);
+              return s;
+            });
+    GameSession session =
+        gameSessionRepository.findByMemberAndSentence(member, yesterdaySentence).orElseThrow();
+    rankingService.updateRanking(session, member);
+
+    testAuthHelper.createActiveSentence("오늘 후보 멱등");
+    testClock.advanceBy(Duration.ofDays(1));
+
+    scheduler.executeMidnightJob();
+
+    DailySentence afterFirst =
+        dailySentenceRepository.findById(yesterdaySentence.getId()).orElseThrow();
+    Integer totalAfterFirst = afterFirst.getTotalPlayers();
+    GameSession sessionAfterFirst =
+        gameSessionRepository.findByMemberAndSentence(member, yesterdaySentence).orElseThrow();
+    Integer rankAfterFirst = sessionAfterFirst.getFinalRank();
+
+    scheduler.executeMidnightJob();
+
+    DailySentence afterSecond =
+        dailySentenceRepository.findById(yesterdaySentence.getId()).orElseThrow();
+    GameSession sessionAfterSecond =
+        gameSessionRepository.findByMemberAndSentence(member, yesterdaySentence).orElseThrow();
+
+    assertThat(afterSecond.getTotalPlayers()).isEqualTo(totalAfterFirst);
+    assertThat(sessionAfterSecond.getFinalRank()).isEqualTo(rankAfterFirst);
+  }
+
+  @Test
   @DisplayName("executeMidnightJob - 예약 문장(scheduledAt=today)이 우선 선정")
   void 예약문장_우선선정() {
     TestClock testClock = (TestClock) schedulerClock;

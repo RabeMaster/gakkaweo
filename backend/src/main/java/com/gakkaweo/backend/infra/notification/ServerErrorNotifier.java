@@ -28,7 +28,7 @@ public class ServerErrorNotifier {
 
   public void notify(Exception ex, HttpServletRequest request) {
     try {
-      NotificationProperties.ErrorAlert config = notificationProperties.getErrorAlert();
+      NotificationProperties.ErrorAlert config = notificationProperties.errorAlert();
       if (!config.enabled()) {
         return;
       }

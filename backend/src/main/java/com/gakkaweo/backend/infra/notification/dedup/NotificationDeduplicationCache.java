@@ -38,7 +38,7 @@ public class NotificationDeduplicationCache {
 
   @Scheduled(fixedDelayString = "${app.notification.dedup.cleanup-interval-ms:300000}")
   public void cleanup() {
-    Duration retention = notificationProperties.getErrorAlert().cooldown().multipliedBy(2);
+    Duration retention = notificationProperties.errorAlert().cooldown().multipliedBy(2);
     Instant expiry = clock.instant().minus(retention);
     int before = lastSentAt.size();
     lastSentAt.entrySet().removeIf(entry -> entry.getValue().isBefore(expiry));

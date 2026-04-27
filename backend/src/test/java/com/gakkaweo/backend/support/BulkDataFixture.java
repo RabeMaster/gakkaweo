@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.support;
 
+import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
@@ -15,13 +16,13 @@ import org.springframework.stereotype.Component;
 public class BulkDataFixture {
 
   private static final int BATCH = 1000;
-  private static final List<String> AUDIT_ACTIONS =
+  private static final List<AuditAction> AUDIT_ACTIONS =
       List.of(
-          "BAN_MEMBER",
-          "UNBAN_MEMBER",
-          "SENTENCE_UPLOAD",
-          "SENTENCE_DELETE",
-          "ANNOUNCEMENT_CREATE");
+          AuditAction.USER_BAN,
+          AuditAction.USER_UNBAN,
+          AuditAction.CSV_UPLOAD,
+          AuditAction.SENTENCE_DELETE,
+          AuditAction.ANNOUNCEMENT_CREATE);
   private final JdbcTemplate jdbc;
   private final Clock clock;
 
@@ -53,7 +54,8 @@ public class BulkDataFixture {
     insertAuditLogs(adminId, auditLogCount, base);
     insertSentenceUploads(adminId, sentenceUploadCount, base);
 
-    return new PopulatedIds(memberIds, sentenceIds, sessionIds, adminId, AUDIT_ACTIONS.get(0));
+    return new PopulatedIds(
+        memberIds, sentenceIds, sessionIds, adminId, AUDIT_ACTIONS.get(0).name());
   }
 
   private List<Long> insertMembers(int count, int bannedCount, Instant base) {
@@ -220,14 +222,14 @@ public class BulkDataFixture {
             + " VALUES (?, ?, ?, ?, ?, ?, ?)";
     List<Object[]> batch = new ArrayList<>(BATCH);
     for (int i = 0; i < count; i++) {
-      String action = AUDIT_ACTIONS.get(i % AUDIT_ACTIONS.size());
+      AuditAction action = AUDIT_ACTIONS.get(i % AUDIT_ACTIONS.size());
       addAndMaybeFlush(
           sql,
           batch,
           new Object[] {
             adminId,
-            action,
-            "MEMBER",
+            action.name(),
+            action.targetType().name(),
             String.valueOf(i),
             "detail_" + i,
             "127.0.0.1",
