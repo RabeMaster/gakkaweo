@@ -1378,10 +1378,19 @@
           "Admin: Sentences"
         ],
         "summary": "문장 목록 조회",
+        "description": "정렬 (`sort\u003dfield,dir`):\n- 가능 필드: `createdAt`, `status`, `usedAt`, `scheduledAt`, `sentence`\n- 기본값: `createdAt,desc`\n- 잘못된 필드/방향: 400 `VALIDATION_FAILED`",
         "operationId": "getSentences",
         "parameters": [
           {
             "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort",
             "in": "query",
             "required": false,
             "schema": {
@@ -4677,6 +4686,7 @@
           "Admin: Users"
         ],
         "summary": "사용자 목록 조회",
+        "description": "정렬 (`sort\u003dfield,dir`):\n- 가능 필드: `createdAt`, `nickname`, `role`, `banned`\n- 기본값: `createdAt,desc`\n- 잘못된 필드/방향: 400 `VALIDATION_FAILED`",
         "operationId": "getUsers",
         "parameters": [
           {
@@ -4693,6 +4703,14 @@
             "required": false,
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -5350,6 +5368,7 @@
           "Admin: System"
         ],
         "summary": "감사 로그 조회",
+        "description": "정렬 (`sort\u003dfield,dir`):\n- 가능 필드: `createdAt`, `action`\n- 기본값: `createdAt,desc`\n- 잘못된 필드/방향: 400 `VALIDATION_FAILED`",
         "operationId": "getAuditLogs",
         "parameters": [
           {
@@ -5376,6 +5395,14 @@
             "schema": {
               "type": "string",
               "format": "date-time"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
