@@ -2,6 +2,7 @@ package com.gakkaweo.backend.game;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
@@ -20,6 +21,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @DisplayName("DailySentenceScheduler 통합 테스트")
@@ -31,6 +33,7 @@ class DailySentenceSchedulerTest extends IntegrationTestBase {
   @Autowired TransactionTemplate transactionTemplate;
   @Autowired Clock schedulerClock;
   @Autowired RankingService rankingService;
+  @Autowired StringRedisTemplate redisTemplate;
 
   @Test
   @DisplayName("executeMidnightJob - 전날 세션 EXPIRED + 오늘 문장 USED + DayChangeEvent 발행")
@@ -152,6 +155,61 @@ class DailySentenceSchedulerTest extends IntegrationTestBase {
     GameSession sessionAfterFirst =
         gameSessionRepository.findByMemberAndSentence(member, yesterdaySentence).orElseThrow();
     Integer rankAfterFirst = sessionAfterFirst.getFinalRank();
+    assertThat(totalAfterFirst).isNotNull().isGreaterThanOrEqualTo(1);
+    assertThat(rankAfterFirst).isNotNull().isGreaterThanOrEqualTo(1);
+
+    scheduler.executeMidnightJob();
+
+    DailySentence afterSecond =
+        dailySentenceRepository.findById(yesterdaySentence.getId()).orElseThrow();
+    GameSession sessionAfterSecond =
+        gameSessionRepository.findByMemberAndSentence(member, yesterdaySentence).orElseThrow();
+
+    assertThat(afterSecond.getTotalPlayers()).isEqualTo(totalAfterFirst);
+    assertThat(sessionAfterSecond.getFinalRank()).isEqualTo(rankAfterFirst);
+  }
+
+  @Test
+  @DisplayName("executeMidnightJob - Redis 키 만료 후 두 번째 호출(empty snapshot)도 첫 결과 유지 (멱등)")
+  void 스냅샷_저장_멱등성_empty_snapshot() {
+    TestClock testClock = (TestClock) schedulerClock;
+    LocalDate yesterday = LocalDate.now(testClock);
+
+    Member member = testAuthHelper.createMember();
+    DailySentence yesterdaySentence =
+        transactionTemplate.execute(
+            status -> {
+              DailySentence s = new DailySentence("어제 정답 문장 멱등 empty");
+              s.setUsedAt(yesterday);
+              s.setStatus(DailySentenceStatus.USED);
+              dailySentenceRepository.save(s);
+              GameSession gs = new GameSession(member, s);
+              gs.updateBestSimilarity(new BigDecimal("100.0"));
+              gs.markCleared(testClock.instant());
+              gameSessionRepository.save(gs);
+              return s;
+            });
+    GameSession session =
+        gameSessionRepository.findByMemberAndSentence(member, yesterdaySentence).orElseThrow();
+    rankingService.updateRanking(session, member);
+
+    testAuthHelper.createActiveSentence("오늘 후보 멱등 empty");
+    testClock.advanceBy(Duration.ofDays(1));
+
+    scheduler.executeMidnightJob();
+
+    Integer totalAfterFirst =
+        dailySentenceRepository.findById(yesterdaySentence.getId()).orElseThrow().getTotalPlayers();
+    Integer rankAfterFirst =
+        gameSessionRepository
+            .findByMemberAndSentence(member, yesterdaySentence)
+            .orElseThrow()
+            .getFinalRank();
+    assertThat(totalAfterFirst).isNotNull().isGreaterThanOrEqualTo(1);
+    assertThat(rankAfterFirst).isNotNull().isGreaterThanOrEqualTo(1);
+
+    redisTemplate.delete(RedisKeyConstants.rankingKey(yesterday));
+    redisTemplate.delete(RedisKeyConstants.rankingDetailKey(yesterday, member.getPublicId()));
 
     scheduler.executeMidnightJob();
 
