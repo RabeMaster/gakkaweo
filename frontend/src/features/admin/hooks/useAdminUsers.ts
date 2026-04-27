@@ -11,10 +11,10 @@ import {
   unbanUser,
 } from "@/features/admin/api";
 
-export function useUsers(nickname?: string, banned?: boolean, page = 0, size = 20) {
+export function useUsers(nickname?: string, banned?: boolean, sort?: string, page = 0, size = 20) {
   return useQuery({
-    queryKey: ["admin", "users", nickname, banned, page, size],
-    queryFn: () => getUsers(nickname, banned, page, size),
+    queryKey: ["admin", "users", nickname, banned, sort, page, size],
+    queryFn: () => getUsers(nickname, banned, sort, page, size),
   });
 }
 

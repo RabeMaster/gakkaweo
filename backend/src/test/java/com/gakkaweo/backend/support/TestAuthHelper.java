@@ -120,4 +120,23 @@ public class TestAuthHelper {
     return transactionTemplate.execute(
         status -> dailySentenceRepository.save(new DailySentence(sentence)));
   }
+
+  public DailySentence createUsedSentence(String sentence, LocalDate usedAt) {
+    return transactionTemplate.execute(
+        status -> {
+          DailySentence s = new DailySentence(sentence);
+          s.setUsedAt(usedAt);
+          s.setStatus(DailySentenceStatus.USED);
+          return dailySentenceRepository.save(s);
+        });
+  }
+
+  public DailySentence createScheduledSentence(String sentence, LocalDate scheduledAt) {
+    return transactionTemplate.execute(
+        status -> {
+          DailySentence s = new DailySentence(sentence);
+          s.setScheduledAt(scheduledAt);
+          return dailySentenceRepository.save(s);
+        });
+  }
 }

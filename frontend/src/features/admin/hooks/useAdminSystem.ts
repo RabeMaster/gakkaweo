@@ -75,9 +75,9 @@ export function useResetRateLimit() {
   return useMutation({ mutationFn: resetRateLimit });
 }
 
-export function useAuditLogs(action?: string, dateFrom?: string, dateTo?: string, page = 0, size = 20) {
+export function useAuditLogs(action?: string, dateFrom?: string, dateTo?: string, sort?: string, page = 0, size = 20) {
   return useQuery({
-    queryKey: ["admin", "system", "audit-logs", action, dateFrom, dateTo, page, size],
-    queryFn: () => getAuditLogs(action, dateFrom, dateTo, page, size),
+    queryKey: ["admin", "system", "audit-logs", action, dateFrom, dateTo, sort, page, size],
+    queryFn: () => getAuditLogs(action, dateFrom, dateTo, sort, page, size),
   });
 }

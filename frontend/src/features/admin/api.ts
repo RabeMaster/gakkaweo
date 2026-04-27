@@ -22,10 +22,13 @@ import type {
 
 // --- Sentence ---
 
-export function getSentences(status?: string, page = 0, size = 20) {
+export function getSentences(status?: string, sort?: string, page = 0, size = 20) {
   const params = new URLSearchParams();
   if (status) {
     params.set("status", status);
+  }
+  if (sort) {
+    params.set("sort", sort);
   }
   params.set("page", String(page));
   params.set("size", String(size));
@@ -93,13 +96,16 @@ export function emergencyReplace(newSentencePublicId: string, returnOldToPool: b
 
 // --- User ---
 
-export function getUsers(nickname?: string, banned?: boolean, page = 0, size = 20) {
+export function getUsers(nickname?: string, banned?: boolean, sort?: string, page = 0, size = 20) {
   const params = new URLSearchParams();
   if (nickname) {
     params.set("nickname", nickname);
   }
   if (banned !== undefined) {
     params.set("banned", String(banned));
+  }
+  if (sort) {
+    params.set("sort", sort);
   }
   params.set("page", String(page));
   params.set("size", String(size));
@@ -204,7 +210,7 @@ export function resetRateLimit() {
   return apiFetch<void>("/admin/system/rate-limit/reset", { method: "POST" });
 }
 
-export function getAuditLogs(action?: string, dateFrom?: string, dateTo?: string, page = 0, size = 20) {
+export function getAuditLogs(action?: string, dateFrom?: string, dateTo?: string, sort?: string, page = 0, size = 20) {
   const params = new URLSearchParams();
   if (action) {
     params.set("action", action);
@@ -214,6 +220,9 @@ export function getAuditLogs(action?: string, dateFrom?: string, dateTo?: string
   }
   if (dateTo) {
     params.set("dateTo", dateTo);
+  }
+  if (sort) {
+    params.set("sort", sort);
   }
   params.set("page", String(page));
   params.set("size", String(size));

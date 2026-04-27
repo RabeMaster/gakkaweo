@@ -11,6 +11,9 @@ import com.gakkaweo.backend.admin.dto.SentenceStatsResponse;
 import com.gakkaweo.backend.admin.dto.SentenceUpdateRequest;
 import com.gakkaweo.backend.admin.dto.SimilarityTestRequest;
 import com.gakkaweo.backend.admin.dto.SimilarityTestResponse;
+import com.gakkaweo.backend.admin.sort.SentenceSortField;
+import com.gakkaweo.backend.admin.sort.SortRequestParser;
+import com.gakkaweo.backend.admin.sort.SortSpecBuilder;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
@@ -56,7 +59,7 @@ public class AdminSentenceService {
   private final Clock clock;
 
   @Transactional(readOnly = true)
-  public SentenceListResponse getSentences(String status, int page, int size) {
+  public SentenceListResponse getSentences(String status, String sort, int page, int size) {
     final DailySentenceStatus statusEnum;
     if (status != null && !status.isBlank()) {
       try {
@@ -68,12 +71,16 @@ public class AdminSentenceService {
       statusEnum = null;
     }
 
-    Specification<DailySentence> spec =
+    SortRequestParser.SortSpec sortSpec =
+        SortRequestParser.parse(
+            sort, SentenceSortField.class, SentenceSortField.CREATED_AT, Sort.Direction.DESC);
+
+    Specification<DailySentence> filterSpec =
         (root, query, cb) ->
             statusEnum != null ? cb.equal(root.get("status"), statusEnum) : cb.conjunction();
+    Specification<DailySentence> spec = filterSpec.and(SortSpecBuilder.build(sortSpec, "id"));
     Page<DailySentence> pageResult =
-        dailySentenceRepository.findAll(
-            spec, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        dailySentenceRepository.findAll(spec, PageRequest.of(page, size));
 
     return new SentenceListResponse(
         pageResult.getContent().stream().map(SentenceResponse::from).toList(),

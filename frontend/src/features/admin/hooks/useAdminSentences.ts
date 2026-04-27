@@ -13,10 +13,10 @@ import {
   uploadCsv,
 } from "@/features/admin/api";
 
-export function useSentences(status?: string, page = 0, size = 20) {
+export function useSentences(status?: string, sort?: string, page = 0, size = 20) {
   return useQuery({
-    queryKey: ["admin", "sentences", status, page, size],
-    queryFn: () => getSentences(status, page, size),
+    queryKey: ["admin", "sentences", status, sort, page, size],
+    queryFn: () => getSentences(status, sort, page, size),
   });
 }
 

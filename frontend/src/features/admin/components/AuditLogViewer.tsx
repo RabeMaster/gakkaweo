@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/Button";
 import { useAuditLogs } from "@/features/admin/hooks/useAdminSystem";
+import { useSortState } from "@/features/admin/hooks/useSortState";
+import { SortableHeader } from "@/features/admin/components/SortableHeader";
 import type { AuditLog } from "@/features/admin/types";
 
 function AuditLogDetailDialog({ log, onClose }: { log: AuditLog; onClose: () => void }) {
@@ -77,8 +79,14 @@ export function AuditLogViewer() {
   const [actionFilter, setActionFilter] = useState("");
   const [page, setPage] = useState(0);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const { sort, toggleSort } = useSortState();
 
-  const { data, isLoading } = useAuditLogs(actionFilter || undefined, undefined, undefined, page, 20);
+  const { data, isLoading } = useAuditLogs(actionFilter || undefined, undefined, undefined, sort, page, 20);
+
+  function handleSortChange(field: string) {
+    toggleSort(field);
+    setPage(0);
+  }
 
   return (
     <div className="mt-4 space-y-3">
@@ -120,9 +128,23 @@ export function AuditLogViewer() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b-2 border-black dark:border-white bg-gray-100 dark:bg-gray-800">
-                  <th className="px-3 py-2 font-black text-left">시간</th>
+                  <SortableHeader
+                    field="createdAt"
+                    label="시간"
+                    align="left"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-3 py-2"
+                  />
                   <th className="px-3 py-2 font-black text-left">관리자</th>
-                  <th className="px-3 py-2 font-black text-left">액션</th>
+                  <SortableHeader
+                    field="action"
+                    label="액션"
+                    align="left"
+                    currentSort={sort}
+                    onSortChange={handleSortChange}
+                    className="px-3 py-2"
+                  />
                   <th className="px-3 py-2 font-black text-left">대상</th>
                   <th className="px-3 py-2 font-black text-left">상세</th>
                   <th className="px-3 py-2 font-black text-center w-16">보기</th>

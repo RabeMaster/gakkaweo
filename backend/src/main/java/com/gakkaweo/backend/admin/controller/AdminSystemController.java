@@ -125,7 +125,14 @@ public class AdminSystemController {
     return ResponseEntity.ok().build();
   }
 
-  @Operation(summary = "감사 로그 조회")
+  @Operation(
+      summary = "감사 로그 조회",
+      description =
+          """
+          정렬 (`sort=field,dir`):
+          - 가능 필드: `createdAt`, `action`
+          - 기본값: `createdAt,desc`
+          - 잘못된 필드/방향: 400 `VALIDATION_FAILED`""")
   @AdminErrorResponses
   @GetMapping("/audit-logs")
   @Transactional(readOnly = true)
@@ -135,8 +142,10 @@ public class AdminSystemController {
           Instant dateFrom,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
           Instant dateTo,
+      @RequestParam(required = false) String sort,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size) {
-    return ResponseEntity.ok(adminSystemService.getAuditLogs(action, dateFrom, dateTo, page, size));
+    return ResponseEntity.ok(
+        adminSystemService.getAuditLogs(action, dateFrom, dateTo, sort, page, size));
   }
 }
