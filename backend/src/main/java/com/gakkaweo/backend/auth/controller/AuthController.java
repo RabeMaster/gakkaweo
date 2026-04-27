@@ -9,6 +9,7 @@ import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.auth.service.AccountService;
 import com.gakkaweo.backend.auth.service.AuthService;
 import com.gakkaweo.backend.auth.service.LocalAuthService;
+import com.gakkaweo.backend.auth.service.MemberRedisSyncer;
 import com.gakkaweo.backend.auth.service.ProfileImageService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
 import com.gakkaweo.backend.config.openapi.StandardErrorResponses;
@@ -47,6 +48,7 @@ public class AuthController {
   private final LocalAuthService localAuthService;
   private final AccountService accountService;
   private final ProfileImageService profileImageService;
+  private final MemberRedisSyncer memberRedisSyncer;
   private final CookieUtils cookieUtils;
 
   @Operation(
@@ -169,7 +171,7 @@ public class AuthController {
       @Valid @RequestBody NicknameUpdateRequest request,
       @AuthenticationPrincipal CustomUserDetails userDetails) {
     AuthResponse response = authService.changeNickname(userDetails.publicId(), request.nickname());
-    authService.syncNicknameToRedis(userDetails.publicId(), response.nickname());
+    memberRedisSyncer.updateNickname(userDetails.publicId(), response.nickname());
     return ResponseEntity.ok(response);
   }
 
@@ -188,7 +190,7 @@ public class AuthController {
       @AuthenticationPrincipal CustomUserDetails userDetails) {
     String profileUrl = profileImageService.save(userDetails.publicId(), file);
     AuthResponse response = authService.updateProfileUrl(userDetails.publicId(), profileUrl);
-    authService.syncProfileUrlToRedis(userDetails.publicId(), response.profileUrl());
+    memberRedisSyncer.updateProfileUrl(userDetails.publicId(), response.profileUrl());
     return ResponseEntity.ok(response);
   }
 
@@ -200,7 +202,7 @@ public class AuthController {
       @AuthenticationPrincipal CustomUserDetails userDetails) {
     AuthResponse response = authService.updateProfileUrl(userDetails.publicId(), null);
     profileImageService.delete(userDetails.publicId());
-    authService.syncProfileUrlToRedis(userDetails.publicId(), null);
+    memberRedisSyncer.updateProfileUrl(userDetails.publicId(), null);
     return ResponseEntity.ok(response);
   }
 

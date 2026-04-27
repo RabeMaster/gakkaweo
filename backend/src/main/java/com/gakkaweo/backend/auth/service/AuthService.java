@@ -10,16 +10,12 @@ import com.gakkaweo.backend.domain.auth.entity.RefreshToken;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.validation.NicknameValidator;
-import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import io.jsonwebtoken.Claims;
 import java.time.Clock;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -35,7 +31,6 @@ public class AuthService {
   private final MemberRepository memberRepository;
   private final NicknameValidator nicknameValidator;
   private final StringRedisTemplate redisTemplate;
-  private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
 
   @Transactional
@@ -126,33 +121,5 @@ public class AuthService {
     member.setProfileUrl(profileUrl);
 
     return AuthResponse.from(member);
-  }
-
-  public void syncProfileUrlToRedis(UUID publicId, String profileUrl) {
-    try {
-      LocalDate today = LocalDate.now(clock);
-      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
-
-      if (redisTemplate.hasKey(detailKey)) {
-        redisTemplate.opsForHash().put(detailKey, "profileUrl", Objects.toString(profileUrl, ""));
-        eventPublisher.publishEvent(new RankingUpdateEvent());
-      }
-    } catch (Exception e) {
-      log.warn("프로필 URL Redis 동기화 실패: publicId={}", publicId, e);
-    }
-  }
-
-  public void syncNicknameToRedis(UUID publicId, String nickname) {
-    try {
-      LocalDate today = LocalDate.now(clock);
-      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
-
-      if (redisTemplate.hasKey(detailKey)) {
-        redisTemplate.opsForHash().put(detailKey, "nickname", nickname);
-        eventPublisher.publishEvent(new RankingUpdateEvent());
-      }
-    } catch (Exception e) {
-      log.warn("닉네임 Redis 동기화 실패: publicId={}", publicId, e);
-    }
   }
 }

@@ -8,6 +8,7 @@ import com.gakkaweo.backend.admin.dto.UserGameHistoryResponse;
 import com.gakkaweo.backend.admin.dto.UserListResponse;
 import com.gakkaweo.backend.admin.service.AdminUserService;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
+import com.gakkaweo.backend.auth.service.MemberRedisSyncer;
 import com.gakkaweo.backend.config.openapi.AdminErrorResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -19,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminUserController {
 
   private final AdminUserService adminUserService;
+  private final MemberRedisSyncer memberRedisSyncer;
 
   @Operation(
       summary = "사용자 목록 조회",
@@ -50,7 +51,6 @@ public class AdminUserController {
           - 잘못된 필드/방향: 400 `VALIDATION_FAILED`""")
   @AdminErrorResponses
   @GetMapping
-  @Transactional(readOnly = true)
   public ResponseEntity<UserListResponse> getUsers(
       @RequestParam(required = false) String nickname,
       @RequestParam(required = false) Boolean banned,
@@ -63,7 +63,6 @@ public class AdminUserController {
   @Operation(summary = "사용자 상세 조회")
   @AdminErrorResponses
   @GetMapping("/{publicId}")
-  @Transactional(readOnly = true)
   public ResponseEntity<UserDetailResponse> getUserDetail(@PathVariable UUID publicId) {
     return ResponseEntity.ok(adminUserService.getUserDetail(publicId));
   }
@@ -71,7 +70,6 @@ public class AdminUserController {
   @Operation(summary = "사용자 게임 이력 조회")
   @AdminErrorResponses
   @GetMapping("/{publicId}/history")
-  @Transactional(readOnly = true)
   public ResponseEntity<UserGameHistoryResponse> getUserHistory(@PathVariable UUID publicId) {
     return ResponseEntity.ok(adminUserService.getUserHistory(publicId));
   }
@@ -173,7 +171,7 @@ public class AdminUserController {
     AdminUserResponse response =
         adminUserService.forceChangeNickname(
             publicId, userDetails.publicId(), request, httpRequest.getRemoteAddr());
-    adminUserService.syncNicknameToRedis(publicId, response.nickname());
+    memberRedisSyncer.updateNickname(publicId, response.nickname());
     return ResponseEntity.ok(response);
   }
 
