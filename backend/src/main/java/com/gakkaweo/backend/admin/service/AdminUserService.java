@@ -11,10 +11,11 @@ import com.gakkaweo.backend.admin.dto.UserListResponse;
 import com.gakkaweo.backend.admin.sort.SortRequestParser;
 import com.gakkaweo.backend.admin.sort.SortSpecBuilder;
 import com.gakkaweo.backend.admin.sort.UserSortField;
+import com.gakkaweo.backend.auth.service.MemberRedisSyncer;
 import com.gakkaweo.backend.auth.service.ProfileImageService;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
-import com.gakkaweo.backend.common.redis.RedisKeyConstants;
+import com.gakkaweo.backend.common.util.EnumParser;
 import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
 import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
@@ -30,11 +31,9 @@ import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Clock;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +43,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,8 +58,8 @@ public class AdminUserService {
   private final RefreshTokenRepository refreshTokenRepository;
   private final SentenceUploadRepository sentenceUploadRepository;
   private final ProfileImageService profileImageService;
+  private final MemberRedisSyncer memberRedisSyncer;
   private final NicknameValidator nicknameValidator;
-  private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final RankingService rankingService;
   private final AdminAuditService adminAuditService;
@@ -101,7 +99,7 @@ public class AdminUserService {
 
   @Transactional(readOnly = true)
   public UserDetailResponse getUserDetail(UUID publicId) {
-    Member member = findMember(publicId);
+    Member member = findByPublicIdOrThrow(publicId);
 
     long totalParticipations = gameSessionRepository.countByMember(member);
     long totalClears = gameSessionRepository.countClearedByMember(member);
@@ -118,7 +116,7 @@ public class AdminUserService {
 
   @Transactional(readOnly = true)
   public UserGameHistoryResponse getUserHistory(UUID publicId) {
-    Member member = findMember(publicId);
+    Member member = findByPublicIdOrThrow(publicId);
 
     List<GameSession> sessions = gameSessionRepository.findByMemberWithSentence(member);
     List<GameHistoryEntry> history = sessions.stream().map(GameHistoryEntry::from).toList();
@@ -131,13 +129,9 @@ public class AdminUserService {
       UUID targetPublicId, UUID adminPublicId, RoleChangeRequest request, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findMember(targetPublicId);
-    MemberRole newRole;
-    try {
-      newRole = MemberRole.valueOf(request.role());
-    } catch (IllegalArgumentException e) {
-      throw new BusinessException(ErrorCode.VALIDATION_FAILED);
-    }
+    Member member = findByPublicIdOrThrow(targetPublicId);
+    MemberRole newRole =
+        EnumParser.parseOrThrow(MemberRole.class, request.role(), ErrorCode.VALIDATION_FAILED);
 
     if (member.getRole() == newRole) {
       throw new BusinessException(ErrorCode.ROLE_ALREADY_ASSIGNED);
@@ -157,13 +151,13 @@ public class AdminUserService {
   public void banUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findMember(targetPublicId);
+    Member member = findByPublicIdOrThrow(targetPublicId);
     Long memberId = member.getId();
 
     // clearAutomatically=true로 영속성 컨텍스트 초기화됨 → delete 먼저, 재조회 후 set
     refreshTokenRepository.deleteByMemberId(memberId);
 
-    Member reloaded = findMember(targetPublicId);
+    Member reloaded = findByPublicIdOrThrow(targetPublicId);
     reloaded.setBanned(true);
     reloaded.setBannedAt(clock.instant());
 
@@ -176,7 +170,7 @@ public class AdminUserService {
   public void unbanUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findMember(targetPublicId);
+    Member member = findByPublicIdOrThrow(targetPublicId);
     member.setBanned(false);
     member.setBannedAt(null);
 
@@ -189,7 +183,7 @@ public class AdminUserService {
   public void forceDeleteUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findMember(targetPublicId);
+    Member member = findByPublicIdOrThrow(targetPublicId);
 
     gameSessionRepository.anonymizeByMember(member);
     sentenceUploadRepository.anonymizeByAdmin(member);
@@ -218,7 +212,7 @@ public class AdminUserService {
       UUID targetPublicId, UUID adminPublicId, ForceNicknameRequest request, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findMember(targetPublicId);
+    Member member = findByPublicIdOrThrow(targetPublicId);
     String nickname = nicknameValidator.normalize(request.nickname());
     nicknameValidator.validate(nickname);
 
@@ -244,25 +238,11 @@ public class AdminUserService {
     return toUserResponse(member);
   }
 
-  public void syncNicknameToRedis(UUID publicId, String nickname) {
-    try {
-      LocalDate today = LocalDate.now(clock);
-      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
-
-      if (redisTemplate.hasKey(detailKey)) {
-        redisTemplate.opsForHash().put(detailKey, "nickname", nickname);
-        eventPublisher.publishEvent(new RankingUpdateEvent());
-      }
-    } catch (Exception e) {
-      log.warn("닉네임 Redis 동기화 실패: publicId={}", publicId, e);
-    }
-  }
-
   @Transactional
   public void forceDeleteProfileImage(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findMember(targetPublicId);
+    Member member = findByPublicIdOrThrow(targetPublicId);
     member.setProfileUrl(null);
     adminAuditService.log(
         adminPublicId,
@@ -274,24 +254,10 @@ public class AdminUserService {
 
   public void cleanupProfileImageAndRedis(UUID publicId) {
     profileImageService.delete(publicId);
-    syncProfileUrlToRedis(publicId, null);
+    memberRedisSyncer.updateProfileUrl(publicId, null);
   }
 
-  private void syncProfileUrlToRedis(UUID publicId, String profileUrl) {
-    try {
-      LocalDate today = LocalDate.now(clock);
-      String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
-
-      if (redisTemplate.hasKey(detailKey)) {
-        redisTemplate.opsForHash().put(detailKey, "profileUrl", Objects.toString(profileUrl, ""));
-        eventPublisher.publishEvent(new RankingUpdateEvent());
-      }
-    } catch (Exception e) {
-      log.warn("프로필 URL Redis 동기화 실패: publicId={}", publicId, e);
-    }
-  }
-
-  private Member findMember(UUID publicId) {
+  private Member findByPublicIdOrThrow(UUID publicId) {
     return memberRepository
         .findByPublicId(publicId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));

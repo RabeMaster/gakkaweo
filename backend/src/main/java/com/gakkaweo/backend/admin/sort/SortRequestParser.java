@@ -9,8 +9,6 @@ public final class SortRequestParser {
 
   private SortRequestParser() {}
 
-  public record SortSpec(String entityField, Sort.Direction direction) {}
-
   public static <E extends Enum<E> & SortField> SortSpec parse(
       String raw, Class<E> enumType, E defaultField, Sort.Direction defaultDirection) {
     if (raw == null || raw.isBlank()) {
@@ -51,4 +49,6 @@ public final class SortRequestParser {
 
     return new SortSpec(matched.entityField(), direction);
   }
+
+  public record SortSpec(String entityField, Sort.Direction direction) {}
 }

@@ -1,9 +1,7 @@
 package com.gakkaweo.backend.config.openapi;
 
 import io.swagger.v3.oas.annotations.Hidden;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
@@ -24,17 +22,18 @@ public class SwaggerConfigController {
   private final SwaggerUiConfigProperties swaggerUiConfigProperties;
 
   @GetMapping("/v3/api-docs/swagger-config")
-  public ResponseEntity<Map<String, Object>> swaggerConfig() {
-    Map<String, Object> config = new LinkedHashMap<>();
-    config.put("configUrl", "/v3/api-docs/swagger-config");
-    config.put("urls", filterUrlsByRole());
-    config.put("operationsSorter", swaggerUiConfigProperties.getOperationsSorter());
-    config.put("tagsSorter", swaggerUiConfigProperties.getTagsSorter());
-    config.put("validatorUrl", "");
+  public ResponseEntity<SwaggerConfig> swaggerConfig() {
+    SwaggerConfig config =
+        new SwaggerConfig(
+            "/v3/api-docs/swagger-config",
+            filterUrlsByRole(),
+            swaggerUiConfigProperties.getOperationsSorter(),
+            swaggerUiConfigProperties.getTagsSorter(),
+            "");
     return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(config);
   }
 
-  private List<Map<String, String>> filterUrlsByRole() {
+  private List<SwaggerConfig.SwaggerUrl> filterUrlsByRole() {
     boolean isAdmin = hasAdminRole();
 
     return groupedOpenApis.stream()
@@ -50,12 +49,9 @@ public class SwaggerConfigController {
               return true;
             })
         .map(
-            group -> {
-              Map<String, String> entry = new LinkedHashMap<>();
-              entry.put("url", "/v3/api-docs/" + group.getGroup());
-              entry.put("name", group.getDisplayName());
-              return entry;
-            })
+            group ->
+                new SwaggerConfig.SwaggerUrl(
+                    "/v3/api-docs/" + group.getGroup(), group.getDisplayName()))
         .toList();
   }
 
@@ -67,5 +63,15 @@ public class SwaggerConfigController {
     return authentication.getAuthorities().stream()
         .map(GrantedAuthority::getAuthority)
         .anyMatch("ROLE_ADMIN"::equals);
+  }
+
+  public record SwaggerConfig(
+      String configUrl,
+      List<SwaggerUrl> urls,
+      String operationsSorter,
+      String tagsSorter,
+      String validatorUrl) {
+
+    public record SwaggerUrl(String url, String name) {}
   }
 }

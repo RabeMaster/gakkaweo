@@ -18,6 +18,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
+  private static final String OAUTH2_BANNED_ERROR_CODE = "member_banned";
+
   private final OAuthMemberService oAuthMemberService;
 
   @Override
@@ -31,10 +33,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     if (Boolean.TRUE.equals(member.getBanned())) {
       throw new OAuth2AuthenticationException(
-          new OAuth2Error(
-              ErrorCode.MEMBER_BANNED.name().toLowerCase(),
-              ErrorCode.MEMBER_BANNED.getMessage(),
-              null));
+          new OAuth2Error(OAUTH2_BANNED_ERROR_CODE, ErrorCode.MEMBER_BANNED.getMessage(), null));
     }
 
     return new CustomOAuth2User(member, oAuth2User.getAttributes());

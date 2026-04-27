@@ -21,7 +21,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -44,7 +43,6 @@ public class AdminSystemController {
   @Operation(summary = "공지 목록 조회")
   @AdminErrorResponses
   @GetMapping("/announcements")
-  @Transactional(readOnly = true)
   public ResponseEntity<List<AnnouncementResponse>> getAnnouncements() {
     return ResponseEntity.ok(adminSystemService.getAnnouncements());
   }
@@ -102,7 +100,6 @@ public class AdminSystemController {
   @Operation(summary = "시스템 상태 조회")
   @AdminErrorResponses
   @GetMapping("/status")
-  @Transactional(readOnly = true)
   public ResponseEntity<SystemStatusResponse> getSystemStatus() {
     return ResponseEntity.ok(adminSystemService.getSystemStatus());
   }
@@ -135,7 +132,6 @@ public class AdminSystemController {
           - 잘못된 필드/방향: 400 `VALIDATION_FAILED`""")
   @AdminErrorResponses
   @GetMapping("/audit-logs")
-  @Transactional(readOnly = true)
   public ResponseEntity<AuditLogListResponse> getAuditLogs(
       @RequestParam(required = false) String action,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)

@@ -22,7 +22,7 @@ public class AuditLogNotificationListener {
 
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
   public void onAuditLog(AuditLogEvent event) {
-    if (!notificationProperties.getAuditAlert().enabled()) {
+    if (!notificationProperties.auditAlert().enabled()) {
       return;
     }
 

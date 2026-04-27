@@ -1,16 +1,16 @@
 package com.gakkaweo.backend.common.redis;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.Set;
 import java.util.UUID;
 
 public final class RedisKeyConstants {
 
-  public static final String BLACKLIST_PREFIX = "blacklist:jti:";
-  public static final String RANKING_KEY_PREFIX = "ranking:";
-  public static final String RANKING_DETAIL_PREFIX = "ranking_detail:";
-  public static final String SIMILARITY_CACHE_PREFIX = "similarity:";
-
+  private static final String BLACKLIST_PREFIX = "blacklist:jti:";
+  private static final String RANKING_KEY_PREFIX = "ranking:";
+  private static final String RANKING_DETAIL_PREFIX = "ranking_detail:";
+  private static final String SIMILARITY_CACHE_PREFIX = "similarity:";
   private static final String RANKING_MEMBER_PREFIX = "member:";
 
   private static final Set<String> KNOWN_PREFIXES =
@@ -44,5 +44,37 @@ public final class RedisKeyConstants {
 
   public static String similarityCacheKey(Long sentenceId, String hash) {
     return SIMILARITY_CACHE_PREFIX + sentenceId + ":" + hash;
+  }
+
+  public static String rankingScanPattern() {
+    return RANKING_KEY_PREFIX + "*";
+  }
+
+  public static String rankingDetailScanPattern() {
+    return RANKING_DETAIL_PREFIX + "*";
+  }
+
+  public static LocalDate extractDateFromRankingKey(String key) {
+    if (!key.startsWith(RANKING_KEY_PREFIX)) {
+      return null;
+    }
+    return parseLeadingDate(key.substring(RANKING_KEY_PREFIX.length()));
+  }
+
+  public static LocalDate extractDateFromDetailKey(String key) {
+    if (!key.startsWith(RANKING_DETAIL_PREFIX)) {
+      return null;
+    }
+    return parseLeadingDate(key.substring(RANKING_DETAIL_PREFIX.length()));
+  }
+
+  private static LocalDate parseLeadingDate(String body) {
+    int colonIdx = body.indexOf(':');
+    String datePart = colonIdx == -1 ? body : body.substring(0, colonIdx);
+    try {
+      return LocalDate.parse(datePart);
+    } catch (DateTimeParseException e) {
+      return null;
+    }
   }
 }

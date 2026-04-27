@@ -29,6 +29,21 @@ public class AdminAuditService {
   @Transactional
   public void log(
       Member admin, AuditAction action, String targetId, String detail, String ipAddress) {
+    doLog(admin, action, targetId, detail, ipAddress);
+  }
+
+  @Transactional
+  public void log(
+      UUID adminPublicId, AuditAction action, String targetId, String detail, String ipAddress) {
+    Member admin =
+        memberRepository
+            .findByPublicId(adminPublicId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+    doLog(admin, action, targetId, detail, ipAddress);
+  }
+
+  private void doLog(
+      Member admin, AuditAction action, String targetId, String detail, String ipAddress) {
     AuditLog auditLog =
         new AuditLog(admin, action, action.targetType(), targetId, detail, ipAddress);
     auditLogRepository.save(auditLog);
@@ -47,15 +62,5 @@ public class AdminAuditService {
             detail,
             ipAddress,
             clock.instant()));
-  }
-
-  @Transactional
-  public void log(
-      UUID adminPublicId, AuditAction action, String targetId, String detail, String ipAddress) {
-    Member admin =
-        memberRepository
-            .findByPublicId(adminPublicId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
-    log(admin, action, targetId, detail, ipAddress);
   }
 }

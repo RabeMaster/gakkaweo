@@ -3,6 +3,7 @@ package com.gakkaweo.backend.domain.game.entity;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.gakkaweo.backend.domain.game.GameConstants;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -83,7 +84,7 @@ public class GameSession {
   }
 
   public void updateClearedAt(Instant now) {
-    if (this.bestSimilarity.compareTo(new BigDecimal("100")) < 0) {
+    if (this.bestSimilarity.compareTo(GameConstants.PERFECT_SIMILARITY) < 0) {
       this.clearedAt = now;
     }
   }

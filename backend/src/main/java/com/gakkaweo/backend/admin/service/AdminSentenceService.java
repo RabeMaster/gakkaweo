@@ -17,6 +17,7 @@ import com.gakkaweo.backend.admin.sort.SortSpecBuilder;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
+import com.gakkaweo.backend.common.util.EnumParser;
 import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
@@ -48,6 +49,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 public class AdminSentenceService {
 
+  private static final BigDecimal DUPLICATE_THRESHOLD = new BigDecimal("80.0");
+
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
   private final GuessHistoryRepository guessHistoryRepository;
@@ -60,16 +63,11 @@ public class AdminSentenceService {
 
   @Transactional(readOnly = true)
   public SentenceListResponse getSentences(String status, String sort, int page, int size) {
-    final DailySentenceStatus statusEnum;
-    if (status != null && !status.isBlank()) {
-      try {
-        statusEnum = DailySentenceStatus.valueOf(status.toUpperCase());
-      } catch (IllegalArgumentException e) {
-        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
-      }
-    } else {
-      statusEnum = null;
-    }
+    final DailySentenceStatus statusEnum =
+        (status != null && !status.isBlank())
+            ? EnumParser.parseOrThrow(
+                DailySentenceStatus.class, status, ErrorCode.VALIDATION_FAILED)
+            : null;
 
     SortRequestParser.SortSpec sortSpec =
         SortRequestParser.parse(
@@ -217,12 +215,11 @@ public class AdminSentenceService {
         dailySentenceRepository.findAll().stream().map(DailySentence::getSentence).toList();
 
     List<DuplicateCheckResponse.SimilarEntry> similarEntries = new ArrayList<>();
-    BigDecimal threshold = new BigDecimal("80.0");
 
     for (String existing : existingSentences) {
       try {
         BigDecimal score = similarityService.testSimilarity(existing, request.sentence());
-        if (score.compareTo(threshold) >= 0) {
+        if (score.compareTo(DUPLICATE_THRESHOLD) >= 0) {
           similarEntries.add(new DuplicateCheckResponse.SimilarEntry(existing, score));
         }
       } catch (Exception e) {
