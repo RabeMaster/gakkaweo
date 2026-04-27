@@ -13,6 +13,10 @@ import org.springframework.data.domain.Sort;
 
 class SortRequestParserTest {
 
+  private static SortSpec expected(String entityField, Sort.Direction direction) {
+    return new SortSpec(entityField, direction);
+  }
+
   enum TestSortField implements SortField {
     CREATED_AT("createdAt", "createdAt"),
     NICKNAME("nickname", "nickname"),
@@ -35,10 +39,6 @@ class SortRequestParserTest {
     public String entityField() {
       return entityField;
     }
-  }
-
-  private static SortSpec expected(String entityField, Sort.Direction direction) {
-    return new SortSpec(entityField, direction);
   }
 
   @Nested
