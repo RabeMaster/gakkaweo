@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -20,13 +21,17 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class SseConnectionManager {
 
   private static final long HEARTBEAT_INTERVAL_SECONDS = 10;
 
   private final CopyOnWriteArrayList<SseEmitter> emitters = new CopyOnWriteArrayList<>();
   private final RankingService rankingService;
+
+  @Value("${app.sse.max-connections:500}")
   private final int maxConnections;
+
   private final ScheduledExecutorService heartbeatExecutor =
       Executors.newSingleThreadScheduledExecutor(
           r -> {
@@ -34,12 +39,6 @@ public class SseConnectionManager {
             t.setDaemon(true);
             return t;
           });
-
-  public SseConnectionManager(
-      RankingService rankingService, @Value("${app.sse.max-connections:500}") int maxConnections) {
-    this.rankingService = rankingService;
-    this.maxConnections = maxConnections;
-  }
 
   @PostConstruct
   void startHeartbeat() {

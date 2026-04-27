@@ -3,9 +3,11 @@ package com.gakkaweo.backend.domain.member.service;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class NicknameGenerator {
 
   private static final int MAX_RETRIES = 3;
@@ -25,10 +27,6 @@ public class NicknameGenerator {
           "무지개", "폭포", "하늘", "새벽", "노을", "안개", "번개");
 
   private final MemberRepository memberRepository;
-
-  public NicknameGenerator(MemberRepository memberRepository) {
-    this.memberRepository = memberRepository;
-  }
 
   public String generate() {
     ThreadLocalRandom random = ThreadLocalRandom.current();

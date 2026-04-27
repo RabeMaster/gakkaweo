@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -14,17 +15,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
 
   private final OAuth2Properties oAuth2Properties;
   private final CookieAuthorizationRequestRepository authorizationRequestRepository;
-
-  public OAuth2LoginFailureHandler(
-      OAuth2Properties oAuth2Properties,
-      CookieAuthorizationRequestRepository authorizationRequestRepository) {
-    this.oAuth2Properties = oAuth2Properties;
-    this.authorizationRequestRepository = authorizationRequestRepository;
-  }
 
   @Override
   public void onAuthenticationFailure(
