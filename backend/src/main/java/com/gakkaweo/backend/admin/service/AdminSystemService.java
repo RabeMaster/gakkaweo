@@ -13,6 +13,7 @@ import com.gakkaweo.backend.admin.sort.SortSpecBuilder;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
+import com.gakkaweo.backend.common.util.EnumParser;
 import com.gakkaweo.backend.domain.admin.entity.Announcement;
 import com.gakkaweo.backend.domain.admin.entity.AnnouncementType;
 import com.gakkaweo.backend.domain.admin.entity.AuditAction;
@@ -70,16 +71,10 @@ public class AdminSystemService {
 
   private static Specification<AuditLog> auditLogFilters(
       String action, Instant dateFrom, Instant dateTo) {
-    final AuditAction actionEnum;
-    if (action != null && !action.isBlank()) {
-      try {
-        actionEnum = AuditAction.valueOf(action);
-      } catch (IllegalArgumentException e) {
-        throw new BusinessException(ErrorCode.VALIDATION_FAILED);
-      }
-    } else {
-      actionEnum = null;
-    }
+    final AuditAction actionEnum =
+        (action != null && !action.isBlank())
+            ? EnumParser.parseOrThrow(AuditAction.class, action, ErrorCode.VALIDATION_FAILED)
+            : null;
     return (root, query, cb) -> {
       if (Long.class != query.getResultType()) {
         root.fetch("admin", JoinType.LEFT);
@@ -113,7 +108,7 @@ public class AdminSystemService {
     AnnouncementResponse response =
         transactionTemplate.execute(
             status -> {
-              Member admin = findMember(adminPublicId);
+              Member admin = findByPublicIdOrThrow(adminPublicId);
               Announcement announcement =
                   new Announcement(
                       admin,
@@ -180,7 +175,7 @@ public class AdminSystemService {
       Instant now = clock.instant();
       if (!response.startsAt().isAfter(now)
           && (response.endsAt() == null || !response.endsAt().isBefore(now))) {
-        AnnouncementType type = AnnouncementType.valueOf(response.type());
+        AnnouncementType type = parseAnnouncementType(response.type());
         eventPublisher.publishEvent(
             new AnnouncementEvent(response.id(), response.title(), response.content(), type));
       }
@@ -283,7 +278,7 @@ public class AdminSystemService {
         .orElseThrow(() -> new BusinessException(ErrorCode.ANNOUNCEMENT_NOT_FOUND));
   }
 
-  private Member findMember(UUID publicId) {
+  private Member findByPublicIdOrThrow(UUID publicId) {
     return memberRepository
         .findByPublicId(publicId)
         .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
@@ -296,11 +291,7 @@ public class AdminSystemService {
   }
 
   private AnnouncementType parseAnnouncementType(String type) {
-    try {
-      return AnnouncementType.valueOf(type);
-    } catch (IllegalArgumentException e) {
-      throw new BusinessException(ErrorCode.VALIDATION_FAILED);
-    }
+    return EnumParser.parseOrThrow(AnnouncementType.class, type, ErrorCode.VALIDATION_FAILED);
   }
 
   private boolean isCurrentlyActiveByTime(Instant startsAt, Instant endsAt) {
