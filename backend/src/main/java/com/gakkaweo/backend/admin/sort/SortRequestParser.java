@@ -9,10 +9,12 @@ public final class SortRequestParser {
 
   private SortRequestParser() {}
 
-  public static <E extends Enum<E> & SortField> Sort parse(
+  public record SortSpec(String entityField, Sort.Direction direction) {}
+
+  public static <E extends Enum<E> & SortField> SortSpec parse(
       String raw, Class<E> enumType, E defaultField, Sort.Direction defaultDirection) {
     if (raw == null || raw.isBlank()) {
-      return Sort.by(defaultDirection, defaultField.entityField());
+      return new SortSpec(defaultField.entityField(), defaultDirection);
     }
 
     String[] parts = raw.split(",", -1);
@@ -47,6 +49,6 @@ public final class SortRequestParser {
       throw new BusinessException(ErrorCode.VALIDATION_FAILED);
     }
 
-    return Sort.by(direction, matched.entityField());
+    return new SortSpec(matched.entityField(), direction);
   }
 }

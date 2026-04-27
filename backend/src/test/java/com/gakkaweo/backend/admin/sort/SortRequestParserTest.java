@@ -3,6 +3,7 @@ package com.gakkaweo.backend.admin.sort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.gakkaweo.backend.admin.sort.SortRequestParser.SortSpec;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +37,10 @@ class SortRequestParserTest {
     }
   }
 
+  private static SortSpec expected(String entityField, Sort.Direction direction) {
+    return new SortSpec(entityField, direction);
+  }
+
   @Nested
   @DisplayName("기본값 처리")
   class Defaults {
@@ -43,21 +48,21 @@ class SortRequestParserTest {
     @Test
     @DisplayName("null 입력 → 기본 필드/방향")
     void nullRaw_returnsDefault() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               null, TestSortField.class, TestSortField.CREATED_AT, Sort.Direction.DESC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.DESC, "createdAt"));
+      assertThat(spec).isEqualTo(expected("createdAt", Sort.Direction.DESC));
     }
 
     @Test
     @DisplayName("빈 문자열 → 기본 필드/방향")
     void blankRaw_returnsDefault() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               "   ", TestSortField.class, TestSortField.CREATED_AT, Sort.Direction.DESC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.DESC, "createdAt"));
+      assertThat(spec).isEqualTo(expected("createdAt", Sort.Direction.DESC));
     }
   }
 
@@ -68,77 +73,77 @@ class SortRequestParserTest {
     @Test
     @DisplayName("필드 + asc")
     void fieldAndAsc() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               "nickname,asc", TestSortField.class, TestSortField.CREATED_AT, Sort.Direction.DESC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.ASC, "nickname"));
+      assertThat(spec).isEqualTo(expected("nickname", Sort.Direction.ASC));
     }
 
     @Test
     @DisplayName("필드 + desc")
     void fieldAndDesc() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               "nickname,desc", TestSortField.class, TestSortField.CREATED_AT, Sort.Direction.DESC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.DESC, "nickname"));
+      assertThat(spec).isEqualTo(expected("nickname", Sort.Direction.DESC));
     }
 
     @Test
     @DisplayName("필드만 → 기본 방향 적용")
     void fieldOnly_usesDefaultDirection() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               "nickname", TestSortField.class, TestSortField.CREATED_AT, Sort.Direction.ASC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.ASC, "nickname"));
+      assertThat(spec).isEqualTo(expected("nickname", Sort.Direction.ASC));
     }
 
     @Test
     @DisplayName("대소문자 무관 매핑 (필드)")
     void fieldKeyIsCaseInsensitive() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               "NickName,asc", TestSortField.class, TestSortField.CREATED_AT, Sort.Direction.DESC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.ASC, "nickname"));
+      assertThat(spec).isEqualTo(expected("nickname", Sort.Direction.ASC));
     }
 
     @Test
     @DisplayName("대소문자 무관 매핑 (방향)")
     void directionIsCaseInsensitive() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               "nickname,DESC", TestSortField.class, TestSortField.CREATED_AT, Sort.Direction.ASC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.DESC, "nickname"));
+      assertThat(spec).isEqualTo(expected("nickname", Sort.Direction.DESC));
     }
 
     @Test
     @DisplayName("앞뒤 공백 trim")
     void trimsWhitespace() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               "  nickname , asc ",
               TestSortField.class,
               TestSortField.CREATED_AT,
               Sort.Direction.DESC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.ASC, "nickname"));
+      assertThat(spec).isEqualTo(expected("nickname", Sort.Direction.ASC));
     }
 
     @Test
     @DisplayName("fieldKey와 entityField가 다른 경우 entityField로 매핑")
     void mapsFieldKeyToEntityField() {
-      Sort sort =
+      SortSpec spec =
           SortRequestParser.parse(
               "memberNickname,asc",
               TestSortField.class,
               TestSortField.CREATED_AT,
               Sort.Direction.DESC);
 
-      assertThat(sort).isEqualTo(Sort.by(Sort.Direction.ASC, "member.nickname"));
+      assertThat(spec).isEqualTo(expected("member.nickname", Sort.Direction.ASC));
     }
   }
 

@@ -13,6 +13,7 @@ import com.gakkaweo.backend.admin.dto.SimilarityTestRequest;
 import com.gakkaweo.backend.admin.dto.SimilarityTestResponse;
 import com.gakkaweo.backend.admin.sort.SentenceSortField;
 import com.gakkaweo.backend.admin.sort.SortRequestParser;
+import com.gakkaweo.backend.admin.sort.SortSpecBuilder;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
@@ -70,16 +71,16 @@ public class AdminSentenceService {
       statusEnum = null;
     }
 
-    Sort sortSpec =
+    SortRequestParser.SortSpec sortSpec =
         SortRequestParser.parse(
-                sort, SentenceSortField.class, SentenceSortField.CREATED_AT, Sort.Direction.DESC)
-            .and(Sort.by(Sort.Direction.DESC, "id"));
+            sort, SentenceSortField.class, SentenceSortField.CREATED_AT, Sort.Direction.DESC);
 
-    Specification<DailySentence> spec =
+    Specification<DailySentence> filterSpec =
         (root, query, cb) ->
             statusEnum != null ? cb.equal(root.get("status"), statusEnum) : cb.conjunction();
+    Specification<DailySentence> spec = filterSpec.and(SortSpecBuilder.build(sortSpec, "id"));
     Page<DailySentence> pageResult =
-        dailySentenceRepository.findAll(spec, PageRequest.of(page, size, sortSpec));
+        dailySentenceRepository.findAll(spec, PageRequest.of(page, size));
 
     return new SentenceListResponse(
         pageResult.getContent().stream().map(SentenceResponse::from).toList(),
