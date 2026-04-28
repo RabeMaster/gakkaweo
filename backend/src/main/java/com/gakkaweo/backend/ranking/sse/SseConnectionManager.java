@@ -5,6 +5,7 @@ import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.ranking.dto.HeartbeatResponse;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.service.RankingService;
+import com.gakkaweo.backend.ranking.sse.config.SseProperties;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
@@ -15,7 +16,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -28,9 +28,7 @@ public class SseConnectionManager {
 
   private final CopyOnWriteArrayList<SseEmitter> emitters = new CopyOnWriteArrayList<>();
   private final RankingService rankingService;
-
-  @Value("${app.sse.max-connections:500}")
-  private final int maxConnections;
+  private final SseProperties sseProperties;
 
   private final ScheduledExecutorService heartbeatExecutor =
       Executors.newSingleThreadScheduledExecutor(
@@ -57,7 +55,7 @@ public class SseConnectionManager {
   }
 
   public synchronized SseEmitter register() {
-    if (emitters.size() >= maxConnections) {
+    if (emitters.size() >= sseProperties.getMaxConnections()) {
       throw new BusinessException(ErrorCode.SSE_MAX_CONNECTIONS);
     }
 

@@ -92,6 +92,8 @@ app:
     hint-max-count: ${HINT_MAX_COUNT:5}
   upload:
     profile-dir: ${UPLOAD_PROFILE_DIR:./uploads/profiles}
+  sse:
+    max-connections: ${SSE_MAX_CONNECTIONS:500}
   rate-limit:
     guess-per-minute: ${RATE_LIMIT_GUESS:40}
     read-per-minute: ${RATE_LIMIT_READ:120}
