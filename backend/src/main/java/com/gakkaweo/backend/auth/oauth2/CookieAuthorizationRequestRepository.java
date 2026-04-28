@@ -12,6 +12,7 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.oauth2.client.web.AuthorizationRequestRepository;
@@ -19,6 +20,7 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.stereotype.Component;
 
 @Component
+@RequiredArgsConstructor
 public class CookieAuthorizationRequestRepository
     implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
 
@@ -27,12 +29,6 @@ public class CookieAuthorizationRequestRepository
 
   private final CookieProperties cookieProperties;
   private final ObjectMapper objectMapper;
-
-  public CookieAuthorizationRequestRepository(
-      CookieProperties cookieProperties, ObjectMapper objectMapper) {
-    this.cookieProperties = cookieProperties;
-    this.objectMapper = objectMapper;
-  }
 
   @Override
   public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
