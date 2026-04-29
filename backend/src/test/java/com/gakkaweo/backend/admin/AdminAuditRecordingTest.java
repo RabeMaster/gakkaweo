@@ -81,7 +81,7 @@ class AdminAuditRecordingTest extends IntegrationTestBase {
   @DisplayName("랭킹 캐시 리셋 → RANKING_CACHE_RESET 기록")
   void 랭킹리셋_감사() {
     testAuthHelper.createTodaySentence("오늘 문장");
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
 
     restTemplate.exchange(

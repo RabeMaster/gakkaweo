@@ -42,6 +42,10 @@ public class TestAuthHelper {
     return createMember(MemberRole.ADMIN, false);
   }
 
+  public Member createSuperAdmin() {
+    return createMember(MemberRole.SUPERADMIN, false);
+  }
+
   public Member createBannedMember() {
     return createMember(MemberRole.USER, true);
   }
@@ -51,8 +55,8 @@ public class TestAuthHelper {
     return transactionTemplate.execute(
         status -> {
           Member member = new Member(nickname);
-          if (role == MemberRole.ADMIN) {
-            member.setRole(MemberRole.ADMIN);
+          if (role != MemberRole.USER) {
+            member.setRole(role);
           }
           if (banned) {
             member.setBanned(true);

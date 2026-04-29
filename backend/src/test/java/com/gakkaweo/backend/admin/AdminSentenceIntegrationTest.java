@@ -459,7 +459,7 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("emergencyReplace - returnOldToPool=true (이전 문장 ACTIVE 복귀, DayChangeEvent 발행)")
   void 긴급교체_풀복귀() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     DailySentence old = testAuthHelper.createTodaySentence("교체 대상 (기존)");
     DailySentence replacement = testAuthHelper.createActiveSentence("교체 후보 (새 문장)");
 
@@ -489,7 +489,7 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("emergencyReplace - returnOldToPool=false (이전 문장 DISABLED)")
   void 긴급교체_비활성처리() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     DailySentence old = testAuthHelper.createTodaySentence("교체 대상 2");
     DailySentence replacement = testAuthHelper.createActiveSentence("교체 후보 2");
 
@@ -511,7 +511,7 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("emergencyReplace - 오늘 문장 없으면 SENTENCE_NOT_FOUND")
   void 긴급교체_오늘문장없음() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     DailySentence replacement = testAuthHelper.createActiveSentence("후보");
 
     HttpHeaders headers = authedJson(admin);
@@ -529,7 +529,7 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("emergencyReplace - 존재하지 않는 newSentencePublicId SENTENCE_NOT_FOUND")
   void 긴급교체_없는문장() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     testAuthHelper.createTodaySentence("오늘");
 
     HttpHeaders headers = authedJson(admin);
@@ -547,7 +547,7 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("emergencyReplace - newSentence가 이미 사용됨이면 SENTENCE_ALREADY_USED")
   void 긴급교체_이미사용() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     testAuthHelper.createTodaySentence("오늘");
     DailySentence alreadyUsed =
         transactionTemplate.execute(
@@ -573,7 +573,7 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
   @Test
   @DisplayName("emergencyReplace - newSentence가 DISABLED면 SENTENCE_NOT_FOUND")
   void 긴급교체_비활성문장() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     testAuthHelper.createTodaySentence("오늘");
     DailySentence disabled =
         transactionTemplate.execute(
@@ -593,6 +593,25 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     assertThat(response.getBody().code()).isEqualTo("SENTENCE_NOT_FOUND");
+  }
+
+  @Test
+  @DisplayName("emergencyReplace - ADMIN 호출 시 403 ACCESS_DENIED (path-level)")
+  void 긴급교체_ADMIN_거부() {
+    Member admin = testAuthHelper.createAdmin();
+    testAuthHelper.createTodaySentence("오늘");
+    DailySentence replacement = testAuthHelper.createActiveSentence("후보");
+
+    HttpHeaders headers = authedJson(admin);
+    ResponseEntity<ErrorBody> response =
+        restTemplate.exchange(
+            url("/admin/sentences/emergency-replace"),
+            HttpMethod.POST,
+            new HttpEntity<>(new EmergencyReplaceRequest(replacement.getPublicId(), true), headers),
+            ErrorBody.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(response.getBody().code()).isEqualTo("ACCESS_DENIED");
   }
 
   private HttpHeaders authedJson(Member admin) {

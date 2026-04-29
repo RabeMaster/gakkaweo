@@ -81,7 +81,8 @@ public class AdminUserController {
           에러 코드:
           - `MEMBER_NOT_FOUND` (404): 사용자 없음
           - `ADMIN_SELF_ACTION` (400): 자기 자신의 역할 변경 불가
-          - `ROLE_ALREADY_ASSIGNED` (400): 이미 동일한 역할""")
+          - `ROLE_ALREADY_ASSIGNED` (400): 이미 동일한 역할
+          - `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족 (SUPERADMIN만 ADMIN을 변경 가능)""")
   @AdminErrorResponses
   @PatchMapping("/{publicId}/role")
   public ResponseEntity<AdminUserResponse> changeRole(
@@ -101,7 +102,8 @@ public class AdminUserController {
           """
           에러 코드:
           - `MEMBER_NOT_FOUND` (404): 사용자 없음
-          - `ADMIN_SELF_ACTION` (400): 자기 자신 차단 불가""")
+          - `ADMIN_SELF_ACTION` (400): 자기 자신 차단 불가
+          - `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족""")
   @AdminErrorResponses
   @PostMapping("/{publicId}/ban")
   public ResponseEntity<Void> banUser(
@@ -118,7 +120,8 @@ public class AdminUserController {
           """
           에러 코드:
           - `MEMBER_NOT_FOUND` (404): 사용자 없음
-          - `ADMIN_SELF_ACTION` (400): 자기 자신 해제 불가""")
+          - `ADMIN_SELF_ACTION` (400): 자기 자신 해제 불가
+          - `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족""")
   @AdminErrorResponses
   @DeleteMapping("/{publicId}/ban")
   public ResponseEntity<Void> unbanUser(
@@ -130,12 +133,15 @@ public class AdminUserController {
   }
 
   @Operation(
-      summary = "강제 탈퇴",
+      summary = "강제 탈퇴 (SUPERADMIN 전용)",
       description =
           """
+          회복 불가능한 데이터 영구 삭제 액션이라 SUPERADMIN만 호출 가능.
           에러 코드:
+          - `ACCESS_DENIED` (403): SUPERADMIN 권한 없음 (path-level)
           - `MEMBER_NOT_FOUND` (404): 사용자 없음
-          - `ADMIN_SELF_ACTION` (400): 자기 자신 탈퇴 불가""")
+          - `ADMIN_SELF_ACTION` (400): 자기 자신 탈퇴 불가
+          - `INSUFFICIENT_ROLE` (403): 대상이 SUPERADMIN인 경우""")
   @AdminErrorResponses
   @DeleteMapping("/{publicId}")
   public ResponseEntity<Void> forceDeleteUser(
@@ -160,7 +166,8 @@ public class AdminUserController {
           - `MEMBER_NOT_FOUND` (404): 사용자 없음
           - `ADMIN_SELF_ACTION` (400): 자기 자신의 닉네임 변경 불가
           - `NICKNAME_DUPLICATED` (409): 이미 사용 중인 닉네임
-          - `NICKNAME_FORBIDDEN` (400): 사용할 수 없는 닉네임""")
+          - `NICKNAME_FORBIDDEN` (400): 사용할 수 없는 닉네임
+          - `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족""")
   @AdminErrorResponses
   @PatchMapping("/{publicId}/nickname")
   public ResponseEntity<AdminUserResponse> forceChangeNickname(
@@ -181,7 +188,8 @@ public class AdminUserController {
           """
           에러 코드:
           - `MEMBER_NOT_FOUND` (404): 사용자 없음
-          - `ADMIN_SELF_ACTION` (400): 자기 자신의 이미지 삭제 불가""")
+          - `ADMIN_SELF_ACTION` (400): 자기 자신의 이미지 삭제 불가
+          - `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족""")
   @AdminErrorResponses
   @DeleteMapping("/{publicId}/profile-image")
   public ResponseEntity<Void> forceDeleteProfileImage(

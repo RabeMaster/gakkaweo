@@ -119,10 +119,10 @@ public class InitialDataSeeder {
     transactionTemplate.executeWithoutResult(
         status -> {
           Member member = memberRepository.save(new Member(nickname));
-          member.setRole(MemberRole.ADMIN);
+          member.setRole(MemberRole.SUPERADMIN);
           localAccountRepository.save(new LocalAccount(member, ADMIN_USERNAME, passwordHash));
         });
 
-    log.info("admin 시딩 완료: nickname={}, username={}", nickname, ADMIN_USERNAME);
+    log.info("SUPERADMIN 시딩 완료: nickname={}, username={}", nickname, ADMIN_USERNAME);
   }
 }

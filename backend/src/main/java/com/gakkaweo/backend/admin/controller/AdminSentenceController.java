@@ -224,12 +224,14 @@ public class AdminSentenceController {
   }
 
   @Operation(
-      summary = "긴급 교체",
+      summary = "긴급 교체 (SUPERADMIN 전용)",
       description =
           """
+          진행 중인 게임에 즉시 영향을 주는 액션이라 SUPERADMIN만 호출 가능.
           기존 세션+추측 삭제, Redis 랭킹 초기화, DAY_CHANGE SSE 브로드캐스트
 
           에러 코드:
+          - `ACCESS_DENIED` (403): SUPERADMIN 권한 없음
           - `SENTENCE_NOT_FOUND` (404): 문장 없음
           - `SENTENCE_ALREADY_USED` (400): 교체 대상이 이미 출제됨""")
   @AdminErrorResponses

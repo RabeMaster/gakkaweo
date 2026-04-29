@@ -130,6 +130,7 @@ public class AdminUserService {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findByPublicIdOrThrow(targetPublicId);
+    requireSufficientRoleOver(adminPublicId, member);
     MemberRole newRole =
         EnumParser.parseOrThrow(MemberRole.class, request.role(), ErrorCode.VALIDATION_FAILED);
 
@@ -152,6 +153,7 @@ public class AdminUserService {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findByPublicIdOrThrow(targetPublicId);
+    requireSufficientRoleOver(adminPublicId, member);
     Long memberId = member.getId();
 
     // clearAutomatically=true로 영속성 컨텍스트 초기화됨 → delete 먼저, 재조회 후 set
@@ -171,6 +173,7 @@ public class AdminUserService {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findByPublicIdOrThrow(targetPublicId);
+    requireSufficientRoleOver(adminPublicId, member);
     member.setBanned(false);
     member.setBannedAt(null);
 
@@ -184,6 +187,7 @@ public class AdminUserService {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findByPublicIdOrThrow(targetPublicId);
+    requireSufficientRoleOver(adminPublicId, member);
 
     gameSessionRepository.anonymizeByMember(member);
     sentenceUploadRepository.anonymizeByAdmin(member);
@@ -213,6 +217,7 @@ public class AdminUserService {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findByPublicIdOrThrow(targetPublicId);
+    requireSufficientRoleOver(adminPublicId, member);
     String nickname = nicknameValidator.normalize(request.nickname());
     nicknameValidator.validate(nickname);
 
@@ -243,6 +248,7 @@ public class AdminUserService {
     preventSelfAction(targetPublicId, adminPublicId);
 
     Member member = findByPublicIdOrThrow(targetPublicId);
+    requireSufficientRoleOver(adminPublicId, member);
     member.setProfileUrl(null);
     adminAuditService.log(
         adminPublicId,
@@ -267,6 +273,24 @@ public class AdminUserService {
     if (targetPublicId.equals(adminPublicId)) {
       throw new BusinessException(ErrorCode.ADMIN_SELF_ACTION);
     }
+  }
+
+  /**
+   * 행위자가 대상에 대한 변경 액션을 수행할 수 있는지 검증한다.
+   *
+   * <p>USER 대상은 모든 ADMIN/SUPERADMIN 통과. ADMIN 대상은 SUPERADMIN만 통과. SUPERADMIN 대상은 누구든 변경 불가(동급
+   * SUPERADMIN 포함).
+   */
+  private void requireSufficientRoleOver(UUID adminPublicId, Member target) {
+    MemberRole targetRole = target.getRole();
+    if (targetRole == MemberRole.USER) {
+      return;
+    }
+    Member admin = findByPublicIdOrThrow(adminPublicId);
+    if (targetRole == MemberRole.ADMIN && admin.getRole() == MemberRole.SUPERADMIN) {
+      return;
+    }
+    throw new BusinessException(ErrorCode.INSUFFICIENT_ROLE);
   }
 
   private AdminUserResponse toUserResponse(Member member) {

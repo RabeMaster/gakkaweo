@@ -13,7 +13,7 @@ public record AuthResponse(
         String profileUrl,
     @Schema(
             description = "역할",
-            allowableValues = {"USER", "ADMIN"},
+            allowableValues = {"USER", "ADMIN", "SUPERADMIN"},
             example = "USER")
         String role) {
 

@@ -111,10 +111,10 @@ class AdminSystemIntegrationTest extends IntegrationTestBase {
   }
 
   @Test
-  @DisplayName("랭킹 캐시 리셋 - 200")
+  @DisplayName("랭킹 캐시 리셋 - SUPERADMIN 200")
   void 랭킹캐시_리셋() {
     testAuthHelper.createTodaySentence("오늘 문장");
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
 
     ResponseEntity<Void> response =
@@ -140,7 +140,7 @@ class AdminSystemIntegrationTest extends IntegrationTestBase {
           gameSessionRepository.save(session);
         });
 
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
 
     ResponseEntity<Void> response =
@@ -164,9 +164,9 @@ class AdminSystemIntegrationTest extends IntegrationTestBase {
   }
 
   @Test
-  @DisplayName("Rate Limit 리셋 - 200")
+  @DisplayName("Rate Limit 리셋 - SUPERADMIN 200")
   void 레이트리밋_리셋() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
 
     ResponseEntity<Void> response =
@@ -177,6 +177,41 @@ class AdminSystemIntegrationTest extends IntegrationTestBase {
             Void.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  @DisplayName("랭킹 캐시 리셋 - ADMIN 호출 시 403 ACCESS_DENIED (path-level)")
+  void 랭킹캐시_리셋_ADMIN_거부() {
+    testAuthHelper.createTodaySentence("오늘 문장");
+    Member admin = testAuthHelper.createAdmin();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+
+    ResponseEntity<ErrorBody> response =
+        restTemplate.exchange(
+            url("/admin/system/ranking-cache/reset"),
+            HttpMethod.POST,
+            new HttpEntity<>(headers),
+            ErrorBody.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(response.getBody().code()).isEqualTo("ACCESS_DENIED");
+  }
+
+  @Test
+  @DisplayName("Rate Limit 리셋 - ADMIN 호출 시 403 ACCESS_DENIED (path-level)")
+  void 레이트리밋_리셋_ADMIN_거부() {
+    Member admin = testAuthHelper.createAdmin();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+
+    ResponseEntity<ErrorBody> response =
+        restTemplate.exchange(
+            url("/admin/system/rate-limit/reset"),
+            HttpMethod.POST,
+            new HttpEntity<>(headers),
+            ErrorBody.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(response.getBody().code()).isEqualTo("ACCESS_DENIED");
   }
 
   @Test
