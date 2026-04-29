@@ -10,10 +10,16 @@ import { Pagination } from "@/features/admin/components/Pagination";
 import { resolveProfileUrl } from "@/shared/utils/url";
 
 function RoleBadge({ role }: { role: string }) {
-  const color = role === "ADMIN" ? "bg-red-400 text-black" : "bg-blue-300 text-black";
+  const color =
+    role === "SUPERADMIN"
+      ? "bg-purple-400 text-black"
+      : role === "ADMIN"
+        ? "bg-red-400 text-black"
+        : "bg-blue-300 text-black";
+  const label = role === "SUPERADMIN" ? "SUPERADMIN" : role === "ADMIN" ? "ADMIN" : "USER";
   return (
     <span className={`inline-block px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white ${color}`}>
-      {role === "ADMIN" ? "ADMIN" : "USER"}
+      {label}
     </span>
   );
 }

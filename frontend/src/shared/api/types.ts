@@ -4,7 +4,7 @@ export interface MeResponse {
   publicId: string;
   nickname: string;
   profileUrl: string | null;
-  role: "USER" | "ADMIN";
+  role: "USER" | "ADMIN" | "SUPERADMIN";
 }
 
 // --- Daily Game ---

@@ -12,6 +12,7 @@ import {
 } from "@/features/admin/hooks/useAdminSentences";
 import type { SentenceResponse } from "@/features/admin/types";
 import { useToastStore } from "@/shared/stores/useToastStore";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { ApiError } from "@/shared/api/client";
 
 interface SentenceDetailDialogProps {
@@ -32,6 +33,7 @@ export function SentenceDetailDialog({ sentence, onClose }: SentenceDetailDialog
   const emergencyReplace = useEmergencyReplace();
   const { data: stats } = useSentenceStats(sentence?.publicId ?? null);
   const { addToast } = useToastStore();
+  const isSuperAdmin = useAuthStore((s) => s.user?.role === "SUPERADMIN");
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
@@ -205,15 +207,21 @@ export function SentenceDetailDialog({ sentence, onClose }: SentenceDetailDialog
               )}
 
               {!sentence.usedAt && sentence.status === "ACTIVE" && (
-                <div className="border-t-2 border-black/20 dark:border-white/20 pt-4">
+                <div className="border-t-2 border-black/20 dark:border-white/20 pt-4 space-y-2">
                   <Button
                     size="sm"
                     variant="danger"
                     onClick={handleEmergencyReplace}
+                    disabled={!isSuperAdmin}
                     isLoading={emergencyReplace.isPending}
                   >
                     긴급 교체 (이 문장으로)
                   </Button>
+                  {!isSuperAdmin && (
+                    <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                      SUPERADMIN만 긴급 교체를 수행할 수 있습니다.
+                    </p>
+                  )}
                 </div>
               )}
             </>

@@ -12,9 +12,33 @@ import {
   useForceDeleteUser,
 } from "@/features/admin/hooks/useAdminUsers";
 import { useToastStore } from "@/shared/stores/useToastStore";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { ApiError } from "@/shared/api/client";
 import { resolveProfileUrl } from "@/shared/utils/url";
 import { getSimilarityColor } from "@/shared/utils/similarity";
+
+function canModify(actorRole: string | undefined, targetRole: string): boolean {
+  if (targetRole === "SUPERADMIN") {
+    return false;
+  }
+  if (targetRole === "USER") {
+    return true;
+  }
+  if (targetRole === "ADMIN" && actorRole === "SUPERADMIN") {
+    return true;
+  }
+  return false;
+}
+
+function roleLabel(role: string): string {
+  if (role === "SUPERADMIN") {
+    return "최고관리자";
+  }
+  if (role === "ADMIN") {
+    return "관리자";
+  }
+  return "일반";
+}
 
 interface UserDetailDialogProps {
   publicId: string;
@@ -34,6 +58,7 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
   const profileMutation = useForceDeleteProfileImage();
   const deleteMutation = useForceDeleteUser();
   const { addToast } = useToastStore();
+  const actorRole = useAuthStore((s) => s.user?.role);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -113,8 +138,7 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
             <div>
               <p className="text-lg font-black">{user.nickname}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                {user.provider} / {user.role === "ADMIN" ? "관리자" : "일반"} /{" "}
-                {new Date(user.createdAt).toLocaleDateString("ko-KR")}
+                {user.provider} / {roleLabel(user.role)} / {new Date(user.createdAt).toLocaleDateString("ko-KR")}
               </p>
               {user.email && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">{user.email}</p>
@@ -144,6 +168,11 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
 
           {/* 액션 */}
           <div className="border-t-2 border-black/20 dark:border-white/20 pt-4 space-y-3">
+            {!canModify(actorRole, user.role) && (
+              <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                이 사용자에 대한 변경 권한이 부족합니다.
+              </p>
+            )}
             {/* 역할 변경 */}
             <div className="flex gap-2 items-center">
               <span className="text-sm font-bold w-20">역할:</span>
@@ -160,6 +189,7 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                     `${user.role === "ADMIN" ? "일반 사용자" : "관리자"}로 변경하시겠습니까?`,
                   )
                 }
+                disabled={!canModify(actorRole, user.role) || user.role === "SUPERADMIN"}
                 isLoading={roleMutation.isPending}
               >
                 {user.role === "ADMIN" ? "일반으로" : "관리자로"}
@@ -183,6 +213,7 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                       "차단을 해제하시겠습니까?",
                     )
                   }
+                  disabled={!canModify(actorRole, user.role)}
                   isLoading={unbanMutation.isPending}
                 >
                   차단 해제
@@ -201,6 +232,7 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                       "이 사용자를 차단하시겠습니까?",
                     )
                   }
+                  disabled={!canModify(actorRole, user.role)}
                   isLoading={banMutation.isPending}
                 >
                   차단
@@ -235,7 +267,7 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                     `닉네임을 "${newNickname.trim()}"(으)로 변경하시겠습니까?`,
                   )
                 }
-                disabled={!newNickname.trim()}
+                disabled={!newNickname.trim() || !canModify(actorRole, user.role)}
                 isLoading={nicknameMutation.isPending}
               >
                 변경
@@ -259,6 +291,7 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                       "프로필 이미지를 삭제하시겠습니까?",
                     )
                   }
+                  disabled={!canModify(actorRole, user.role)}
                   isLoading={profileMutation.isPending}
                 >
                   이미지 삭제
@@ -266,29 +299,37 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
               </div>
             )}
 
-            {/* 강제 탈퇴 */}
-            <div className="flex gap-2 items-center">
-              <span className="text-sm font-bold w-20">탈퇴:</span>
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={() =>
-                  handleAction(
-                    () =>
-                      deleteMutation.mutate(publicId, {
-                        onSuccess: () => {
-                          addToast("강제 탈퇴되었습니다.", "success");
-                          onClose();
-                        },
-                        onError,
-                      }),
-                    "이 사용자를 강제 탈퇴시키겠습니까? 되돌릴 수 없습니다.",
-                  )
-                }
-                isLoading={deleteMutation.isPending}
-              >
-                강제 탈퇴
-              </Button>
+            {/* 강제 탈퇴 (SUPERADMIN 전용) */}
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-2 items-center">
+                <span className="text-sm font-bold w-20">탈퇴:</span>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() =>
+                    handleAction(
+                      () =>
+                        deleteMutation.mutate(publicId, {
+                          onSuccess: () => {
+                            addToast("강제 탈퇴되었습니다.", "success");
+                            onClose();
+                          },
+                          onError,
+                        }),
+                      "이 사용자를 강제 탈퇴시키겠습니까? 되돌릴 수 없습니다.",
+                    )
+                  }
+                  disabled={actorRole !== "SUPERADMIN" || user.role === "SUPERADMIN"}
+                  isLoading={deleteMutation.isPending}
+                >
+                  강제 탈퇴
+                </Button>
+              </div>
+              {actorRole !== "SUPERADMIN" && (
+                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 pl-[5.5rem]">
+                  SUPERADMIN만 강제 탈퇴를 수행할 수 있습니다.
+                </p>
+              )}
             </div>
           </div>
 
