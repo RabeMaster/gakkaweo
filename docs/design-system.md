@@ -289,7 +289,8 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
   - **a11y**: `<th scope="col" aria-sort="ascending|descending|none">` + 헤더 라벨은 `<button type="button">` 래핑. 버튼 `title` 속성으로 호버 안내(`클릭하여 정렬` / `오름차순/내림차순 정렬 중`)
   - **백엔드 계약**: `?sort=field,dir` (Spring 표준). 화이트리스트 외 필드/방향은 400. 도메인별 enum (`UserSortField`/`SentenceSortField`/`AuditLogSortField`)이 단일 진실
 - **위젯 카드**: `border-4 shadow-brutal-sm`. 라벨 `text-xs uppercase tracking-wide`. 수치 `text-3xl font-black tabular-nums`
-- **상태 배지**: `px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white`. ACTIVE=green-400, USED=blue-300, DISABLED=gray-300, ADMIN=red, USER=blue, 차단=gray-800
+- **상태 배지**: `px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white`. ACTIVE=green-400, USED=blue-300, DISABLED=gray-300, SUPERADMIN=purple-400, ADMIN=red-400, USER=blue-300, 차단=gray-800
+- **SUPERADMIN 전용 액션 가시성**: 강제 탈퇴, 긴급 교체, 랭킹 캐시 리셋, Rate Limit 초기화는 `useAuthStore().user?.role === "SUPERADMIN"` 검사로 disabled 분기. 비-SUPERADMIN ADMIN에게는 안내 문구(`text-amber-600 dark:text-amber-400`) 노출
 - **다이얼로그**: `border-4 shadow-brutal max-w-lg`. 헤더 `border-b-4 px-6 py-5`. 푸터 `border-t-4`. `role="dialog" aria-modal="true"` + Escape 닫기 필수
 - **텍스트 링크 액션**: 테이블 행 내 액션은 `text-indigo-600 dark:text-indigo-400 font-black text-xs hover:underline`
 - **Pagination**: `Button sm secondary` 이전/다음 + `tabular-nums` 페이지 표시

@@ -214,7 +214,7 @@ pnpm dev
 최초 실행 시 `InitialDataSeeder`가 다음을 자동으로 처리합니다.
 
 - **기본 문장 5개** 자동 삽입 (`backend/src/main/resources/seed/sentences.txt`). 파일을 편집해 문장을 추가·교체할 수 있으며, 중복은 자동 skip됩니다.
-- `.env`에 `SEED_ADMIN_PASSWORD`(8자 이상)를 설정하면 **admin 계정이 자동 생성**됩니다 (username: `admin`, 닉네임 자동 생성). 이후 `/admin` 접근이 가능합니다.
+- `.env`에 `SEED_ADMIN_PASSWORD`(8자 이상)를 설정하면 **SUPERADMIN 계정이 자동 생성**됩니다 (username: `admin`, 닉네임 자동 생성). 이후 `/admin` 접근이 가능합니다.
 - 비밀번호 8자 미만이거나 시드 파일이 없으면 서버 실행이 중단됩니다.
 
 ---
@@ -245,4 +245,4 @@ pnpm dev
 
 ---
 
-_마지막 업데이트: 2026-04-16_
+_마지막 업데이트: 2026-04-28_
