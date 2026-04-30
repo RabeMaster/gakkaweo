@@ -631,7 +631,7 @@
           "Admin: Users"
         ],
         "summary": "사용자 차단",
-        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신 차단 불가",
+        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신 차단 불가\n- `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족",
         "operationId": "banUser",
         "parameters": [
           {
@@ -687,11 +687,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -756,7 +772,7 @@
           "Admin: Users"
         ],
         "summary": "차단 해제",
-        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신 해제 불가",
+        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신 해제 불가\n- `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족",
         "operationId": "unbanUser",
         "parameters": [
           {
@@ -812,11 +828,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -882,7 +914,8 @@
         "tags": [
           "Admin: System"
         ],
-        "summary": "Rate Limit 초기화",
+        "summary": "Rate Limit 초기화 (SUPERADMIN 전용)",
+        "description": "어뷰저 IP 차단을 해제하는 효과로 보안 영향이 있어 SUPERADMIN만 호출 가능.",
         "operationId": "resetRateLimit",
         "responses": {
           "200": {
@@ -927,11 +960,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -997,7 +1046,8 @@
         "tags": [
           "Admin: System"
         ],
-        "summary": "랭킹 캐시 리셋",
+        "summary": "랭킹 캐시 리셋 (SUPERADMIN 전용)",
+        "description": "Redis Sorted Set 전체 초기화. 운영 사고 가능성으로 SUPERADMIN만 호출 가능.",
         "operationId": "resetRankingCache",
         "responses": {
           "200": {
@@ -1042,11 +1092,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -1167,11 +1233,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -1307,11 +1389,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -1468,11 +1566,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -1609,11 +1723,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -1753,11 +1883,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -1884,11 +2030,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -2036,11 +2198,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -2169,11 +2347,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -2239,8 +2433,8 @@
         "tags": [
           "Admin: Sentences"
         ],
-        "summary": "긴급 교체",
-        "description": "기존 세션+추측 삭제, Redis 랭킹 초기화, DAY_CHANGE SSE 브로드캐스트\n\n에러 코드:\n- `SENTENCE_NOT_FOUND` (404): 문장 없음\n- `SENTENCE_ALREADY_USED` (400): 교체 대상이 이미 출제됨",
+        "summary": "긴급 교체 (SUPERADMIN 전용)",
+        "description": "진행 중인 게임에 즉시 영향을 주는 액션이라 SUPERADMIN만 호출 가능.\n기존 세션+추측 삭제, Redis 랭킹 초기화, DAY_CHANGE SSE 브로드캐스트\n\n에러 코드:\n- `ACCESS_DENIED` (403): SUPERADMIN 권한 없음\n- `SENTENCE_NOT_FOUND` (404): 문장 없음\n- `SENTENCE_ALREADY_USED` (400): 교체 대상이 이미 출제됨",
         "operationId": "emergencyReplace",
         "requestBody": {
           "content": {
@@ -2302,11 +2496,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -2434,11 +2644,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -2852,7 +3078,7 @@
           "Admin: Users"
         ],
         "summary": "역할 변경",
-        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신의 역할 변경 불가\n- `ROLE_ALREADY_ASSIGNED` (400): 이미 동일한 역할",
+        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신의 역할 변경 불가\n- `ROLE_ALREADY_ASSIGNED` (400): 이미 동일한 역할\n- `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족 (SUPERADMIN만 ADMIN을 변경 가능)",
         "operationId": "changeRole",
         "parameters": [
           {
@@ -2925,11 +3151,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -2996,7 +3238,7 @@
           "Admin: Users"
         ],
         "summary": "닉네임 강제 변경",
-        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신의 닉네임 변경 불가\n- `NICKNAME_DUPLICATED` (409): 이미 사용 중인 닉네임\n- `NICKNAME_FORBIDDEN` (400): 사용할 수 없는 닉네임",
+        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신의 닉네임 변경 불가\n- `NICKNAME_DUPLICATED` (409): 이미 사용 중인 닉네임\n- `NICKNAME_FORBIDDEN` (400): 사용할 수 없는 닉네임\n- `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족",
         "operationId": "forceChangeNickname",
         "parameters": [
           {
@@ -3069,11 +3311,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -3196,11 +3454,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -3338,11 +3612,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -3471,11 +3761,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -3596,11 +3902,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -3738,11 +4060,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -4784,11 +5122,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -4917,11 +5271,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -4985,8 +5355,8 @@
         "tags": [
           "Admin: Users"
         ],
-        "summary": "강제 탈퇴",
-        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신 탈퇴 불가",
+        "summary": "강제 탈퇴 (SUPERADMIN 전용)",
+        "description": "회복 불가능한 데이터 영구 삭제 액션이라 SUPERADMIN만 호출 가능.\n에러 코드:\n- `ACCESS_DENIED` (403): SUPERADMIN 권한 없음 (path-level)\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신 탈퇴 불가\n- `INSUFFICIENT_ROLE` (403): 대상이 SUPERADMIN인 경우",
         "operationId": "forceDeleteUser",
         "parameters": [
           {
@@ -5042,11 +5412,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -5175,11 +5561,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -5297,11 +5699,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -5476,11 +5894,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -5609,11 +6043,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -5731,11 +6181,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -5865,11 +6331,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -5987,11 +6469,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -6120,11 +6618,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -6253,11 +6767,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -6395,11 +6925,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -6576,7 +7122,7 @@
           "Admin: Users"
         ],
         "summary": "프로필 이미지 강제 삭제",
-        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신의 이미지 삭제 불가",
+        "description": "에러 코드:\n- `MEMBER_NOT_FOUND` (404): 사용자 없음\n- `ADMIN_SELF_ACTION` (400): 자기 자신의 이미지 삭제 불가\n- `INSUFFICIENT_ROLE` (403): 대상 ADMIN/SUPERADMIN에 대한 변경 권한 부족",
         "operationId": "forceDeleteProfileImage",
         "parameters": [
           {
@@ -6632,11 +7178,27 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorBody"
                 },
-                "example": {
-                  "status": 403,
-                  "code": "ACCESS_DENIED",
-                  "message": "접근 권한이 없습니다",
-                  "timestamp": "2026-04-17T12:00:00Z"
+                "examples": {
+                  "path-deny": {
+                    "summary": "경로 권한 부족 (Spring Security path matcher)",
+                    "description": "path-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "ACCESS_DENIED",
+                      "message": "접근 권한이 없습니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  },
+                  "domain-deny": {
+                    "summary": "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    "description": "domain-deny",
+                    "value": {
+                      "status": 403,
+                      "code": "INSUFFICIENT_ROLE",
+                      "message": "이 작업을 수행할 권한이 부족합니다",
+                      "timestamp": "2026-04-17T12:00:00Z"
+                    }
+                  }
                 }
               }
             }
@@ -6895,7 +7457,8 @@
             "description": "역할",
             "enum": [
               "USER",
-              "ADMIN"
+              "ADMIN",
+              "SUPERADMIN"
             ],
             "example": "USER"
           }
@@ -7256,7 +7819,7 @@
         "properties": {
           "role": {
             "type": "string",
-            "description": "변경할 역할",
+            "description": "변경할 역할 (SUPERADMIN은 API로 부여 불가)",
             "enum": [
               "USER",
               "ADMIN"
@@ -7292,7 +7855,8 @@
             "description": "역할",
             "enum": [
               "USER",
-              "ADMIN"
+              "ADMIN",
+              "SUPERADMIN"
             ],
             "example": "USER"
           },
@@ -7810,7 +8374,8 @@
             "description": "역할",
             "enum": [
               "USER",
-              "ADMIN"
+              "ADMIN",
+              "SUPERADMIN"
             ],
             "example": "USER"
           },
