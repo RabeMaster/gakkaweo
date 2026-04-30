@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { hasAdminAccess } from "@/shared/utils/role";
 
 function LoadingFallback() {
   return <div className="max-w-md mx-auto py-12 text-center text-gray-400 font-bold animate-pulse">로딩 중...</div>;
@@ -27,7 +28,7 @@ export function RequireAdminAuth({ children }: { children: ReactNode }) {
     return <LoadingFallback />;
   }
 
-  if (!isAuthenticated || user?.role !== "ADMIN") {
+  if (!isAuthenticated || !hasAdminAccess(user?.role)) {
     return <Navigate to="/" replace />;
   }
 
