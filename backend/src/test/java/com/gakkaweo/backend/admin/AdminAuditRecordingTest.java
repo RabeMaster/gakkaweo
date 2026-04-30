@@ -27,7 +27,7 @@ class AdminAuditRecordingTest extends IntegrationTestBase {
   @Test
   @DisplayName("역할 변경 → ROLE_CHANGE 기록")
   void 역할변경_감사() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     Member target = testAuthHelper.createMember();
     HttpHeaders headers = authedJson(admin);
 

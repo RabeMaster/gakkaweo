@@ -67,7 +67,7 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
   @Test
   @DisplayName("역할 변경 중 audit 실패 시 Member.role 변경이 롤백된다")
   void 역할변경_audit실패_롤백() {
-    Member admin = testAuthHelper.createAdmin();
+    Member admin = testAuthHelper.createSuperAdmin();
     Member target = testAuthHelper.createMember();
     HttpHeaders headers = authedJson(admin);
 

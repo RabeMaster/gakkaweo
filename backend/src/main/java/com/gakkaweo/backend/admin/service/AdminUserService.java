@@ -133,6 +133,7 @@ public class AdminUserService {
     requireSufficientRoleOver(adminPublicId, member);
     MemberRole newRole =
         EnumParser.parseOrThrow(MemberRole.class, request.role(), ErrorCode.VALIDATION_FAILED);
+    requireRoleAssignmentAllowed(adminPublicId, newRole);
 
     if (member.getRole() == newRole) {
       throw new BusinessException(ErrorCode.ROLE_ALREADY_ASSIGNED);
@@ -275,12 +276,20 @@ public class AdminUserService {
     }
   }
 
-  /**
-   * 행위자가 대상에 대한 변경 액션을 수행할 수 있는지 검증한다.
-   *
-   * <p>USER 대상은 모든 ADMIN/SUPERADMIN 통과. ADMIN 대상은 SUPERADMIN만 통과. SUPERADMIN 대상은 누구든 변경 불가(동급
-   * SUPERADMIN 포함).
-   */
+  // SUPERADMIN 부여는 API 차단(운영 SQL 전용), ADMIN 승격은 SUPERADMIN 행위자만.
+  private void requireRoleAssignmentAllowed(UUID adminPublicId, MemberRole newRole) {
+    if (newRole == MemberRole.SUPERADMIN) {
+      throw new BusinessException(ErrorCode.INSUFFICIENT_ROLE);
+    }
+    if (newRole == MemberRole.ADMIN) {
+      Member admin = findByPublicIdOrThrow(adminPublicId);
+      if (admin.getRole() != MemberRole.SUPERADMIN) {
+        throw new BusinessException(ErrorCode.INSUFFICIENT_ROLE);
+      }
+    }
+  }
+
+  // 대상이 ADMIN/SUPERADMIN이면 행위자가 더 높은 등급일 때만 변경 액션 허용.
   private void requireSufficientRoleOver(UUID adminPublicId, Member target) {
     MemberRole targetRole = target.getRole();
     if (targetRole == MemberRole.USER) {

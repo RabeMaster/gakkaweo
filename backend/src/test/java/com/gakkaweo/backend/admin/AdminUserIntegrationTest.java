@@ -35,12 +35,12 @@ class AdminUserIntegrationTest extends IntegrationTestBase {
   @Autowired TransactionTemplate transactionTemplate;
 
   @Test
-  @DisplayName("역할 변경 - USER → ADMIN 성공")
+  @DisplayName("역할 변경 - SUPERADMIN이 USER → ADMIN 승격 성공")
   void 역할변경_성공() {
-    Member admin = testAuthHelper.createAdmin();
+    Member superAdmin = testAuthHelper.createSuperAdmin();
     Member target = testAuthHelper.createMember();
 
-    HttpHeaders headers = authedJson(admin);
+    HttpHeaders headers = authedJson(superAdmin);
 
     ResponseEntity<AdminUserResponse> response =
         restTemplate.exchange(
@@ -429,6 +429,42 @@ class AdminUserIntegrationTest extends IntegrationTestBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody().role()).isEqualTo("USER");
+  }
+
+  @Test
+  @DisplayName("권한 가드 - ADMIN이 USER → ADMIN 승격 시도 → 403 INSUFFICIENT_ROLE")
+  void 권한가드_ADMIN의_ADMIN승격_차단() {
+    Member admin = testAuthHelper.createAdmin();
+    Member target = testAuthHelper.createMember();
+    HttpHeaders headers = authedJson(admin);
+
+    ResponseEntity<ErrorBody> response =
+        restTemplate.exchange(
+            url("/admin/users/" + target.getPublicId() + "/role"),
+            HttpMethod.PATCH,
+            new HttpEntity<>(new RoleChangeRequest("ADMIN"), headers),
+            ErrorBody.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(response.getBody().code()).isEqualTo("INSUFFICIENT_ROLE");
+  }
+
+  @Test
+  @DisplayName("권한 가드 - SUPERADMIN 부여 시도 (DTO 패턴 위반) → 400 VALIDATION_FAILED")
+  void 권한가드_SUPERADMIN_부여_DTO차단() {
+    Member superAdmin = testAuthHelper.createSuperAdmin();
+    Member target = testAuthHelper.createMember();
+    HttpHeaders headers = authedJson(superAdmin);
+
+    ResponseEntity<ErrorBody> response =
+        restTemplate.exchange(
+            url("/admin/users/" + target.getPublicId() + "/role"),
+            HttpMethod.PATCH,
+            new HttpEntity<>(new RoleChangeRequest("SUPERADMIN"), headers),
+            ErrorBody.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody().code()).isEqualTo("VALIDATION_FAILED");
   }
 
   @Test
