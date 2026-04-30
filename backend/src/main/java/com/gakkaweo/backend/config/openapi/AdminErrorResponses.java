@@ -46,11 +46,20 @@ import java.lang.annotation.Target;
           @Content(
               mediaType = "application/json",
               schema = @Schema(implementation = ErrorBody.class),
-              examples =
-                  @ExampleObject(
-                      value =
-                          """
-              {"status":403,"code":"ACCESS_DENIED","message":"접근 권한이 없습니다","timestamp":"2026-04-17T12:00:00Z"}"""))),
+              examples = {
+                @ExampleObject(
+                    name = "path-deny",
+                    summary = "경로 권한 부족 (Spring Security path matcher)",
+                    value =
+                        """
+              {"status":403,"code":"ACCESS_DENIED","message":"접근 권한이 없습니다","timestamp":"2026-04-17T12:00:00Z"}"""),
+                @ExampleObject(
+                    name = "domain-deny",
+                    summary = "도메인 룰 권한 부족 (대상 보호 / SUPERADMIN-only 액션)",
+                    value =
+                        """
+              {"status":403,"code":"INSUFFICIENT_ROLE","message":"이 작업을 수행할 권한이 부족합니다","timestamp":"2026-04-17T12:00:00Z"}""")
+              })),
   @ApiResponse(
       responseCode = "404",
       description = "리소스 없음",
