@@ -100,6 +100,39 @@ Family 기반 Refresh Token Rotation을 구현했다.
 
 - 차단 시 refresh_token을 폐기하고 access_token을 블랙리스트에 등록하여 즉시 세션을 종료한다.
 
+## 권한 모델
+
+`USER` < `ADMIN` < `SUPERADMIN`. Spring Security `RoleHierarchy`로 자동 포괄. API 응답 `role`은 prefix 없이 노출하고 내부에서만 `ROLE_`을 쓴다.
+
+### 가드 3층
+
+| 층 | 위치 | 거부 코드 |
+| --- | --- | --- |
+| Path matcher | `SecurityConfig` (`/admin/**` = ADMIN, 위험 액션 = SUPERADMIN) | `ACCESS_DENIED` |
+| 대상 보호 | `AdminUserService.requireSufficientRoleOver` | `INSUFFICIENT_ROLE` |
+| 부여 정책 | `AdminUserService.requireRoleAssignmentAllowed` | `INSUFFICIENT_ROLE` |
+
+> 거부 사유가 다르므로 응답 코드를 분리해 클라이언트가 구분할 수 있게 했다.
+
+### 액션별 매트릭스
+
+| 액션 | Path | 대상 보호 | 부여 정책 |
+| --- | --- | --- | --- |
+| 역할 변경 | `ADMIN` | ✓ | ✓ (SUPERADMIN-only) |
+| 차단/해제, 닉네임 강제, 프로필 강제 삭제 | `ADMIN` | ✓ | — |
+| 강제 탈퇴 | `SUPERADMIN` | ✓ | — |
+| 긴급 교체, 랭킹 캐시 리셋, Rate Limit 초기화 | `SUPERADMIN` | — | — |
+
+`ADMIN`은 가역적이고 단일 사용자에 한정된 액션, `SUPERADMIN`은 비가역(강제 탈퇴, 긴급 교체, 캐시 리셋), 시스템 광역(Rate Limit), 권한 부여 메타-액션(역할 변경)을 수행한다.
+
+> 역할 변경은 가역적이지만 다른 액션의 전제 조건이 되는 권한 부여이므로 SUPERADMIN으로 분리했다.
+
+### SUPERADMIN 부여 채널
+
+`SUPERADMIN`은 운영 SQL로만 부여한다. API는 DTO `@Pattern("USER|ADMIN")` 1차 + 서비스 `requireRoleAssignmentAllowed` 2차로 차단하고, 시딩은 최초 admin 한 건만 만든다. `USER → ADMIN` 승격도 SUPERADMIN 행위자만 가능하다.
+
+> 부여 채널을 운영 SQL로 좁히면 단일 ADMIN 탈취가 권한 상승으로 이어지지 않는다. ADMIN끼리의 상호 임명도 권한 확산 통제가 어려워 같은 정책으로 묶었다.
+
 ## 랭킹 시스템
 
 ### Redis Sorted Set 스코어 인코딩
