@@ -2,15 +2,14 @@ package com.gakkaweo.backend.domain.game.entity;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.gakkaweo.backend.domain.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -22,7 +21,7 @@ import lombok.Setter;
 @Table(name = "daily_sentences")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class DailySentence {
+public class DailySentence extends BaseTimeEntity {
 
   @Column(unique = true, nullable = false, updatable = false)
   private final UUID publicId = UUID.randomUUID();
@@ -51,18 +50,11 @@ public class DailySentence {
   @Column(nullable = true)
   private Integer totalPlayers;
 
-  private Instant createdAt;
-
   public DailySentence(String sentence) {
     this.sentence = sentence;
   }
 
   public void recordTotalPlayers(int totalPlayers) {
     this.totalPlayers = totalPlayers;
-  }
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = Instant.now();
   }
 }

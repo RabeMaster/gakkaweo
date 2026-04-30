@@ -5,13 +5,13 @@ import static jakarta.persistence.GenerationType.IDENTITY;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
@@ -19,6 +19,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table(
@@ -26,6 +28,7 @@ import lombok.Setter;
     uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "provider_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@EntityListeners(AuditingEntityListener.class)
 public class SocialAccount {
 
   @Id
@@ -47,16 +50,13 @@ public class SocialAccount {
   @Column(length = 255)
   private String email;
 
+  @CreatedDate
+  @Column(nullable = false, updatable = false)
   private Instant connectedAt;
 
   public SocialAccount(Member member, SocialProvider provider, String providerId) {
     this.member = member;
     this.provider = provider;
     this.providerId = providerId;
-  }
-
-  @PrePersist
-  protected void onCreate() {
-    this.connectedAt = Instant.now();
   }
 }

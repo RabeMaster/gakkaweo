@@ -3,6 +3,7 @@ package com.gakkaweo.backend.domain.auth.entity;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.gakkaweo.backend.domain.common.entity.BaseTimeEntity;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,7 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -23,7 +23,7 @@ import lombok.Setter;
 @Table(name = "refresh_tokens")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class RefreshToken {
+public class RefreshToken extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = IDENTITY)
@@ -42,8 +42,6 @@ public class RefreshToken {
   @Column(nullable = false)
   private Instant expiresAt;
 
-  private Instant createdAt;
-
   @Setter private boolean revoked = false;
 
   public RefreshToken(Member member, String tokenHash, UUID familyId, Instant expiresAt) {
@@ -51,10 +49,5 @@ public class RefreshToken {
     this.tokenHash = tokenHash;
     this.familyId = familyId;
     this.expiresAt = expiresAt;
-  }
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = Instant.now();
   }
 }
