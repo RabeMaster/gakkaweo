@@ -2,14 +2,13 @@ package com.gakkaweo.backend.domain.member.entity;
 
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.gakkaweo.backend.domain.common.entity.BaseAuditableEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
@@ -22,7 +21,7 @@ import lombok.Setter;
 @Table(name = "members")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Member {
+public class Member extends BaseAuditableEntity {
 
   @Column(unique = true, nullable = false, updatable = false)
   private final UUID publicId = UUID.randomUUID();
@@ -50,22 +49,7 @@ public class Member {
 
   @Setter private Instant bannedAt;
 
-  private Instant createdAt;
-
-  private Instant updatedAt;
-
   public Member(String nickname) {
     this.nickname = nickname;
-  }
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = Instant.now();
-    this.updatedAt = Instant.now();
-  }
-
-  @PreUpdate
-  protected void onUpdate() {
-    this.updatedAt = Instant.now();
   }
 }

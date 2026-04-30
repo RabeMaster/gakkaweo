@@ -3,6 +3,7 @@ package com.gakkaweo.backend.domain.admin.entity;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.gakkaweo.backend.domain.common.entity.BaseTimeEntity;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,9 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,7 +20,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "sentence_uploads")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SentenceUpload {
+public class SentenceUpload extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = IDENTITY)
@@ -37,16 +36,9 @@ public class SentenceUpload {
   @Column(nullable = false)
   private Integer recordCount;
 
-  private Instant createdAt;
-
   public SentenceUpload(Member admin, String fileName, Integer recordCount) {
     this.admin = admin;
     this.fileName = fileName;
     this.recordCount = recordCount;
-  }
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = Instant.now();
   }
 }

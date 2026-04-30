@@ -3,15 +3,14 @@ package com.gakkaweo.backend.domain.member.entity;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.gakkaweo.backend.domain.common.entity.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "local_accounts")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class LocalAccount {
+public class LocalAccount extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = IDENTITY)
@@ -36,16 +35,9 @@ public class LocalAccount {
   @Column(nullable = false, length = 72)
   private String passwordHash;
 
-  private Instant createdAt;
-
   public LocalAccount(Member member, String username, String passwordHash) {
     this.member = member;
     this.username = username;
     this.passwordHash = passwordHash;
-  }
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = Instant.now();
   }
 }

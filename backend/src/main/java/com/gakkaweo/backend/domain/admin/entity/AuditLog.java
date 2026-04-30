@@ -4,6 +4,7 @@ import static jakarta.persistence.EnumType.STRING;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.gakkaweo.backend.domain.common.entity.BaseTimeEntity;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -12,9 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,7 +22,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "audit_logs")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class AuditLog {
+public class AuditLog extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = IDENTITY)
@@ -50,8 +49,6 @@ public class AuditLog {
   @Column(length = 45)
   private String ipAddress;
 
-  private Instant createdAt;
-
   public AuditLog(
       Member admin,
       AuditAction action,
@@ -65,10 +62,5 @@ public class AuditLog {
     this.targetId = targetId;
     this.detail = detail;
     this.ipAddress = ipAddress;
-  }
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = Instant.now();
   }
 }

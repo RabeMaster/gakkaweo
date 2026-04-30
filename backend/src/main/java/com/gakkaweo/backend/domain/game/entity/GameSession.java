@@ -3,6 +3,7 @@ package com.gakkaweo.backend.domain.game.entity;
 import static jakarta.persistence.FetchType.LAZY;
 import static jakarta.persistence.GenerationType.IDENTITY;
 
+import com.gakkaweo.backend.domain.common.entity.BaseAuditableEntity;
 import com.gakkaweo.backend.domain.game.GameConstants;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import jakarta.persistence.Column;
@@ -13,8 +14,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
@@ -31,7 +30,7 @@ import lombok.NoArgsConstructor;
     uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "sentence_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class GameSession {
+public class GameSession extends BaseAuditableEntity {
 
   @Column(unique = true, nullable = false, updatable = false)
   private final UUID publicId = UUID.randomUUID();
@@ -63,10 +62,6 @@ public class GameSession {
   private Integer finalRank;
 
   @Version private Integer version;
-
-  private Instant createdAt;
-
-  private Instant updatedAt;
 
   public GameSession(Member member, DailySentence sentence) {
     this.member = member;
@@ -104,16 +99,5 @@ public class GameSession {
 
   public void recordFinalRank(int finalRank) {
     this.finalRank = finalRank;
-  }
-
-  @PrePersist
-  protected void onCreate() {
-    this.createdAt = Instant.now();
-    this.updatedAt = Instant.now();
-  }
-
-  @PreUpdate
-  protected void onUpdate() {
-    this.updatedAt = Instant.now();
   }
 }
