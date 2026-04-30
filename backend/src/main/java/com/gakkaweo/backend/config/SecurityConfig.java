@@ -17,6 +17,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -42,6 +46,24 @@ public class SecurityConfig {
   private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
   private final RestAccessDeniedHandler restAccessDeniedHandler;
   private final OpenApiProperties openApiProperties;
+
+  @Bean
+  static RoleHierarchy roleHierarchy() {
+    return RoleHierarchyImpl.withDefaultRolePrefix()
+        .role("SUPERADMIN")
+        .implies("ADMIN")
+        .role("ADMIN")
+        .implies("USER")
+        .build();
+  }
+
+  @Bean
+  static MethodSecurityExpressionHandler methodSecurityExpressionHandler(
+      RoleHierarchy roleHierarchy) {
+    DefaultMethodSecurityExpressionHandler handler = new DefaultMethodSecurityExpressionHandler();
+    handler.setRoleHierarchy(roleHierarchy);
+    return handler;
+  }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -82,6 +104,15 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/announcements/active")
                     .permitAll()
+                    // SUPERADMIN 전용 (회복 불가/운영·보안 영향 큰 액션). /admin/** 매처보다 먼저 평가되어야 함
+                    .requestMatchers(HttpMethod.DELETE, "/admin/users/*")
+                    .hasRole("SUPERADMIN")
+                    .requestMatchers(HttpMethod.POST, "/admin/sentences/emergency-replace")
+                    .hasRole("SUPERADMIN")
+                    .requestMatchers(HttpMethod.POST, "/admin/system/ranking-cache/reset")
+                    .hasRole("SUPERADMIN")
+                    .requestMatchers(HttpMethod.POST, "/admin/system/rate-limit/reset")
+                    .hasRole("SUPERADMIN")
                     .requestMatchers("/admin/**")
                     .hasRole("ADMIN")
                     .requestMatchers("/daily/**")

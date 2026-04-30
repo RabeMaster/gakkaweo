@@ -45,6 +45,7 @@ public enum ErrorCode {
   MEMBER_BANNED(HttpStatus.FORBIDDEN, "차단된 계정입니다"),
   ADMIN_SELF_ACTION(HttpStatus.BAD_REQUEST, "자기 자신에 대한 작업은 수행할 수 없습니다"),
   ROLE_ALREADY_ASSIGNED(HttpStatus.BAD_REQUEST, "이미 동일한 역할입니다"),
+  INSUFFICIENT_ROLE(HttpStatus.FORBIDDEN, "이 작업을 수행할 권한이 부족합니다"),
 
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다");
 

@@ -104,7 +104,9 @@ public class AdminSystemController {
     return ResponseEntity.ok(adminSystemService.getSystemStatus());
   }
 
-  @Operation(summary = "랭킹 캐시 리셋")
+  @Operation(
+      summary = "랭킹 캐시 리셋 (SUPERADMIN 전용)",
+      description = "Redis Sorted Set 전체 초기화. 운영 사고 가능성으로 SUPERADMIN만 호출 가능.")
   @AdminErrorResponses
   @PostMapping("/ranking-cache/reset")
   public ResponseEntity<Void> resetRankingCache(
@@ -113,7 +115,9 @@ public class AdminSystemController {
     return ResponseEntity.ok().build();
   }
 
-  @Operation(summary = "Rate Limit 초기화")
+  @Operation(
+      summary = "Rate Limit 초기화 (SUPERADMIN 전용)",
+      description = "어뷰저 IP 차단을 해제하는 효과로 보안 영향이 있어 SUPERADMIN만 호출 가능.")
   @AdminErrorResponses
   @PostMapping("/rate-limit/reset")
   public ResponseEntity<Void> resetRateLimit(

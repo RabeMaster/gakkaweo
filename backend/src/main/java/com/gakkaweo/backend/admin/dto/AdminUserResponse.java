@@ -14,7 +14,7 @@ public record AdminUserResponse(
         String profileUrl,
     @Schema(
             description = "역할",
-            allowableValues = {"USER", "ADMIN"},
+            allowableValues = {"USER", "ADMIN", "SUPERADMIN"},
             example = "USER")
         String role,
     @Schema(description = "차단 여부", example = "false") Boolean banned,

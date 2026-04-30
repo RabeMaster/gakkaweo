@@ -11,6 +11,7 @@ import { AuditLogViewer } from "@/features/admin/components/AuditLogViewer";
 import { useDeleteAnnouncement } from "@/features/admin/hooks/useAdminSystem";
 import type { AnnouncementResponse } from "@/features/admin/types";
 import { useToastStore } from "@/shared/stores/useToastStore";
+import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { ApiError } from "@/shared/api/client";
 
 function StatusIndicator({ healthy, label }: { healthy: boolean; label: string }) {
@@ -50,6 +51,7 @@ export function SystemTab() {
   const resetRate = useResetRateLimit();
   const deleteMutation = useDeleteAnnouncement();
   const { addToast } = useToastStore();
+  const isSuperAdmin = useAuthStore((s) => s.user?.role === "SUPERADMIN");
 
   const [announcementEdit, setAnnouncementEdit] = useState<AnnouncementResponse | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -114,13 +116,32 @@ export function SystemTab() {
               </p>
             </div>
           </div>
-          <div className="flex gap-2 mt-4">
-            <Button size="sm" variant="secondary" onClick={handleResetCache} isLoading={resetCache.isPending}>
-              랭킹 캐시 리셋
-            </Button>
-            <Button size="sm" variant="secondary" onClick={handleResetRate} isLoading={resetRate.isPending}>
-              Rate Limit 초기화
-            </Button>
+          <div className="space-y-2 mt-4">
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleResetCache}
+                disabled={!isSuperAdmin}
+                isLoading={resetCache.isPending}
+              >
+                랭킹 캐시 리셋
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleResetRate}
+                disabled={!isSuperAdmin}
+                isLoading={resetRate.isPending}
+              >
+                Rate Limit 초기화
+              </Button>
+            </div>
+            {!isSuperAdmin && (
+              <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                SUPERADMIN만 시스템 리셋을 수행할 수 있습니다.
+              </p>
+            )}
           </div>
         </div>
       )}
