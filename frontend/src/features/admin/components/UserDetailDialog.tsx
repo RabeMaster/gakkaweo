@@ -30,6 +30,20 @@ function canModify(actorRole: string | undefined, targetRole: string): boolean {
   return false;
 }
 
+function canChangeRole(actorRole: string | undefined, targetRole: string): boolean {
+  if (actorRole !== "SUPERADMIN") {
+    return false;
+  }
+  return targetRole !== "SUPERADMIN";
+}
+
+function roleToggle(targetRole: string): { label: string; nextRole: "USER" | "ADMIN" } {
+  if (targetRole === "ADMIN") {
+    return { label: "일반으로 강등", nextRole: "USER" };
+  }
+  return { label: "관리자로 승격", nextRole: "ADMIN" };
+}
+
 function roleLabel(role: string): string {
   if (role === "SUPERADMIN") {
     return "최고관리자";
@@ -174,26 +188,44 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
               </p>
             )}
             {/* 역할 변경 */}
-            <div className="flex gap-2 items-center">
-              <span className="text-sm font-bold w-20">역할:</span>
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() =>
-                  handleAction(
-                    () =>
-                      roleMutation.mutate(
-                        { publicId, role: user.role === "ADMIN" ? "USER" : "ADMIN" },
-                        { onSuccess: () => addToast("역할이 변경되었습니다.", "success"), onError },
-                      ),
-                    `${user.role === "ADMIN" ? "일반 사용자" : "관리자"}로 변경하시겠습니까?`,
-                  )
-                }
-                disabled={!canModify(actorRole, user.role) || user.role === "SUPERADMIN"}
-                isLoading={roleMutation.isPending}
-              >
-                {user.role === "ADMIN" ? "일반으로" : "관리자로"}
-              </Button>
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-2 items-center">
+                <span className="text-sm font-bold w-20">역할:</span>
+                {user.role === "SUPERADMIN" ? (
+                  <Button size="sm" variant="secondary" disabled>
+                    변경 불가
+                  </Button>
+                ) : (
+                  (() => {
+                    const toggle = roleToggle(user.role);
+                    return (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() =>
+                          handleAction(
+                            () =>
+                              roleMutation.mutate(
+                                { publicId, role: toggle.nextRole },
+                                { onSuccess: () => addToast("역할이 변경되었습니다.", "success"), onError },
+                              ),
+                            `${toggle.label}하시겠습니까?`,
+                          )
+                        }
+                        disabled={!canChangeRole(actorRole, user.role)}
+                        isLoading={roleMutation.isPending}
+                      >
+                        {toggle.label}
+                      </Button>
+                    );
+                  })()
+                )}
+              </div>
+              {user.role !== "SUPERADMIN" && actorRole !== "SUPERADMIN" && (
+                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 pl-[5.5rem]">
+                  SUPERADMIN만 역할을 변경할 수 있습니다.
+                </p>
+              )}
             </div>
 
             {/* 차단/해제 */}
