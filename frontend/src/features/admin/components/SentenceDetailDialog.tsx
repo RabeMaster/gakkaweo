@@ -168,7 +168,7 @@ export function SentenceDetailDialog({ sentence, onClose }: SentenceDetailDialog
                     type="date"
                     value={scheduleDate}
                     onChange={(e) => setScheduleDate(e.target.value)}
-                    className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-bold"
+                    className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-bold shadow-brutal-sm dark:[color-scheme:dark]"
                   />
                   <Button size="sm" onClick={handleSchedule} isLoading={scheduleMutation.isPending}>
                     예약
