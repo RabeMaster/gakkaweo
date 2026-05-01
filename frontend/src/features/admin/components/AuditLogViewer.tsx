@@ -6,6 +6,14 @@ import { SortableHeader } from "@/features/admin/components/SortableHeader";
 import { AUDIT_ACTION_LABELS, getAuditActionLabel, getAuditTargetTypeLabel } from "@/features/admin/labels";
 import type { AuditLog } from "@/features/admin/types";
 
+function toKstDateFromIso(date: string): string {
+  return `${date}T00:00:00+09:00`;
+}
+
+function toKstDateToIso(date: string): string {
+  return `${date}T23:59:59.999+09:00`;
+}
+
 function AuditLogDetailDialog({ log, onClose }: { log: AuditLog; onClose: () => void }) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -81,11 +89,16 @@ function AuditLogDetailDialog({ log, onClose }: { log: AuditLog; onClose: () => 
 
 export function AuditLogViewer() {
   const [actionFilter, setActionFilter] = useState("");
+  const [dateFromInput, setDateFromInput] = useState("");
+  const [dateToInput, setDateToInput] = useState("");
   const [page, setPage] = useState(0);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const { sort, toggleSort } = useSortState();
 
-  const { data, isLoading } = useAuditLogs(actionFilter || undefined, undefined, undefined, sort, page, 20);
+  const dateFromIso = dateFromInput ? toKstDateFromIso(dateFromInput) : undefined;
+  const dateToIso = dateToInput ? toKstDateToIso(dateToInput) : undefined;
+
+  const { data, isLoading } = useAuditLogs(actionFilter || undefined, dateFromIso, dateToIso, sort, page, 20);
 
   function handleSortChange(field: string) {
     toggleSort(field);
@@ -94,7 +107,7 @@ export function AuditLogViewer() {
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center flex-wrap">
         <select
           value={actionFilter}
           onChange={(e) => {
@@ -110,6 +123,45 @@ export function AuditLogViewer() {
             </option>
           ))}
         </select>
+        <label className="flex items-center gap-1 text-xs font-bold">
+          <span className="text-gray-600 dark:text-gray-400">시작</span>
+          <input
+            type="date"
+            value={dateFromInput}
+            max={dateToInput || undefined}
+            onChange={(e) => {
+              setDateFromInput(e.target.value);
+              setPage(0);
+            }}
+            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-2 py-1.5"
+          />
+        </label>
+        <label className="flex items-center gap-1 text-xs font-bold">
+          <span className="text-gray-600 dark:text-gray-400">종료</span>
+          <input
+            type="date"
+            value={dateToInput}
+            min={dateFromInput || undefined}
+            onChange={(e) => {
+              setDateToInput(e.target.value);
+              setPage(0);
+            }}
+            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-2 py-1.5"
+          />
+        </label>
+        {(dateFromInput || dateToInput) && (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setDateFromInput("");
+              setDateToInput("");
+              setPage(0);
+            }}
+          >
+            날짜 초기화
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
