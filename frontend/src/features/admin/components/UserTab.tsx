@@ -62,7 +62,7 @@ export function UserTab() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="닉네임 검색"
-          className="max-w-xs !py-1.5 !text-sm"
+          className="max-w-xs !py-1.5 !text-sm !shadow-brutal-sm"
         />
         <select
           value={bannedFilter === undefined ? "" : String(bannedFilter)}
@@ -71,7 +71,7 @@ export function UserTab() {
             setBannedFilter(val === "" ? undefined : val === "true");
             setPage(0);
           }}
-          className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5"
+          className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5 shadow-brutal-sm dark:[color-scheme:dark]"
         >
           <option value="">전체</option>
           <option value="true">차단됨</option>

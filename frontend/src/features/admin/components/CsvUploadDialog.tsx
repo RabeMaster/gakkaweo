@@ -56,7 +56,7 @@ export function CsvUploadDialog({ onClose }: CsvUploadDialogProps) {
             type="file"
             accept=".csv"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="block w-full text-sm font-bold file:mr-3 file:border-4 file:border-black file:dark:border-white file:bg-yellow-300 file:text-black file:font-bold file:px-3 file:py-1.5 file:text-sm file:cursor-pointer"
+            className="block w-full text-sm font-bold dark:[color-scheme:dark] file:mr-3 file:border-4 file:border-black file:dark:border-white file:shadow-brutal-sm file:bg-yellow-300 file:text-black file:font-bold file:px-3 file:py-1.5 file:text-sm file:cursor-pointer"
           />
 
           {file && <p className="text-sm font-bold">{file.name}</p>}

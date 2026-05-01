@@ -3,7 +3,16 @@ import { Button } from "@/shared/ui/Button";
 import { useAuditLogs } from "@/features/admin/hooks/useAdminSystem";
 import { useSortState } from "@/features/admin/hooks/useSortState";
 import { SortableHeader } from "@/features/admin/components/SortableHeader";
+import { AUDIT_ACTION_LABELS, getAuditActionLabel, getAuditTargetTypeLabel } from "@/features/admin/labels";
 import type { AuditLog } from "@/features/admin/types";
+
+function toKstDateFromIso(date: string): string {
+  return `${date}T00:00:00+09:00`;
+}
+
+function toKstDateToIso(date: string): string {
+  return `${date}T23:59:59.999+09:00`;
+}
 
 function AuditLogDetailDialog({ log, onClose }: { log: AuditLog; onClose: () => void }) {
   useEffect(() => {
@@ -44,15 +53,18 @@ function AuditLogDetailDialog({ log, onClose }: { log: AuditLog; onClose: () => 
           <div>
             <p className="text-xs font-bold text-gray-500 dark:text-gray-400">액션</p>
             <p>
-              <span className="inline-block px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 font-black text-xs">
-                {log.action}
+              <span
+                className="inline-block px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 font-black text-xs"
+                title={log.action}
+              >
+                {getAuditActionLabel(log.action)}
               </span>
             </p>
           </div>
           <div>
             <p className="text-xs font-bold text-gray-500 dark:text-gray-400">대상</p>
-            <p className="font-medium break-all">
-              {log.targetType}
+            <p className="font-medium break-all" title={log.targetType}>
+              {getAuditTargetTypeLabel(log.targetType)}
               {log.targetId ? `: ${log.targetId}` : ""}
             </p>
           </div>
@@ -77,11 +89,16 @@ function AuditLogDetailDialog({ log, onClose }: { log: AuditLog; onClose: () => 
 
 export function AuditLogViewer() {
   const [actionFilter, setActionFilter] = useState("");
+  const [dateFromInput, setDateFromInput] = useState("");
+  const [dateToInput, setDateToInput] = useState("");
   const [page, setPage] = useState(0);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const { sort, toggleSort } = useSortState();
 
-  const { data, isLoading } = useAuditLogs(actionFilter || undefined, undefined, undefined, sort, page, 20);
+  const dateFromIso = dateFromInput ? toKstDateFromIso(dateFromInput) : undefined;
+  const dateToIso = dateToInput ? toKstDateToIso(dateToInput) : undefined;
+
+  const { data, isLoading } = useAuditLogs(actionFilter || undefined, dateFromIso, dateToIso, sort, page, 20);
 
   function handleSortChange(field: string) {
     toggleSort(field);
@@ -90,34 +107,61 @@ export function AuditLogViewer() {
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center flex-wrap">
         <select
           value={actionFilter}
           onChange={(e) => {
             setActionFilter(e.target.value);
             setPage(0);
           }}
-          className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5"
+          className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5 shadow-brutal-sm dark:[color-scheme:dark]"
         >
           <option value="">전체 액션</option>
-          <option value="SENTENCE_CREATE">문장 생성</option>
-          <option value="SENTENCE_UPDATE">문장 수정</option>
-          <option value="SENTENCE_DELETE">문장 삭제</option>
-          <option value="CSV_UPLOAD">CSV 업로드</option>
-          <option value="SENTENCE_SCHEDULE">문장 예약</option>
-          <option value="EMERGENCY_REPLACE">긴급 교체</option>
-          <option value="ROLE_CHANGE">역할 변경</option>
-          <option value="USER_BAN">사용자 차단</option>
-          <option value="USER_UNBAN">차단 해제</option>
-          <option value="USER_FORCE_DELETE">강제 탈퇴</option>
-          <option value="USER_FORCE_NICKNAME">닉네임 변경</option>
-          <option value="USER_FORCE_PROFILE_DELETE">프로필 삭제</option>
-          <option value="ANNOUNCEMENT_CREATE">공지 생성</option>
-          <option value="ANNOUNCEMENT_UPDATE">공지 수정</option>
-          <option value="ANNOUNCEMENT_DELETE">공지 삭제</option>
-          <option value="RANKING_CACHE_RESET">캐시 리셋</option>
-          <option value="RATE_LIMIT_RESET">Rate Limit 리셋</option>
+          {Object.entries(AUDIT_ACTION_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
         </select>
+        <label className="flex items-center gap-1 text-xs font-bold">
+          <span className="text-gray-600 dark:text-gray-400">시작</span>
+          <input
+            type="date"
+            value={dateFromInput}
+            max={dateToInput || undefined}
+            onChange={(e) => {
+              setDateFromInput(e.target.value);
+              setPage(0);
+            }}
+            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-2 py-1.5 shadow-brutal-sm dark:[color-scheme:dark]"
+          />
+        </label>
+        <label className="flex items-center gap-1 text-xs font-bold">
+          <span className="text-gray-600 dark:text-gray-400">종료</span>
+          <input
+            type="date"
+            value={dateToInput}
+            min={dateFromInput || undefined}
+            onChange={(e) => {
+              setDateToInput(e.target.value);
+              setPage(0);
+            }}
+            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-2 py-1.5 shadow-brutal-sm dark:[color-scheme:dark]"
+          />
+        </label>
+        {(dateFromInput || dateToInput) && (
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setDateFromInput("");
+              setDateToInput("");
+              setPage(0);
+            }}
+          >
+            날짜 초기화
+          </Button>
+        )}
       </div>
 
       {isLoading ? (
@@ -163,12 +207,15 @@ export function AuditLogViewer() {
                     </td>
                     <td className="px-3 py-2 font-bold">{log.adminNickname}</td>
                     <td className="px-3 py-2">
-                      <span className="inline-block px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 font-black text-[10px]">
-                        {log.action}
+                      <span
+                        className="inline-block px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 font-black text-[10px]"
+                        title={log.action}
+                      >
+                        {getAuditActionLabel(log.action)}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
-                      {log.targetType}
+                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400" title={log.targetType}>
+                      {getAuditTargetTypeLabel(log.targetType)}
                       {log.targetId ? `: ${log.targetId.slice(0, 8)}...` : ""}
                     </td>
                     <td className="px-3 py-2 text-gray-500 dark:text-gray-400 truncate max-w-[200px]">

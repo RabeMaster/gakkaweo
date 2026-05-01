@@ -78,7 +78,7 @@ export function SentenceTab() {
             setStatusFilter(e.target.value);
             setPage(0);
           }}
-          className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5"
+          className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5 shadow-brutal-sm dark:[color-scheme:dark]"
         >
           <option value="">전체</option>
           <option value="ACTIVE">ACTIVE</option>

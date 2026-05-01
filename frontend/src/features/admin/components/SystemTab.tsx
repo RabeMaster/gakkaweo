@@ -9,6 +9,7 @@ import {
 import { AnnouncementDialog } from "@/features/admin/components/AnnouncementDialog";
 import { AuditLogViewer } from "@/features/admin/components/AuditLogViewer";
 import { useDeleteAnnouncement } from "@/features/admin/hooks/useAdminSystem";
+import { getAnnouncementTypeLabel } from "@/features/admin/labels";
 import type { AnnouncementResponse } from "@/features/admin/types";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
@@ -23,12 +24,6 @@ function StatusIndicator({ healthy, label }: { healthy: boolean; label: string }
   );
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  INFO: "안내",
-  MAINTENANCE: "점검",
-  WARNING: "경고",
-};
-
 function AnnouncementTypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
     INFO: "bg-blue-300 text-black",
@@ -39,7 +34,7 @@ function AnnouncementTypeBadge({ type }: { type: string }) {
     <span
       className={`inline-block px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white ${colors[type] ?? "bg-gray-300 text-black"}`}
     >
-      {TYPE_LABELS[type] ?? type}
+      {getAnnouncementTypeLabel(type)}
     </span>
   );
 }
