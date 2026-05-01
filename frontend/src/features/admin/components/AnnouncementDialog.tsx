@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { useCreateAnnouncement, useUpdateAnnouncement } from "@/features/admin/hooks/useAdminSystem";
+import { ANNOUNCEMENT_TYPE_LABELS } from "@/features/admin/labels";
 import type { AnnouncementResponse } from "@/features/admin/types";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { ApiError } from "@/shared/api/client";
@@ -119,9 +120,11 @@ export function AnnouncementDialog({ announcement, onClose }: AnnouncementDialog
                 onChange={(e) => setType(e.target.value as "INFO" | "MAINTENANCE" | "WARNING")}
                 className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5"
               >
-                <option value="INFO">안내</option>
-                <option value="MAINTENANCE">점검</option>
-                <option value="WARNING">경고</option>
+                {Object.entries(ANNOUNCEMENT_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
               </select>
             </div>
             <div
