@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 import { useCreateAnnouncement, useUpdateAnnouncement } from "@/features/admin/hooks/useAdminSystem";
-import { ANNOUNCEMENT_TYPE_LABELS } from "@/features/admin/labels";
+import { ANNOUNCEMENT_TYPE_LABELS, getAnnouncementTypeColor } from "@/shared/config/announcement";
 import type { AnnouncementResponse } from "@/features/admin/types";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { ApiError } from "@/shared/api/client";
@@ -128,14 +128,7 @@ export function AnnouncementDialog({ announcement, onClose }: AnnouncementDialog
               </select>
             </div>
             <div
-              className={[
-                "border-4 border-black dark:border-white px-3 py-1 text-xs font-black",
-                type === "INFO"
-                  ? "bg-blue-300 text-black"
-                  : type === "MAINTENANCE"
-                    ? "bg-orange-300 text-black"
-                    : "bg-red-500 text-white",
-              ].join(" ")}
+              className={`border-4 border-black dark:border-white px-3 py-1 text-xs font-black ${getAnnouncementTypeColor(type)}`}
             >
               미리보기
             </div>

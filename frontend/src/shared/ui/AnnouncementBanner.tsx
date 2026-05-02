@@ -2,14 +2,9 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getActiveAnnouncements } from "@/shared/api/announcements";
 import type { ActiveAnnouncementResponse } from "@/shared/api/types";
+import { getAnnouncementTypeColor } from "@/shared/config/announcement";
 
 const STORAGE_KEY = "gakkaweo-dismissed-announcements";
-
-const TYPE_COLORS: Record<string, string> = {
-  INFO: "bg-blue-300 border-black dark:border-white text-black",
-  MAINTENANCE: "bg-orange-300 border-black dark:border-white text-black",
-  WARNING: "bg-red-500 border-black dark:border-white text-white",
-};
 
 function toDismissKey(a: ActiveAnnouncementResponse): string {
   return `${a.id}_${a.startsAt}`;
@@ -42,10 +37,12 @@ function BannerItem({
   announcement: ActiveAnnouncementResponse;
   onDismiss: (key: string) => void;
 }) {
-  const colorClass = TYPE_COLORS[announcement.type] ?? TYPE_COLORS.INFO;
+  const colorClass = getAnnouncementTypeColor(announcement.type);
 
   return (
-    <div className={`border-4 ${colorClass} shadow-brutal-sm px-5 py-3 flex items-start gap-3`}>
+    <div
+      className={`border-4 border-black dark:border-white ${colorClass} shadow-brutal-sm px-5 py-3 flex items-start gap-3`}
+    >
       <div className="flex-1 min-w-0">
         <p className="font-black text-sm">{announcement.title}</p>
         {announcement.content && (
