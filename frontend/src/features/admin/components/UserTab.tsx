@@ -59,10 +59,11 @@ export function UserTab() {
 
       <form onSubmit={handleSearch} className="flex gap-2 items-center">
         <Input
+          size="sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="닉네임 검색"
-          className="max-w-xs !py-1.5 !text-sm !shadow-brutal-sm"
+          className="max-w-xs"
         />
         <select
           value={bannedFilter === undefined ? "" : String(bannedFilter)}
