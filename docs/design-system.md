@@ -299,5 +299,5 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **다이얼로그**: `border-4 shadow-brutal max-w-lg`. 헤더 `border-b-4 px-6 py-5`. 푸터 `border-t-4`. `role="dialog" aria-modal="true"` + Escape 닫기 필수
 - **텍스트 링크 액션**: 테이블 행 내 액션은 `text-indigo-600 dark:text-indigo-400 font-black text-xs hover:underline`
 - **Pagination**: `Button sm secondary` 이전/다음 + `tabular-nums` 페이지 표시
-- **공지 유형 라벨**: 안내(blue-300), 점검(orange-300), 경고(red-400). select에서도 한글 라벨 사용
+- **공지 유형 라벨**: 안내(blue-300), 점검(orange-300), 경고(red-500). select에서도 한글 라벨 사용. SoT는 `shared/config/announcement.ts`
 - **공지 배너**: `shared/ui/AnnouncementBanner.tsx`. 유형별 색상 배경 + `shadow-brutal-sm`. 닫기 시 localStorage `id_startsAt` 복합 키 저장
