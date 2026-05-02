@@ -195,11 +195,16 @@ hue = (similarity / 100) × 120
 ### 입력창
 
 ```
-border-4 border-black rounded-none shadow-brutal bg-white dark:bg-gray-900
-px-4 py-3 font-medium text-lg
-focus:outline-none focus:ring-0 focus:border-indigo-500 dark:focus:border-indigo-400
-placeholder:text-gray-400
+공통: border-4 border-black rounded-none bg-white dark:bg-gray-900 font-medium
+      focus:outline-none focus:ring-0 focus:border-indigo-500 dark:focus:border-indigo-400
+      placeholder:text-gray-400
+md(기본): shadow-brutal px-4 py-3 text-lg
+sm: shadow-brutal-sm px-3 py-1.5 text-sm
 ```
+
+- `Input` 컴포넌트는 `size?: "sm" | "md"` prop을 받는다 (default `"md"`)
+- 어드민 폼 필드 등 컴팩트 컨트롤에는 `size="sm"` 사용 (옆 select/Button-sm과 그림자 3px로 일치)
+- 게임/마이페이지/로그인 등 기본 입력은 `size="md"` (별도 지정 불필요)
 
 ### 카드
 
