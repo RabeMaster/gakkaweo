@@ -9,7 +9,7 @@ import {
 import { AnnouncementDialog } from "@/features/admin/components/AnnouncementDialog";
 import { AuditLogViewer } from "@/features/admin/components/AuditLogViewer";
 import { useDeleteAnnouncement } from "@/features/admin/hooks/useAdminSystem";
-import { getAnnouncementTypeLabel } from "@/features/admin/labels";
+import { getAnnouncementTypeColor, getAnnouncementTypeLabel } from "@/shared/config/announcement";
 import type { AnnouncementResponse } from "@/features/admin/types";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
@@ -25,14 +25,9 @@ function StatusIndicator({ healthy, label }: { healthy: boolean; label: string }
 }
 
 function AnnouncementTypeBadge({ type }: { type: string }) {
-  const colors: Record<string, string> = {
-    INFO: "bg-blue-300 text-black",
-    MAINTENANCE: "bg-orange-300 text-black",
-    WARNING: "bg-red-400 text-white",
-  };
   return (
     <span
-      className={`inline-block px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white ${colors[type] ?? "bg-gray-300 text-black"}`}
+      className={`inline-block px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white ${getAnnouncementTypeColor(type)}`}
     >
       {getAnnouncementTypeLabel(type)}
     </span>

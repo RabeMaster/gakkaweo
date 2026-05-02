@@ -26,20 +26,10 @@ export const AUDIT_TARGET_TYPE_LABELS: Record<string, string> = {
   SYSTEM: "시스템",
 };
 
-export const ANNOUNCEMENT_TYPE_LABELS: Record<string, string> = {
-  INFO: "안내",
-  MAINTENANCE: "점검",
-  WARNING: "경고",
-};
-
 export function getAuditActionLabel(action: string): string {
   return AUDIT_ACTION_LABELS[action] ?? action;
 }
 
 export function getAuditTargetTypeLabel(type: string): string {
   return AUDIT_TARGET_TYPE_LABELS[type] ?? type;
-}
-
-export function getAnnouncementTypeLabel(type: string): string {
-  return ANNOUNCEMENT_TYPE_LABELS[type] ?? type;
 }
