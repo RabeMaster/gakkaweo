@@ -51,7 +51,7 @@ class AdminSortIntegrationTest extends IntegrationTestBase {
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       List<String> nicknames =
-          response.getBody().users().stream().map(AdminUserResponse::nickname).toList();
+          response.getBody().content().stream().map(AdminUserResponse::nickname).toList();
       assertThat(nicknames).isSortedAccordingTo(Comparator.naturalOrder());
     }
 
@@ -71,7 +71,7 @@ class AdminSortIntegrationTest extends IntegrationTestBase {
               UserListResponse.class);
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-      assertThat(response.getBody().users())
+      assertThat(response.getBody().content())
           .isNotEmpty()
           .allSatisfy(user -> assertThat(user.banned()).isTrue());
     }
@@ -90,7 +90,7 @@ class AdminSortIntegrationTest extends IntegrationTestBase {
               UserListResponse.class);
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-      assertThat(response.getBody().users()).isNotEmpty();
+      assertThat(response.getBody().content()).isNotEmpty();
     }
 
     @Test
@@ -147,7 +147,7 @@ class AdminSortIntegrationTest extends IntegrationTestBase {
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       List<String> sentences =
-          response.getBody().sentences().stream().map(SentenceResponse::sentence).toList();
+          response.getBody().content().stream().map(SentenceResponse::sentence).toList();
       assertThat(sentences).isSortedAccordingTo(Comparator.naturalOrder());
     }
 
@@ -168,7 +168,7 @@ class AdminSortIntegrationTest extends IntegrationTestBase {
               SentenceListResponse.class);
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-      List<SentenceResponse> sentences = response.getBody().sentences();
+      List<SentenceResponse> sentences = response.getBody().content();
       assertThat(sentences).hasSize(4);
       assertThat(sentences.get(0).usedAt()).isEqualTo(LocalDate.of(2026, 4, 1));
       assertThat(sentences.get(1).usedAt()).isEqualTo(LocalDate.of(2026, 1, 1));
@@ -193,7 +193,7 @@ class AdminSortIntegrationTest extends IntegrationTestBase {
               SentenceListResponse.class);
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-      List<SentenceResponse> sentences = response.getBody().sentences();
+      List<SentenceResponse> sentences = response.getBody().content();
       assertThat(sentences).hasSize(4);
       assertThat(sentences.get(0).scheduledAt()).isEqualTo(LocalDate.of(2026, 6, 1));
       assertThat(sentences.get(1).scheduledAt()).isEqualTo(LocalDate.of(2026, 5, 1));

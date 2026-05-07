@@ -4,7 +4,6 @@ import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
 import com.gakkaweo.backend.admin.dto.AuditLogListResponse;
-import com.gakkaweo.backend.admin.dto.AuditLogResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
 import com.gakkaweo.backend.admin.sort.AuditLogSortField;
@@ -137,9 +136,8 @@ public class AdminSystemService {
 
   public AnnouncementResponse updateAnnouncement(
       Long id, AnnouncementUpdateRequest request, UUID adminPublicId, String ipAddress) {
-    if (request.type() != null) {
-      parseAnnouncementType(request.type());
-    }
+    AnnouncementType parsedType =
+        request.type() != null ? parseAnnouncementType(request.type()) : null;
 
     AnnouncementResponse response =
         transactionTemplate.execute(
@@ -152,8 +150,8 @@ public class AdminSystemService {
               if (request.content() != null) {
                 announcement.setContent(request.content());
               }
-              if (request.type() != null) {
-                announcement.setType(parseAnnouncementType(request.type()));
+              if (parsedType != null) {
+                announcement.setType(parsedType);
               }
               if (request.active() != null) {
                 announcement.setActive(request.active());
@@ -171,14 +169,14 @@ public class AdminSystemService {
               return AnnouncementResponse.from(announcement);
             });
 
-    if (response != null && response.active()) {
-      Instant now = clock.instant();
-      if (!response.startsAt().isAfter(now)
-          && (response.endsAt() == null || !response.endsAt().isBefore(now))) {
-        AnnouncementType type = parseAnnouncementType(response.type());
-        eventPublisher.publishEvent(
-            new AnnouncementEvent(response.id(), response.title(), response.content(), type));
-      }
+    if (response != null
+        && response.active()
+        && isCurrentlyActiveByTime(response.startsAt(), response.endsAt())) {
+      AnnouncementType effectiveType =
+          parsedType != null ? parsedType : parseAnnouncementType(response.type());
+      eventPublisher.publishEvent(
+          new AnnouncementEvent(
+              response.id(), response.title(), response.content(), effectiveType));
     }
 
     return response;
@@ -264,12 +262,7 @@ public class AdminSystemService {
         auditLogFilters(action, dateFrom, dateTo).and(SortSpecBuilder.build(sortSpec, "id"));
     Page<AuditLog> pageResult = auditLogRepository.findAll(spec, PageRequest.of(page, size));
 
-    return new AuditLogListResponse(
-        pageResult.getContent().stream().map(AuditLogResponse::from).toList(),
-        pageResult.getNumber(),
-        pageResult.getSize(),
-        pageResult.getTotalElements(),
-        pageResult.getTotalPages());
+    return AuditLogListResponse.from(pageResult);
   }
 
   private Announcement findAnnouncement(Long id) {

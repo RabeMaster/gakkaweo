@@ -11,7 +11,7 @@ export interface SentenceResponse {
 }
 
 export interface SentenceListResponse {
-  sentences: SentenceResponse[];
+  content: SentenceResponse[];
   page: number;
   size: number;
   totalElements: number;
@@ -58,7 +58,7 @@ export interface AdminUserResponse {
 }
 
 export interface UserListResponse {
-  users: AdminUserResponse[];
+  content: AdminUserResponse[];
   page: number;
   size: number;
   totalElements: number;

@@ -80,12 +80,7 @@ public class AdminSentenceService {
     Page<DailySentence> pageResult =
         dailySentenceRepository.findAll(spec, PageRequest.of(page, size));
 
-    return new SentenceListResponse(
-        pageResult.getContent().stream().map(SentenceResponse::from).toList(),
-        pageResult.getNumber(),
-        pageResult.getSize(),
-        pageResult.getTotalElements(),
-        pageResult.getTotalPages());
+    return SentenceListResponse.from(pageResult);
   }
 
   @Transactional
@@ -155,12 +150,11 @@ public class AdminSentenceService {
 
     long totalSessions = gameSessionRepository.countBySentence(entity);
     long clearedSessions = gameSessionRepository.countClearedBySentence(entity);
-    double clearRate = totalSessions > 0 ? (double) clearedSessions / totalSessions * 100 : 0;
     BigDecimal avgSimilarity = gameSessionRepository.avgSimilarityBySentence(entity);
     double avgAttemptCount = gameSessionRepository.avgAttemptCountBySentence(entity);
 
-    return new SentenceStatsResponse(
-        totalSessions, clearedSessions, clearRate, avgSimilarity, avgAttemptCount);
+    return SentenceStatsResponse.from(
+        totalSessions, clearedSessions, avgSimilarity, avgAttemptCount);
   }
 
   @Transactional(readOnly = true)

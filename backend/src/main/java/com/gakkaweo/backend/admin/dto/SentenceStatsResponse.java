@@ -9,4 +9,12 @@ public record SentenceStatsResponse(
     @Schema(description = "클리어 세션 수", example = "75") long clearedSessions,
     @Schema(description = "클리어율", example = "75.0") double clearRate,
     @Schema(description = "평균 유사도", example = "82.35") BigDecimal avgSimilarity,
-    @Schema(description = "평균 시도 횟수", example = "18.5") double avgAttemptCount) {}
+    @Schema(description = "평균 시도 횟수", example = "18.5") double avgAttemptCount) {
+
+  public static SentenceStatsResponse from(
+      long totalSessions, long clearedSessions, BigDecimal avgSimilarity, double avgAttemptCount) {
+    double clearRate = totalSessions > 0 ? (double) clearedSessions / totalSessions * 100 : 0;
+    return new SentenceStatsResponse(
+        totalSessions, clearedSessions, clearRate, avgSimilarity, avgAttemptCount);
+  }
+}
