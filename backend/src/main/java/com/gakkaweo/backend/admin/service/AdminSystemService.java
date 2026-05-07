@@ -173,7 +173,7 @@ public class AdminSystemService {
         && response.active()
         && isCurrentlyActiveByTime(response.startsAt(), response.endsAt())) {
       AnnouncementType effectiveType =
-          parsedType != null ? parsedType : AnnouncementType.valueOf(response.type());
+          parsedType != null ? parsedType : parseAnnouncementType(response.type());
       eventPublisher.publishEvent(
           new AnnouncementEvent(
               response.id(), response.title(), response.content(), effectiveType));
