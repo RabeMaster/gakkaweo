@@ -50,7 +50,7 @@ public class CookieAuthorizationRequestRepository
         ResponseCookie.from(COOKIE_NAME, serialized)
             .path("/")
             .httpOnly(true)
-            .secure(cookieProperties.isSecure())
+            .secure(cookieProperties.secure())
             .sameSite("Lax")
             .maxAge(COOKIE_EXPIRE_SECONDS)
             .build();
@@ -72,7 +72,7 @@ public class CookieAuthorizationRequestRepository
         ResponseCookie.from(COOKIE_NAME, "")
             .path("/")
             .httpOnly(true)
-            .secure(cookieProperties.isSecure())
+            .secure(cookieProperties.secure())
             .sameSite("Lax")
             .maxAge(0)
             .build();

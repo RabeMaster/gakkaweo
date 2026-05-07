@@ -35,7 +35,7 @@ public class RefreshTokenService {
     String rawToken = UUID.randomUUID().toString();
     String tokenHash = hashToken(rawToken);
     UUID familyId = UUID.randomUUID();
-    Instant expiresAt = clock.instant().plus(jwtProperties.getRefreshExpiration());
+    Instant expiresAt = clock.instant().plus(jwtProperties.refreshExpiration());
 
     RefreshToken refreshToken = new RefreshToken(member, tokenHash, familyId, expiresAt);
     refreshTokenRepository.save(refreshToken);
@@ -69,7 +69,7 @@ public class RefreshTokenService {
 
     String newRawToken = UUID.randomUUID().toString();
     String newTokenHash = hashToken(newRawToken);
-    Instant expiresAt = clock.instant().plus(jwtProperties.getRefreshExpiration());
+    Instant expiresAt = clock.instant().plus(jwtProperties.refreshExpiration());
 
     RefreshToken newRefreshToken =
         new RefreshToken(existing.getMember(), newTokenHash, existing.getFamilyId(), expiresAt);

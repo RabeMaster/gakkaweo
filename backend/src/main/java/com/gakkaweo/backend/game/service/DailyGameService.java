@@ -97,7 +97,7 @@ public class DailyGameService {
         similarityService.calculateSimilarity(
             sentence.getId(), request.guessText(), sentence.getSentence(), remainingTtl());
 
-    boolean isCorrect = similarity.compareTo(gameProperties.getSimilarityThreshold()) >= 0;
+    boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
 
     BigDecimal previousBest = session.getBestSimilarity();
     Instant now = clock.instant();
@@ -143,7 +143,7 @@ public class DailyGameService {
         similarityService.calculateSimilarity(
             sentence.getId(), request.guessText(), sentence.getSentence(), remainingTtl());
 
-    boolean isCorrect = similarity.compareTo(gameProperties.getSimilarityThreshold()) >= 0;
+    boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
 
     return new GuessResponse(similarity, null, isCorrect, null, clock.instant());
   }
@@ -184,16 +184,15 @@ public class DailyGameService {
             .findByMemberAndSentence(member, sentence)
             .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
 
-    if (session.getBestSimilarity().compareTo(gameProperties.getHintTriggerThreshold()) < 0) {
+    if (session.getBestSimilarity().compareTo(gameProperties.hintTriggerThreshold()) < 0) {
       throw new BusinessException(ErrorCode.HINT_NOT_AVAILABLE);
     }
 
-    BigDecimal maxSimilarity =
-        session.getBestSimilarity().min(gameProperties.getHintMaxSimilarity());
+    BigDecimal maxSimilarity = session.getBestSimilarity().min(gameProperties.hintMaxSimilarity());
 
     List<HintProjection> projections =
         guessHistoryRepository.findHints(
-            sentence.getId(), member.getId(), maxSimilarity, gameProperties.getHintMaxCount());
+            sentence.getId(), member.getId(), maxSimilarity, gameProperties.hintMaxCount());
 
     List<HintResponse.HintEntry> entries =
         projections.stream()

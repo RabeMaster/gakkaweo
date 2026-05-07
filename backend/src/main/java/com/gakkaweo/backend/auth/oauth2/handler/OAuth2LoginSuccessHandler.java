@@ -45,6 +45,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     authorizationRequestRepository.deleteCookie(response);
 
-    response.sendRedirect(oAuth2Properties.getAuthorizedRedirectUri());
+    response.sendRedirect(oAuth2Properties.authorizedRedirectUri());
   }
 }

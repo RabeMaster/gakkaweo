@@ -17,9 +17,9 @@ public class CookieUtils {
     return applyDomain(
             ResponseCookie.from("access_token", token)
                 .httpOnly(true)
-                .secure(cookieProperties.isSecure())
+                .secure(cookieProperties.secure())
                 .path("/")
-                .maxAge(jwtProperties.getAccessExpiration())
+                .maxAge(jwtProperties.accessExpiration())
                 .sameSite("Lax"))
         .build();
   }
@@ -28,9 +28,9 @@ public class CookieUtils {
     return applyDomain(
             ResponseCookie.from("refresh_token", token)
                 .httpOnly(true)
-                .secure(cookieProperties.isSecure())
+                .secure(cookieProperties.secure())
                 .path("/auth/refresh")
-                .maxAge(jwtProperties.getRefreshExpiration())
+                .maxAge(jwtProperties.refreshExpiration())
                 .sameSite("Lax"))
         .build();
   }
@@ -39,7 +39,7 @@ public class CookieUtils {
     return applyDomain(
             ResponseCookie.from("access_token", "")
                 .httpOnly(true)
-                .secure(cookieProperties.isSecure())
+                .secure(cookieProperties.secure())
                 .path("/")
                 .maxAge(0)
                 .sameSite("Lax"))
@@ -50,7 +50,7 @@ public class CookieUtils {
     return applyDomain(
             ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
-                .secure(cookieProperties.isSecure())
+                .secure(cookieProperties.secure())
                 .path("/auth/refresh")
                 .maxAge(0)
                 .sameSite("Lax"))
@@ -61,9 +61,9 @@ public class CookieUtils {
     return applyDomain(
             ResponseCookie.from("has_session", "1")
                 .httpOnly(false)
-                .secure(cookieProperties.isSecure())
+                .secure(cookieProperties.secure())
                 .path("/")
-                .maxAge(jwtProperties.getRefreshExpiration())
+                .maxAge(jwtProperties.refreshExpiration())
                 .sameSite("Lax"))
         .build();
   }
@@ -72,7 +72,7 @@ public class CookieUtils {
     return applyDomain(
             ResponseCookie.from("has_session", "")
                 .httpOnly(false)
-                .secure(cookieProperties.isSecure())
+                .secure(cookieProperties.secure())
                 .path("/")
                 .maxAge(0)
                 .sameSite("Lax"))
@@ -81,7 +81,7 @@ public class CookieUtils {
 
   private ResponseCookie.ResponseCookieBuilder applyDomain(
       ResponseCookie.ResponseCookieBuilder builder) {
-    String domain = cookieProperties.getDomain();
+    String domain = cookieProperties.domain();
     if (domain != null && !domain.isBlank()) {
       builder.domain(domain);
     }

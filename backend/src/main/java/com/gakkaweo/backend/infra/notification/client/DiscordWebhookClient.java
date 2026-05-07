@@ -36,7 +36,7 @@ public class DiscordWebhookClient {
   }
 
   private void dispatch(DiscordWebhookPayload payload) {
-    String webhookUrl = properties.getWebhookUrl();
+    String webhookUrl = properties.webhookUrl();
     if (!StringUtils.hasText(webhookUrl)) {
       log.debug("Discord 웹훅 URL 미설정, 전송 건너뜀");
       return;
@@ -58,7 +58,7 @@ public class DiscordWebhookClient {
   private String buildContent(NotificationLevel level) {
     return switch (level) {
       case HIGH -> {
-        String roleId = properties.getMentionRoleId();
+        String roleId = properties.mentionRoleId();
         yield StringUtils.hasText(roleId) ? "<@&" + roleId + ">" : "";
       }
       case INFO -> "";
@@ -68,7 +68,7 @@ public class DiscordWebhookClient {
   private AllowedMentions buildAllowedMentions(NotificationLevel level) {
     return switch (level) {
       case HIGH -> {
-        String roleId = properties.getMentionRoleId();
+        String roleId = properties.mentionRoleId();
         yield StringUtils.hasText(roleId)
             ? AllowedMentions.roles(List.of(roleId))
             : AllowedMentions.none();

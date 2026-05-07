@@ -20,9 +20,9 @@ public class JwtProvider {
   private final Clock clock;
 
   public JwtProvider(JwtProperties jwtProperties, Clock clock) {
-    byte[] keyBytes = Base64.getDecoder().decode(jwtProperties.getAccessSecret());
+    byte[] keyBytes = Base64.getDecoder().decode(jwtProperties.accessSecret());
     this.secretKey = Keys.hmacShaKeyFor(keyBytes);
-    this.accessExpirationMillis = jwtProperties.getAccessExpiration().toMillis();
+    this.accessExpirationMillis = jwtProperties.accessExpiration().toMillis();
     this.clock = clock;
   }
 

@@ -103,7 +103,7 @@ public class InitialDataSeeder {
   }
 
   private void seedAdmin() {
-    String password = seedProperties.getAdminPassword();
+    String password = seedProperties.adminPassword();
     if (!StringUtils.hasText(password)) {
       log.info("SEED_ADMIN_PASSWORD 미설정, admin 시딩 skip");
       return;
