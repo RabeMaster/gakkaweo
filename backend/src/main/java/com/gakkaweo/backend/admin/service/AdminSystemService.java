@@ -136,9 +136,8 @@ public class AdminSystemService {
 
   public AnnouncementResponse updateAnnouncement(
       Long id, AnnouncementUpdateRequest request, UUID adminPublicId, String ipAddress) {
-    if (request.type() != null) {
-      parseAnnouncementType(request.type());
-    }
+    AnnouncementType parsedType =
+        request.type() != null ? parseAnnouncementType(request.type()) : null;
 
     AnnouncementResponse response =
         transactionTemplate.execute(
@@ -151,8 +150,8 @@ public class AdminSystemService {
               if (request.content() != null) {
                 announcement.setContent(request.content());
               }
-              if (request.type() != null) {
-                announcement.setType(parseAnnouncementType(request.type()));
+              if (parsedType != null) {
+                announcement.setType(parsedType);
               }
               if (request.active() != null) {
                 announcement.setActive(request.active());
@@ -170,14 +169,14 @@ public class AdminSystemService {
               return AnnouncementResponse.from(announcement);
             });
 
-    if (response != null && response.active()) {
-      Instant now = clock.instant();
-      if (!response.startsAt().isAfter(now)
-          && (response.endsAt() == null || !response.endsAt().isBefore(now))) {
-        AnnouncementType type = parseAnnouncementType(response.type());
-        eventPublisher.publishEvent(
-            new AnnouncementEvent(response.id(), response.title(), response.content(), type));
-      }
+    if (response != null
+        && response.active()
+        && isCurrentlyActiveByTime(response.startsAt(), response.endsAt())) {
+      AnnouncementType effectiveType =
+          parsedType != null ? parsedType : AnnouncementType.valueOf(response.type());
+      eventPublisher.publishEvent(
+          new AnnouncementEvent(
+              response.id(), response.title(), response.content(), effectiveType));
     }
 
     return response;
