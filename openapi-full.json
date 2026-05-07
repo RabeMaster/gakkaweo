@@ -8286,7 +8286,7 @@
         "type": "object",
         "description": "사용자 목록 응답",
         "properties": {
-          "users": {
+          "content": {
             "type": "array",
             "description": "사용자 목록",
             "items": {
@@ -8642,7 +8642,7 @@
         "type": "object",
         "description": "문장 목록 응답",
         "properties": {
-          "sentences": {
+          "content": {
             "type": "array",
             "description": "문장 목록",
             "items": {
