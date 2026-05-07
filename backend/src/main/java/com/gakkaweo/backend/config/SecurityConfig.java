@@ -93,7 +93,7 @@ public class SecurityConfig {
                     .requestMatchers("/v3/api-docs/full")
                     .access(
                         (authentication, context) ->
-                            new AuthorizationDecision(openApiProperties.isDocsMode()))
+                            new AuthorizationDecision(openApiProperties.docsMode()))
                     .requestMatchers(HttpMethod.GET, "/daily/today")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/daily/guess")
@@ -139,7 +139,7 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of(oAuth2Properties.getAuthorizedRedirectUri()));
+    configuration.setAllowedOrigins(List.of(oAuth2Properties.authorizedRedirectUri()));
     configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(List.of("*"));
     configuration.setAllowCredentials(true);

@@ -28,7 +28,7 @@ public class ProfileImageService {
 
   @PostConstruct
   void init() {
-    uploadDir = Path.of(properties.getProfileDir());
+    uploadDir = Path.of(properties.profileDir());
     try {
       Files.createDirectories(uploadDir);
       log.info("프로필 이미지 업로드 디렉토리 준비 완료: {}", uploadDir.toAbsolutePath());

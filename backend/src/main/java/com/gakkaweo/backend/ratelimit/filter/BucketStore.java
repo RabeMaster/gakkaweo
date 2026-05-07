@@ -43,7 +43,7 @@ public class BucketStore {
 
   @Scheduled(fixedDelayString = "${app.rate-limit.cleanup-interval-ms:300000}")
   public void cleanup() {
-    Instant expiry = Instant.now().minusSeconds(properties.getBucketExpiryMinutes() * 60L);
+    Instant expiry = Instant.now().minusSeconds(properties.bucketExpiryMinutes() * 60L);
     int before = buckets.size();
     buckets.entrySet().removeIf(entry -> entry.getValue().lastAccessed().isBefore(expiry));
     int removed = before - buckets.size();
@@ -65,11 +65,11 @@ public class BucketStore {
 
   private int getCapacity(EndpointGroup group) {
     return switch (group) {
-      case GUESS -> properties.getGuessPerMinute();
-      case READ -> properties.getReadPerMinute();
-      case SSE -> properties.getSsePerMinute();
-      case AUTH -> properties.getAuthPerMinute();
-      case ADMIN -> properties.getAdminPerMinute();
+      case GUESS -> properties.guessPerMinute();
+      case READ -> properties.readPerMinute();
+      case SSE -> properties.ssePerMinute();
+      case AUTH -> properties.authPerMinute();
+      case ADMIN -> properties.adminPerMinute();
       case NONE -> throw new IllegalArgumentException("NONE 그룹은 버킷을 생성하지 않습니다");
     };
   }

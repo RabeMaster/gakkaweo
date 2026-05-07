@@ -37,7 +37,7 @@ public class RedisCleanupScheduler {
 
   @Scheduled(cron = "0 30 4,10,16,22 * * *", zone = "Asia/Seoul")
   public void executeCleanup() {
-    if (!properties.isEnabled()) {
+    if (!properties.enabled()) {
       log.debug("Redis 정리 스케줄러 비활성화");
       return;
     }
@@ -60,7 +60,7 @@ public class RedisCleanupScheduler {
       log.error("Redis orphan 스캔 실패: {}", e.getMessage(), e);
     }
 
-    LocalDate cutoff = LocalDate.now(clock).minusDays(properties.getPurgeOlderThanDays());
+    LocalDate cutoff = LocalDate.now(clock).minusDays(properties.purgeOlderThanDays());
     try {
       purgeRetry.executeRunnable(
           () -> {
@@ -137,7 +137,7 @@ public class RedisCleanupScheduler {
 
   private Cursor<String> openCursor(String pattern) {
     ScanOptions options =
-        ScanOptions.scanOptions().match(pattern).count(properties.getScanBatchSize()).build();
+        ScanOptions.scanOptions().match(pattern).count(properties.scanBatchSize()).build();
     return redisTemplate.scan(options);
   }
 
@@ -151,7 +151,7 @@ public class RedisCleanupScheduler {
   }
 
   private void notifyDiscord(RedisCleanupReport report) {
-    if (!report.hasAnyAction() && !report.hasFailure() && !properties.isNotifyOnZero()) {
+    if (!report.hasAnyAction() && !report.hasFailure() && !properties.notifyOnZero()) {
       return;
     }
     try {
@@ -184,7 +184,7 @@ public class RedisCleanupScheduler {
             new DiscordEmbed.Field("Orphan 스캔", report.orphanScanFailed() ? "실패" : "성공", true),
             new DiscordEmbed.Field("Ranking 정리", report.rankingPurgeFailed() ? "실패" : "성공", true),
             new DiscordEmbed.Field(
-                "삭제 임계 일수", String.valueOf(properties.getPurgeOlderThanDays()), true));
+                "삭제 임계 일수", String.valueOf(properties.purgeOlderThanDays()), true));
 
     return new DiscordEmbed(title, description, color, fields);
   }

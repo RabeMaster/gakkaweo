@@ -55,7 +55,7 @@ public class SseConnectionManager {
   }
 
   public synchronized SseEmitter register() {
-    if (emitters.size() >= sseProperties.getMaxConnections()) {
+    if (emitters.size() >= sseProperties.maxConnections()) {
       throw new BusinessException(ErrorCode.SSE_MAX_CONNECTIONS);
     }
 

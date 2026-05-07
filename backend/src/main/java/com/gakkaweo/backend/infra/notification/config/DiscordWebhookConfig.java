@@ -12,7 +12,7 @@ public class DiscordWebhookConfig {
 
   @Bean
   RestClient discordWebhookRestClient(DiscordWebhookProperties properties) {
-    int timeoutMillis = Math.toIntExact(properties.getTimeout().toMillis());
+    int timeoutMillis = Math.toIntExact(properties.timeout().toMillis());
 
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(timeoutMillis);

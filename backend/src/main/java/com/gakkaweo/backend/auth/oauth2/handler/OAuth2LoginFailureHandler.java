@@ -30,6 +30,6 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
 
     String message = exception.getMessage() != null ? exception.getMessage() : "로그인에 실패했습니다";
     String errorMessage = URLEncoder.encode(message, StandardCharsets.UTF_8);
-    response.sendRedirect(oAuth2Properties.getAuthorizedRedirectUri() + "?error=" + errorMessage);
+    response.sendRedirect(oAuth2Properties.authorizedRedirectUri() + "?error=" + errorMessage);
   }
 }
