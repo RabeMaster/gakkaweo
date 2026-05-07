@@ -89,12 +89,9 @@ public class AdminUserService {
         memberFilters(nickname, banned).and(SortSpecBuilder.build(sortSpec, "id"));
     Page<Member> pageResult = memberRepository.findAll(spec, PageRequest.of(page, size));
 
-    return new UserListResponse(
-        pageResult.getContent().stream().map(this::toUserResponse).toList(),
-        pageResult.getNumber(),
-        pageResult.getSize(),
-        pageResult.getTotalElements(),
-        pageResult.getTotalPages());
+    List<AdminUserResponse> users =
+        pageResult.getContent().stream().map(this::toUserResponse).toList();
+    return UserListResponse.from(users, pageResult);
   }
 
   @Transactional(readOnly = true)

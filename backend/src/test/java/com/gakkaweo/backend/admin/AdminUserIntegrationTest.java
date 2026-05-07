@@ -220,7 +220,7 @@ class AdminUserIntegrationTest extends IntegrationTestBase {
             UserListResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().users()).isNotEmpty();
+    assertThat(response.getBody().content()).isNotEmpty();
   }
 
   @Test
@@ -276,7 +276,7 @@ class AdminUserIntegrationTest extends IntegrationTestBase {
             UserListResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().users())
+    assertThat(response.getBody().content())
         .extracting(AdminUserResponse::nickname)
         .contains(match.getNickname());
   }
@@ -297,7 +297,7 @@ class AdminUserIntegrationTest extends IntegrationTestBase {
             UserListResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().users()).allSatisfy(user -> assertThat(user.banned()).isTrue());
+    assertThat(response.getBody().content()).allSatisfy(user -> assertThat(user.banned()).isTrue());
   }
 
   @Test

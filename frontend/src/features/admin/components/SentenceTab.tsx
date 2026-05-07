@@ -89,7 +89,7 @@ export function SentenceTab() {
 
       {isLoading ? (
         <p className="font-bold text-gray-400 animate-pulse py-8">로딩 중...</p>
-      ) : data && data.sentences.length > 0 ? (
+      ) : data && data.content.length > 0 ? (
         <>
           <div className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal overflow-hidden">
             <table className="w-full text-sm">
@@ -128,7 +128,7 @@ export function SentenceTab() {
                 </tr>
               </thead>
               <tbody>
-                {data.sentences.map((s) => (
+                {data.content.map((s) => (
                   <tr
                     key={s.publicId}
                     className="border-b-2 border-black/20 dark:border-white/20 hover:bg-yellow-50 dark:hover:bg-gray-800 transition-colors"

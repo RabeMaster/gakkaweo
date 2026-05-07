@@ -4,7 +4,6 @@ import com.gakkaweo.backend.admin.dto.AnnouncementCreateRequest;
 import com.gakkaweo.backend.admin.dto.AnnouncementResponse;
 import com.gakkaweo.backend.admin.dto.AnnouncementUpdateRequest;
 import com.gakkaweo.backend.admin.dto.AuditLogListResponse;
-import com.gakkaweo.backend.admin.dto.AuditLogResponse;
 import com.gakkaweo.backend.admin.dto.SystemStatusResponse;
 import com.gakkaweo.backend.admin.event.AnnouncementEvent;
 import com.gakkaweo.backend.admin.sort.AuditLogSortField;
@@ -264,12 +263,7 @@ public class AdminSystemService {
         auditLogFilters(action, dateFrom, dateTo).and(SortSpecBuilder.build(sortSpec, "id"));
     Page<AuditLog> pageResult = auditLogRepository.findAll(spec, PageRequest.of(page, size));
 
-    return new AuditLogListResponse(
-        pageResult.getContent().stream().map(AuditLogResponse::from).toList(),
-        pageResult.getNumber(),
-        pageResult.getSize(),
-        pageResult.getTotalElements(),
-        pageResult.getTotalPages());
+    return AuditLogListResponse.from(pageResult);
   }
 
   private Announcement findAnnouncement(Long id) {

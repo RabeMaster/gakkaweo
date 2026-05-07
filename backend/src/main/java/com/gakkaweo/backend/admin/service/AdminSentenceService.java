@@ -80,12 +80,7 @@ public class AdminSentenceService {
     Page<DailySentence> pageResult =
         dailySentenceRepository.findAll(spec, PageRequest.of(page, size));
 
-    return new SentenceListResponse(
-        pageResult.getContent().stream().map(SentenceResponse::from).toList(),
-        pageResult.getNumber(),
-        pageResult.getSize(),
-        pageResult.getTotalElements(),
-        pageResult.getTotalPages());
+    return SentenceListResponse.from(pageResult);
   }
 
   @Transactional

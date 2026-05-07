@@ -205,7 +205,7 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
             SentenceListResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().sentences()).hasSize(2);
+    assertThat(response.getBody().content()).hasSize(2);
   }
 
   @Test
@@ -333,7 +333,7 @@ class AdminSentenceIntegrationTest extends IntegrationTestBase {
             SentenceListResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().sentences()).hasSize(2);
+    assertThat(response.getBody().content()).hasSize(2);
   }
 
   @Test
