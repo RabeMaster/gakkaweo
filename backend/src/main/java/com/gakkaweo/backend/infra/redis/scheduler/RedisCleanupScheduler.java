@@ -7,6 +7,7 @@ import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
 import com.gakkaweo.backend.infra.redis.config.RedisCleanupProperties;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryRegistry;
+import io.micrometer.core.annotation.Timed;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -35,6 +36,9 @@ public class RedisCleanupScheduler {
   private final RedisCleanupProperties properties;
   private final Clock clock;
 
+  @Timed(
+      value = "scheduler.redis_cleanup.duration",
+      description = "Redis cleanup scheduler execution time")
   @Scheduled(cron = "0 30 4,10,16,22 * * *", zone = "Asia/Seoul")
   public void executeCleanup() {
     if (!properties.enabled()) {

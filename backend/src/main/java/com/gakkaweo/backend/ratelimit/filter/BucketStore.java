@@ -35,6 +35,10 @@ public class BucketStore {
         .bucket();
   }
 
+  public int getBucketCount() {
+    return buckets.size();
+  }
+
   public void clearAllBuckets() {
     int size = buckets.size();
     buckets.clear();

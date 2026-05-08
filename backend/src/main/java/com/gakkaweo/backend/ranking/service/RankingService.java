@@ -16,6 +16,10 @@ import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.dto.RankingResponse.MyRank;
 import com.gakkaweo.backend.ranking.dto.RankingResponse.RankingEntry;
 import com.gakkaweo.backend.ranking.dto.RankingSnapshot;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
@@ -48,7 +52,18 @@ public class RankingService {
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
   private final MemberRepository memberRepository;
+  private final MeterRegistry meterRegistry;
   private final Clock clock;
+
+  private Counter rankingUpdateCounter;
+
+  @PostConstruct
+  void initCounters() {
+    rankingUpdateCounter =
+        Counter.builder("ranking.update")
+            .description("Ranking update count")
+            .register(meterRegistry);
+  }
 
   public Integer updateRanking(GameSession session, Member member) {
     try {
@@ -81,6 +96,8 @@ public class RankingService {
 
       redisTemplate.expire(rankingKey, LIVE_TTL);
       redisTemplate.expire(detailKey, LIVE_TTL);
+
+      rankingUpdateCounter.increment();
 
       Long rank = redisTemplate.opsForZSet().reverseRank(rankingKey, memberKey);
       if (rank != null) {
@@ -253,6 +270,7 @@ public class RankingService {
     }
   }
 
+  @Timed(value = "ranking.cache.rebuild.duration", description = "Ranking cache rebuild time")
   public int rebuildRankingCache(LocalDate date) {
     DailySentence sentence =
         dailySentenceRepository
