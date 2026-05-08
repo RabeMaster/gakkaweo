@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,6 +24,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtProvider jwtProvider;
   private final StringRedisTemplate redisTemplate;
+
+  @Value("${management.server.port:#{null}}")
+  private Integer managementPort;
+
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    return managementPort != null && request.getLocalPort() == managementPort;
+  }
 
   @Override
   protected void doFilterInternal(
