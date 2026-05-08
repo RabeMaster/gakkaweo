@@ -9,6 +9,7 @@ import com.gakkaweo.backend.auth.config.CookieProperties;
 import com.gakkaweo.backend.auth.config.JwtProperties;
 import com.gakkaweo.backend.auth.config.OAuth2Properties;
 import com.gakkaweo.backend.auth.dto.TokenPair;
+import com.gakkaweo.backend.auth.metrics.AuthMetrics;
 import com.gakkaweo.backend.auth.oauth2.CookieAuthorizationRequestRepository;
 import com.gakkaweo.backend.auth.oauth2.CustomOAuth2User;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginFailureHandler;
@@ -16,6 +17,7 @@ import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import com.gakkaweo.backend.auth.service.AuthService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
 import com.gakkaweo.backend.domain.member.entity.Member;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.net.HttpCookie;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -45,6 +47,7 @@ class OAuth2LoginHandlerTest {
   private CookieUtils cookieUtils;
   private OAuth2Properties oAuth2Properties;
   private CookieAuthorizationRequestRepository authorizationRequestRepository;
+  private AuthMetrics authMetrics;
 
   private static List<HttpCookie> allSetCookies(MockHttpServletResponse response) {
     return response.getHeaders(HttpHeaders.SET_COOKIE).stream()
@@ -69,6 +72,7 @@ class OAuth2LoginHandlerTest {
     oAuth2Properties = new OAuth2Properties(REDIRECT_URI);
     authorizationRequestRepository =
         new CookieAuthorizationRequestRepository(cookieProperties, new ObjectMapper());
+    authMetrics = new AuthMetrics(new SimpleMeterRegistry());
   }
 
   private static class NullMessageAuthenticationException extends AuthenticationException {
@@ -86,7 +90,11 @@ class OAuth2LoginHandlerTest {
     void 성공_쿠키_리다이렉트() throws Exception {
       OAuth2LoginSuccessHandler handler =
           new OAuth2LoginSuccessHandler(
-              authService, cookieUtils, oAuth2Properties, authorizationRequestRepository);
+              authService,
+              cookieUtils,
+              oAuth2Properties,
+              authorizationRequestRepository,
+              authMetrics);
       Member member = new Member("tester");
       when(authService.issueTokens(any(Member.class)))
           .thenReturn(new TokenPair("access-value", "refresh-value"));
@@ -117,7 +125,8 @@ class OAuth2LoginHandlerTest {
     @DisplayName("예외 메시지 있음 - URLEncoded error 파라미터 포함 리다이렉트")
     void 메시지_있음() throws Exception {
       OAuth2LoginFailureHandler handler =
-          new OAuth2LoginFailureHandler(oAuth2Properties, authorizationRequestRepository);
+          new OAuth2LoginFailureHandler(
+              oAuth2Properties, authorizationRequestRepository, authMetrics);
       AuthenticationException exception =
           new OAuth2AuthenticationException(new OAuth2Error("member_banned", "차단된 계정입니다", null));
 
@@ -132,7 +141,8 @@ class OAuth2LoginHandlerTest {
     @DisplayName("예외 메시지 null - 기본 메시지로 리다이렉트")
     void 메시지_null() throws Exception {
       OAuth2LoginFailureHandler handler =
-          new OAuth2LoginFailureHandler(oAuth2Properties, authorizationRequestRepository);
+          new OAuth2LoginFailureHandler(
+              oAuth2Properties, authorizationRequestRepository, authMetrics);
       AuthenticationException exception = new NullMessageAuthenticationException();
 
       MockHttpServletResponse response = new MockHttpServletResponse();
@@ -146,7 +156,8 @@ class OAuth2LoginHandlerTest {
     @DisplayName("실패 - oauth2 인증 요청 삭제 쿠키 발급")
     void 인증요청_삭제쿠키() throws Exception {
       OAuth2LoginFailureHandler handler =
-          new OAuth2LoginFailureHandler(oAuth2Properties, authorizationRequestRepository);
+          new OAuth2LoginFailureHandler(
+              oAuth2Properties, authorizationRequestRepository, authMetrics);
       AuthenticationException exception =
           new OAuth2AuthenticationException(new OAuth2Error("invalid_request", "bad", null));
 

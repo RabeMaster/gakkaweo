@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.auth.service;
 
+import com.gakkaweo.backend.auth.metrics.AuthMetrics;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.domain.member.entity.LocalAccount;
@@ -23,6 +24,7 @@ public class LocalAuthService {
   private final MemberRepository memberRepository;
   private final NicknameGenerator nicknameGenerator;
   private final PasswordEncoder passwordEncoder;
+  private final AuthMetrics authMetrics;
 
   public Member register(String username, String password) {
     if (username.length() < 4 || password.length() < 8) {
@@ -49,6 +51,7 @@ public class LocalAuthService {
     }
 
     log.info("로컬 계정 가입: publicId={}, username={}", member.getPublicId(), username);
+    authMetrics.recordRegister("local");
     return member;
   }
 
@@ -57,17 +60,24 @@ public class LocalAuthService {
     LocalAccount localAccount =
         localAccountRepository
             .findByUsernameIgnoreCase(username)
-            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_CREDENTIALS));
+            .orElseThrow(
+                () -> {
+                  authMetrics.recordLogin("local", false);
+                  return new BusinessException(ErrorCode.INVALID_CREDENTIALS);
+                });
 
     if (!passwordEncoder.matches(password, localAccount.getPasswordHash())) {
+      authMetrics.recordLogin("local", false);
       throw new BusinessException(ErrorCode.INVALID_CREDENTIALS);
     }
 
     Member member = localAccount.getMember();
     if (Boolean.TRUE.equals(member.getBanned())) {
+      authMetrics.recordLogin("local", false);
       throw new BusinessException(ErrorCode.MEMBER_BANNED);
     }
 
+    authMetrics.recordLogin("local", true);
     return member;
   }
 }

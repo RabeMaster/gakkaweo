@@ -25,6 +25,7 @@ import com.gakkaweo.backend.game.util.HintMaskGenerator;
 import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
@@ -55,6 +56,7 @@ public class DailyGameService {
   private final GameProperties gameProperties;
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
+  private final MeterRegistry meterRegistry;
 
   private static boolean isPerfect(BigDecimal similarity) {
     return similarity.compareTo(GameConstants.PERFECT_SIMILARITY) >= 0;
@@ -98,6 +100,9 @@ public class DailyGameService {
             sentence.getId(), request.guessText(), sentence.getSentence(), remainingTtl());
 
     boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
+    meterRegistry
+        .counter("game.guesses.total", "result", isCorrect ? "correct" : "incorrect")
+        .increment();
 
     BigDecimal previousBest = session.getBestSimilarity();
     Instant now = clock.instant();
@@ -106,6 +111,7 @@ public class DailyGameService {
       session.incrementAttempt();
       if (isCorrect) {
         session.markCleared(now);
+        meterRegistry.counter("game.clears.total").increment();
       }
     } else if (session.isCleared() && isPerfect(similarity)) {
       session.updateClearedAt(now);
@@ -144,6 +150,9 @@ public class DailyGameService {
             sentence.getId(), request.guessText(), sentence.getSentence(), remainingTtl());
 
     boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
+    meterRegistry
+        .counter("game.guesses.total", "result", isCorrect ? "correct" : "incorrect")
+        .increment();
 
     return new GuessResponse(similarity, null, isCorrect, null, clock.instant());
   }
