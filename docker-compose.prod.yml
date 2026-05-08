@@ -101,7 +101,16 @@ services:
       - prometheusdata:/prometheus
     networks:
       - internal
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     logging: *logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/-/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   grafana:
@@ -118,7 +127,8 @@ services:
     networks:
       - internal
     depends_on:
-      - prometheus
+      prometheus:
+        condition: service_healthy
     logging: *logging
     restart: unless-stopped
 

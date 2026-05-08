@@ -169,6 +169,7 @@ jobs:
           source: infra/
           target: ~/gakkaweo/infra
           strip_components: 1
+          rm: true
           overwrite: true
 
       - name: Upload compose file

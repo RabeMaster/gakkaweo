@@ -76,7 +76,7 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers("/health", "/auth/refresh", "/auth/register", "/auth/login")
                     .permitAll()
-                    .requestMatchers("/actuator/**")
+                    .requestMatchers("/actuator/prometheus")
                     .permitAll()
                     .requestMatchers("/uploads/**")
                     .permitAll()
