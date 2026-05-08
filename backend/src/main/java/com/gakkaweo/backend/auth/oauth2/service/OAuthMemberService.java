@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.auth.oauth2.service;
 
+import com.gakkaweo.backend.auth.metrics.AuthMetrics;
 import com.gakkaweo.backend.auth.oauth2.dto.OAuthAttributes;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.entity.SocialAccount;
@@ -20,6 +21,7 @@ public class OAuthMemberService {
   private final SocialAccountRepository socialAccountRepository;
   private final MemberRepository memberRepository;
   private final NicknameGenerator nicknameGenerator;
+  private final AuthMetrics authMetrics;
 
   @Transactional
   public Member findOrCreateMember(OAuthAttributes attributes) {
@@ -43,6 +45,7 @@ public class OAuthMemberService {
     String nickname = nicknameGenerator.generate();
     Member member = memberRepository.save(new Member(nickname));
     log.info("신규 회원 가입: provider={}, memberId={}", attributes.provider(), member.getPublicId());
+    authMetrics.recordRegister(attributes.provider().name().toLowerCase());
 
     SocialAccount socialAccount =
         new SocialAccount(member, attributes.provider(), attributes.providerId());

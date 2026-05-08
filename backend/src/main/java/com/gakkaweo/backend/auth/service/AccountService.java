@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.auth.service;
 
+import com.gakkaweo.backend.auth.metrics.AuthMetrics;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
@@ -32,6 +33,7 @@ public class AccountService {
   private final AuthService authService;
   private final RankingService rankingService;
   private final ApplicationEventPublisher eventPublisher;
+  private final AuthMetrics authMetrics;
 
   @Transactional
   public void deleteAccount(UUID publicId) {
@@ -48,6 +50,7 @@ public class AccountService {
     refreshTokenRepository.deleteByMemberId(member.getId());
     memberRepository.delete(member);
 
+    authMetrics.recordWithdraw();
     log.info(
         "회원 탈퇴 완료: publicId={}, anonymizedSessions={}, anonymizedUploads={}",
         publicId,

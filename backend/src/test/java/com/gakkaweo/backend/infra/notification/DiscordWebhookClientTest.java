@@ -14,6 +14,7 @@ import com.gakkaweo.backend.infra.notification.config.DiscordWebhookProperties;
 import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
@@ -42,7 +43,7 @@ class DiscordWebhookClientTest {
     RestClient restClient = RestClient.builder().requestFactory(factory).build();
     DiscordWebhookProperties properties =
         new DiscordWebhookProperties(webhookUrl, Duration.ofSeconds(3), mentionRoleId);
-    return new DiscordWebhookClient(restClient, properties);
+    return new DiscordWebhookClient(restClient, properties, new SimpleMeterRegistry());
   }
 
   @Test

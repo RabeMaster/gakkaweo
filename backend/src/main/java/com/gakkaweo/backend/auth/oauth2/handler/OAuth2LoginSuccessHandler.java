@@ -2,6 +2,7 @@ package com.gakkaweo.backend.auth.oauth2.handler;
 
 import com.gakkaweo.backend.auth.config.OAuth2Properties;
 import com.gakkaweo.backend.auth.dto.TokenPair;
+import com.gakkaweo.backend.auth.metrics.AuthMetrics;
 import com.gakkaweo.backend.auth.oauth2.CookieAuthorizationRequestRepository;
 import com.gakkaweo.backend.auth.oauth2.CustomOAuth2User;
 import com.gakkaweo.backend.auth.service.AuthService;
@@ -13,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
@@ -25,12 +27,18 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
   private final CookieUtils cookieUtils;
   private final OAuth2Properties oAuth2Properties;
   private final CookieAuthorizationRequestRepository authorizationRequestRepository;
+  private final AuthMetrics authMetrics;
 
   @Override
   public void onAuthenticationSuccess(
       HttpServletRequest request, HttpServletResponse response, Authentication authentication)
       throws IOException {
     CustomOAuth2User oAuth2User = (CustomOAuth2User) authentication.getPrincipal();
+    String provider =
+        authentication instanceof OAuth2AuthenticationToken oauthToken
+            ? oauthToken.getAuthorizedClientRegistrationId()
+            : "unknown";
+    authMetrics.recordLogin(provider, true);
     log.info("OAuth2 로그인 성공: memberId={}", oAuth2User.getMember().getPublicId());
     TokenPair tokenPair = authService.issueTokens(oAuth2User.getMember());
 
