@@ -44,6 +44,9 @@ public class OAuth2LoginFailureHandler implements AuthenticationFailureHandler {
       return "unknown";
     }
     String segment = uri.substring(idx + prefix.length());
+    if (segment.isEmpty()) {
+      return "unknown";
+    }
     int slash = segment.indexOf('/');
     return slash > 0 ? segment.substring(0, slash) : segment;
   }

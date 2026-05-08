@@ -913,7 +913,7 @@
       "targets": [
         {
           "datasource": { "uid": "prometheus", "type": "prometheus" },
-          "expr": "increase(game_clears_total[1h])",
+          "expr": "sum(increase(game_clears_total[1h]))",
           "legendFormat": "Clears",
           "refId": "A"
         }
@@ -1065,7 +1065,7 @@
       "targets": [
         {
           "datasource": { "uid": "prometheus", "type": "prometheus" },
-          "expr": "increase(auth_withdraw_total[1h])",
+          "expr": "sum(increase(auth_withdraw_total[1h]))",
           "legendFormat": "Withdrawals",
           "refId": "A"
         }
