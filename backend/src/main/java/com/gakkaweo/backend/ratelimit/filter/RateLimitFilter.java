@@ -6,15 +6,21 @@ import com.gakkaweo.backend.common.exception.ErrorBody;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.ConsumptionProbe;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,6 +35,33 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private final EndpointGroupResolver endpointGroupResolver;
   private final BucketStore bucketStore;
   private final ObjectMapper objectMapper;
+  private final MeterRegistry meterRegistry;
+
+  @Value("${management.server.port:#{null}}")
+  private Integer managementPort;
+
+  private Map<EndpointGroup, Counter> rejectionCounters;
+
+  @Override
+  protected boolean shouldNotFilter(HttpServletRequest request) {
+    return managementPort != null && request.getLocalPort() == managementPort;
+  }
+
+  @PostConstruct
+  void initCounters() {
+    rejectionCounters = new EnumMap<>(EndpointGroup.class);
+    for (EndpointGroup group : EndpointGroup.values()) {
+      if (group == EndpointGroup.NONE) {
+        continue;
+      }
+      rejectionCounters.put(
+          group,
+          Counter.builder("ratelimit.rejected")
+              .tag("group", group.name())
+              .description("Rate limit rejection count")
+              .register(meterRegistry));
+    }
+  }
 
   @Override
   protected void doFilterInternal(
@@ -54,6 +87,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     long retryAfterSeconds = TimeUnit.NANOSECONDS.toSeconds(probe.getNanosToWaitForRefill()) + 1;
+    rejectionCounters.get(group).increment();
     log.warn("Rate limit 초과: group={}, key={}, retryAfter={}s", group, key, retryAfterSeconds);
 
     ErrorCode errorCode = ErrorCode.RATE_LIMIT_EXCEEDED;

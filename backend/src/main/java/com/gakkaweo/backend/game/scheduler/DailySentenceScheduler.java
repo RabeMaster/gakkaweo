@@ -13,6 +13,7 @@ import com.gakkaweo.backend.ranking.event.DayChangeEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryRegistry;
+import io.micrometer.core.annotation.Timed;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ public class DailySentenceScheduler {
     return succeeded ? "성공" : "실패";
   }
 
+  @Timed(value = "scheduler.midnight.duration", description = "Midnight scheduler execution time")
   @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
   public void executeMidnightJob() {
     executeMidnightJob(true);

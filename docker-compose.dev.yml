@@ -65,6 +65,32 @@ services:
       retries: 5
       start_period: 120s
 
+  prometheus:
+    image: prom/prometheus:v3.5.3
+    ports:
+      - "127.0.0.1:9091:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.dev.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheusdata:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    logging: *logging
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    depends_on:
+      - prometheus
+    logging: *logging
+
 volumes:
   pgdata:
     name: gakkaweo-postgresql
@@ -72,3 +98,7 @@ volumes:
     name: gakkaweo-redis
   hf-model-cache:
     name: gakkaweo-hf-model-cache
+  prometheusdata:
+    name: gakkaweo-prometheus
+  grafanadata:
+    name: gakkaweo-grafana

@@ -26,6 +26,6 @@ COPY --from=builder --chown=appuser:appgroup /build/build/libs/*.jar app.jar
 
 USER appuser
 
-EXPOSE 8080
+EXPOSE 8080 9090
 
 ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

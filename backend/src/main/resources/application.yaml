@@ -184,6 +184,17 @@ logging:
   level:
     com.gakkaweo.backend: ${LOG_LEVEL:DEBUG}
 
+management:
+  server:
+    port: ${MANAGEMENT_PORT:9090}
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  metrics:
+    tags:
+      application: gakkaweo-backend
+
 server:
   port: ${SERVER_PORT:8080}
   forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
