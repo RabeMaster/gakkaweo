@@ -834,6 +834,663 @@
         }
       ]
     }
+    ,
+    {
+      "type": "row",
+      "title": "Application",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 60 },
+      "id": null,
+      "collapsed": false,
+      "panels": []
+    },
+
+    {
+      "type": "stat",
+      "title": "추측 (1h)",
+      "description": "최근 1시간 총 추측 횟수 (correct + incorrect)",
+      "gridPos": { "h": 4, "w": 3, "x": 0, "y": 61 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-blue", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum(increase(game_guesses_total[1h]))",
+          "legendFormat": "Guesses",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "클리어 (1h)",
+      "description": "최근 1시간 게임 클리어 횟수",
+      "gridPos": { "h": 4, "w": 3, "x": 3, "y": 61 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "dark-blue", "value": null },
+              { "color": "semi-dark-green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "increase(game_clears_total[1h])",
+          "legendFormat": "Clears",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "가입 (1h)",
+      "description": "최근 1시간 신규 회원가입 횟수 (모든 프로바이더 합산)",
+      "gridPos": { "h": 4, "w": 3, "x": 6, "y": 61 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-purple", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum(increase(auth_register_total[1h]))",
+          "legendFormat": "Registers",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "로그인 (1h)",
+      "description": "최근 1시간 성공 로그인 횟수 (모든 프로바이더 합산)",
+      "gridPos": { "h": 4, "w": 3, "x": 9, "y": 61 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-purple", "value": null }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum(increase(auth_login_total{result=\"success\"}[1h]))",
+          "legendFormat": "Logins",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "로그인 실패 (1h)",
+      "description": "최근 1시간 로그인 실패 횟수. 급증 시 brute-force 의심",
+      "gridPos": { "h": 4, "w": 3, "x": 12, "y": 61 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-green", "value": null },
+              { "color": "semi-dark-orange", "value": 10 },
+              { "color": "dark-red", "value": 50 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum(increase(auth_login_total{result=\"failure\"}[1h]))",
+          "legendFormat": "Failures",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "탈퇴 (1h)",
+      "description": "최근 1시간 회원 탈퇴 횟수",
+      "gridPos": { "h": 4, "w": 3, "x": 15, "y": 61 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-green", "value": null },
+              { "color": "semi-dark-orange", "value": 3 },
+              { "color": "dark-red", "value": 10 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "increase(auth_withdraw_total[1h])",
+          "legendFormat": "Withdrawals",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Discord 성공률",
+      "description": "Discord 웹훅 전송 성공률. webhookUrl 미설정(skip)은 미포함",
+      "gridPos": { "h": 4, "w": 3, "x": 18, "y": 61 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100,
+          "noValue": "-",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "dark-red", "value": null },
+              { "color": "semi-dark-orange", "value": 90 },
+              { "color": "semi-dark-green", "value": 99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum(increase(discord_webhook_total{result=\"success\"}[1h])) / sum(increase(discord_webhook_total[1h])) * 100",
+          "legendFormat": "Success %",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Rate Limit Buckets",
+      "description": "현재 활성 Rate Limit 버킷 수 (IP당 1개)",
+      "gridPos": { "h": 4, "w": 3, "x": 21, "y": 61 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-green", "value": null },
+              { "color": "semi-dark-orange", "value": 500 },
+              { "color": "dark-red", "value": 1000 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "ratelimit_buckets_active",
+          "legendFormat": "Active Buckets",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Game Guesses Rate",
+      "description": "추측 제출 속도 (correct/incorrect). 인증+비인증 합산",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 65 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 25,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "mode": "normal", "group": "A" },
+            "lineInterpolation": "smooth"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "correct" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "semi-dark-green", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "incorrect" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "semi-dark-orange", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["sum", "mean", "max"]
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum by (result) (rate(game_guesses_total[5m]))",
+          "legendFormat": "{{ result }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Login by Provider",
+      "description": "프로바이더별 성공 로그인 속도",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 65 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": { "mode": "normal", "group": "A" },
+            "lineInterpolation": "smooth"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "kakao" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#FEE500", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "naver" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#03C75A", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "google" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#4285F4", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "local" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "semi-dark-blue", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["sum", "mean"]
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum by (provider) (rate(auth_login_total{result=\"success\"}[5m]))",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Discord Webhook Dispatches",
+      "description": "Discord 웹훅 전송 결과. failure 급증 시 Discord API 장애 또는 payload 오류 의심",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 65 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 20,
+            "gradientMode": "opacity",
+            "showPoints": "never",
+            "spanNulls": true,
+            "lineInterpolation": "smooth"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "success" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "semi-dark-green", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "failure" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "dark-red", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["sum", "mean"]
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum by (result) (rate(discord_webhook_total[5m]))",
+          "legendFormat": "{{ result }}",
+          "refId": "A"
+        }
+      ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Login Failures by Provider",
+      "description": "프로바이더별 로그인 실패 속도. 특정 프로바이더 급증 시 OAuth 설정 이상 또는 brute-force 공격 의심",
+      "gridPos": { "h": 8, "w": 14, "x": 0, "y": 73 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0,
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "gradientMode": "opacity",
+            "showPoints": "auto",
+            "pointSize": 5,
+            "spanNulls": true,
+            "stacking": { "mode": "normal", "group": "A" },
+            "lineInterpolation": "smooth",
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "transparent", "value": null },
+              { "color": "dark-red", "value": 0.1 }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "local" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "semi-dark-red", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "kakao" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "dark-orange", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "naver" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "dark-yellow", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "google" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "dark-purple", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": ["sum", "mean", "max"]
+        }
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum by (provider) (rate(auth_login_total{result=\"failure\"}[5m]))",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "piechart",
+      "title": "Login Provider 비율",
+      "description": "프로바이더별 성공 로그인 비율 (1h 기준)",
+      "gridPos": { "h": 8, "w": 5, "x": 14, "y": 73 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "kakao" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#FEE500", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "naver" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#03C75A", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "google" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "#4285F4", "mode": "fixed" } }
+            ]
+          },
+          {
+            "matcher": { "id": "byName", "options": "local" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "semi-dark-blue", "mode": "fixed" } }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] },
+        "pieType": "donut",
+        "tooltip": { "mode": "multi" }
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "sum by (provider) (increase(auth_login_total{result=\"success\"}[1h]))",
+          "legendFormat": "{{ provider }}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "gauge",
+      "title": "Rate Limit Buckets",
+      "description": "현재 활성 Rate Limit 버킷 수 (IP당 1개). 임계치 초과 시 메모리 압박 가능",
+      "gridPos": { "h": 8, "w": 5, "x": 19, "y": 73 },
+      "id": null,
+      "datasource": { "uid": "prometheus", "type": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": 0,
+          "max": 1000,
+          "noValue": "0",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "semi-dark-green", "value": null },
+              { "color": "semi-dark-orange", "value": 500 },
+              { "color": "dark-red", "value": 800 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "orientation": "auto"
+      },
+      "targets": [
+        {
+          "datasource": { "uid": "prometheus", "type": "prometheus" },
+          "expr": "ratelimit_buckets_active",
+          "legendFormat": "Active Buckets",
+          "refId": "A"
+        }
+      ]
+    }
   ],
   "templating": { "list": [] },
   "annotations": { "list": [] },
