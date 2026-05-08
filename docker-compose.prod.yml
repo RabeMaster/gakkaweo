@@ -94,6 +94,34 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  prometheus:
+    image: prom/prometheus:v3.5.3
+    volumes:
+      - ./infra/prometheus/prometheus.prod.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheusdata:/prometheus
+    networks:
+      - internal
+    logging: *logging
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:13.0.1
+    ports:
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    networks:
+      - internal
+    depends_on:
+      - prometheus
+    logging: *logging
+    restart: unless-stopped
+
 networks:
   internal:
     driver: bridge
@@ -105,3 +133,7 @@ volumes:
     name: gakkaweo-redis
   hf-model-cache:
     name: gakkaweo-hf-model-cache
+  prometheusdata:
+    name: gakkaweo-prometheus
+  grafanadata:
+    name: gakkaweo-grafana
