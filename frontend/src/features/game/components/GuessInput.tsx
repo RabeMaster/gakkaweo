@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { Button } from "@/shared/ui/Button";
 import { Input } from "@/shared/ui/Input";
 
@@ -30,7 +31,7 @@ export function GuessInput({ onSubmit, isLoading, disabled = false }: GuessInput
     focusInput();
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
+  function handleKeyDown(e: KeyboardEvent) {
     if (e.key !== "Enter") {
       return;
     }
