@@ -3,15 +3,12 @@ package com.gakkaweo.backend.auth.service;
 import com.gakkaweo.backend.auth.config.JwtProperties;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.util.HashUtils;
 import com.gakkaweo.backend.domain.auth.entity.RefreshToken;
 import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -87,13 +84,7 @@ public class RefreshTokenService {
   }
 
   public String hashToken(String rawToken) {
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] hash = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
-      return HexFormat.of().formatHex(hash);
-    } catch (NoSuchAlgorithmException e) {
-      throw new IllegalStateException("SHA-256 알고리즘을 사용할 수 없습니다", e);
-    }
+    return HashUtils.sha256Hex(rawToken);
   }
 
   private void revokeFamilyInternal(UUID familyId) {
