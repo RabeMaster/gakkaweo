@@ -3,6 +3,7 @@ package com.gakkaweo.backend.ratelimit.filter;
 import com.gakkaweo.backend.ratelimit.config.RateLimitProperties;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Component;
 public class BucketStore {
 
   private final RateLimitProperties properties;
+  private final Clock clock;
   private final Map<String, BucketEntry> buckets = new ConcurrentHashMap<>();
 
   public Bucket resolveBucket(EndpointGroup group, String key) {
@@ -27,10 +29,10 @@ public class BucketStore {
             bucketKey,
             (k, existing) -> {
               if (existing != null) {
-                return new BucketEntry(existing.bucket(), Instant.now());
+                return new BucketEntry(existing.bucket(), clock.instant());
               }
               Bucket bucket = createBucket(group);
-              return new BucketEntry(bucket, Instant.now());
+              return new BucketEntry(bucket, clock.instant());
             })
         .bucket();
   }
@@ -47,7 +49,7 @@ public class BucketStore {
 
   @Scheduled(fixedDelayString = "${app.rate-limit.cleanup-interval-ms:300000}")
   public void cleanup() {
-    Instant expiry = Instant.now().minusSeconds(properties.bucketExpiryMinutes() * 60L);
+    Instant expiry = clock.instant().minusSeconds(properties.bucketExpiryMinutes() * 60L);
     int before = buckets.size();
     buckets.entrySet().removeIf(entry -> entry.getValue().lastAccessed().isBefore(expiry));
     int removed = before - buckets.size();

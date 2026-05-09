@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { TransitionEvent } from "react";
 import type { RankingResponse } from "@/shared/api/types";
 import { Card } from "@/shared/ui/Card";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
@@ -69,7 +70,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
     return () => clearInterval(id);
   }, [shouldAnimate, isPaused, isHovered, itemHeight]);
 
-  const handleTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
+  const handleTransitionEnd = (e: TransitionEvent<HTMLDivElement>) => {
     if (e.target !== e.currentTarget) {
       return;
     }

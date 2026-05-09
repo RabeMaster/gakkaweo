@@ -5,9 +5,9 @@ import com.gakkaweo.backend.infra.notification.config.DiscordWebhookProperties;
 import com.gakkaweo.backend.infra.notification.dto.AllowedMentions;
 import com.gakkaweo.backend.infra.notification.dto.DiscordEmbed;
 import com.gakkaweo.backend.infra.notification.dto.DiscordWebhookPayload;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
@@ -18,7 +18,6 @@ import org.springframework.web.client.RestClientException;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class DiscordWebhookClient {
 
   private static final int COLOR_HIGH = 0xE67E22;
@@ -26,7 +25,26 @@ public class DiscordWebhookClient {
 
   private final RestClient discordWebhookRestClient;
   private final DiscordWebhookProperties properties;
-  private final MeterRegistry meterRegistry;
+  private final Counter webhookSuccessCounter;
+  private final Counter webhookFailureCounter;
+
+  public DiscordWebhookClient(
+      RestClient discordWebhookRestClient,
+      DiscordWebhookProperties properties,
+      MeterRegistry meterRegistry) {
+    this.discordWebhookRestClient = discordWebhookRestClient;
+    this.properties = properties;
+    this.webhookSuccessCounter =
+        Counter.builder("discord.webhook.total")
+            .tag("result", "success")
+            .description("Total Discord webhook dispatches")
+            .register(meterRegistry);
+    this.webhookFailureCounter =
+        Counter.builder("discord.webhook.total")
+            .tag("result", "failure")
+            .description("Total Discord webhook dispatches")
+            .register(meterRegistry);
+  }
 
   @Async("discordWebhookExecutor")
   public void send(NotificationLevel level, DiscordEmbed embed) {
@@ -52,9 +70,9 @@ public class DiscordWebhookClient {
           .body(payload)
           .retrieve()
           .toBodilessEntity();
-      meterRegistry.counter("discord.webhook.total", "result", "success").increment();
+      webhookSuccessCounter.increment();
     } catch (RestClientException e) {
-      meterRegistry.counter("discord.webhook.total", "result", "failure").increment();
+      webhookFailureCounter.increment();
       log.warn("Discord 웹훅 전송 실패: {}", e.getMessage(), e);
     }
   }

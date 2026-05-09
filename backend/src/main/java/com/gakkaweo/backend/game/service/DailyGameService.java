@@ -25,7 +25,9 @@ import com.gakkaweo.backend.game.util.HintMaskGenerator;
 import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
@@ -40,6 +42,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @Slf4j
@@ -57,9 +60,32 @@ public class DailyGameService {
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
   private final MeterRegistry meterRegistry;
+  private final TransactionTemplate transactionTemplate;
+
+  private Counter guessCorrectCounter;
+  private Counter guessIncorrectCounter;
+  private Counter clearCounter;
 
   private static boolean isPerfect(BigDecimal similarity) {
     return similarity.compareTo(GameConstants.PERFECT_SIMILARITY) >= 0;
+  }
+
+  @PostConstruct
+  void initCounters() {
+    guessCorrectCounter =
+        Counter.builder("game.guesses.total")
+            .tag("result", "correct")
+            .description("Total guess submissions")
+            .register(meterRegistry);
+    guessIncorrectCounter =
+        Counter.builder("game.guesses.total")
+            .tag("result", "incorrect")
+            .description("Total guess submissions")
+            .register(meterRegistry);
+    clearCounter =
+        Counter.builder("game.clears.total")
+            .description("Total game clears")
+            .register(meterRegistry);
   }
 
   @Transactional(readOnly = true)
@@ -86,7 +112,6 @@ public class DailyGameService {
         yesterdaySentence != null ? yesterday : null);
   }
 
-  @Transactional
   public GuessResponse guessAuthenticated(GuessRequest request, UUID memberPublicId) {
     DailySentence sentence = findTodaySentenceByPublicId(request.sentenceId());
     Member member = findMember(memberPublicId);
@@ -100,33 +125,46 @@ public class DailyGameService {
             sentence.getId(), request.guessText(), sentence.getSentence(), remainingTtl());
 
     boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
-    meterRegistry
-        .counter("game.guesses.total", "result", isCorrect ? "correct" : "incorrect")
-        .increment();
-
-    BigDecimal previousBest = session.getBestSimilarity();
     Instant now = clock.instant();
 
-    if (session.isInProgress()) {
-      session.incrementAttempt();
-      if (isCorrect) {
-        session.markCleared(now);
-        meterRegistry.counter("game.clears.total").increment();
-      }
-    } else if (session.isCleared() && isPerfect(similarity)) {
-      session.updateClearedAt(now);
+    record TxResult(GameSession updatedSession, BigDecimal previousBest, boolean cleared) {}
+
+    TxResult txResult =
+        transactionTemplate.execute(
+            status -> {
+              GameSession s = gameSessionRepository.findById(session.getId()).orElseThrow();
+              BigDecimal prevBest = s.getBestSimilarity();
+              boolean justCleared = false;
+
+              if (s.isInProgress()) {
+                s.incrementAttempt();
+                if (isCorrect) {
+                  s.markCleared(now);
+                  justCleared = true;
+                }
+              } else if (s.isCleared() && isPerfect(similarity)) {
+                s.updateClearedAt(now);
+              }
+              s.updateBestSimilarity(similarity);
+
+              int guessSequence = (int) guessHistoryRepository.countBySession(s) + 1;
+              guessHistoryRepository.save(
+                  new GuessHistory(s, request.guessText(), similarity, guessSequence));
+
+              gameSessionRepository.save(s);
+
+              return new TxResult(s, prevBest, justCleared);
+            });
+
+    GameSession updated = txResult.updatedSession();
+
+    (isCorrect ? guessCorrectCounter : guessIncorrectCounter).increment();
+    if (txResult.cleared()) {
+      clearCounter.increment();
     }
-    session.updateBestSimilarity(similarity);
 
-    int guessSequence = (int) guessHistoryRepository.countBySession(session) + 1;
-
-    guessHistoryRepository.save(
-        new GuessHistory(session, request.guessText(), similarity, guessSequence));
-
-    gameSessionRepository.save(session);
-
-    if (similarity.compareTo(previousBest) > 0) {
-      rankingService.updateRanking(session, member);
+    if (similarity.compareTo(txResult.previousBest()) > 0) {
+      rankingService.updateRanking(updated, member);
       eventPublisher.publishEvent(new RankingUpdateEvent());
     }
 
@@ -138,10 +176,9 @@ public class DailyGameService {
         isCorrect);
 
     return new GuessResponse(
-        similarity, session.getAttemptCount(), isCorrect, session.getStatus().name(), now);
+        similarity, updated.getAttemptCount(), isCorrect, updated.getStatus().name(), now);
   }
 
-  @Transactional(readOnly = true)
   public GuessResponse guessAnonymous(GuessRequest request) {
     DailySentence sentence = findTodaySentenceByPublicId(request.sentenceId());
 
@@ -150,9 +187,7 @@ public class DailyGameService {
             sentence.getId(), request.guessText(), sentence.getSentence(), remainingTtl());
 
     boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
-    meterRegistry
-        .counter("game.guesses.total", "result", isCorrect ? "correct" : "incorrect")
-        .increment();
+    (isCorrect ? guessCorrectCounter : guessIncorrectCounter).increment();
 
     return new GuessResponse(similarity, null, isCorrect, null, clock.instant());
   }

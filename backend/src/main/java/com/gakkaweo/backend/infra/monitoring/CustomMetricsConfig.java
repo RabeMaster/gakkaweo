@@ -4,7 +4,6 @@ import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.ranking.sse.SseConnectionManager;
 import com.gakkaweo.backend.ratelimit.filter.BucketStore;
 import io.micrometer.core.aop.TimedAspect;
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
@@ -43,28 +42,5 @@ public class CustomMetricsConfig {
                 "game.sentences.unused", dailySentenceRepository, repo -> repo.countUnusedActive())
             .description("Unused active sentences remaining")
             .register(registry);
-  }
-
-  @Bean
-  MeterBinder businessCounters() {
-    return registry -> {
-      Counter.builder("game.guesses.total")
-          .tag("result", "correct")
-          .description("Total guess submissions")
-          .register(registry);
-      Counter.builder("game.guesses.total")
-          .tag("result", "incorrect")
-          .description("Total guess submissions")
-          .register(registry);
-      Counter.builder("game.clears.total").description("Total game clears").register(registry);
-      Counter.builder("discord.webhook.total")
-          .tag("result", "success")
-          .description("Total Discord webhook dispatches")
-          .register(registry);
-      Counter.builder("discord.webhook.total")
-          .tag("result", "failure")
-          .description("Total Discord webhook dispatches")
-          .register(registry);
-    };
   }
 }

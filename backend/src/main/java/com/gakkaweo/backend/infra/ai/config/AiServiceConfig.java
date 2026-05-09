@@ -10,7 +10,7 @@ public class AiServiceConfig {
 
   @Bean
   RestClient aiServiceRestClient(AiServiceProperties properties) {
-    int timeoutMillis = (int) properties.timeout().toMillis();
+    int timeoutMillis = Math.toIntExact(properties.timeout().toMillis());
 
     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
     factory.setConnectTimeout(timeoutMillis);
