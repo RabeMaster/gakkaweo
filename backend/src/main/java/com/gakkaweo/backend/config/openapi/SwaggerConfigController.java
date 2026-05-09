@@ -7,6 +7,7 @@ import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.properties.SwaggerUiConfigProperties;
 import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,6 +21,7 @@ public class SwaggerConfigController {
 
   private final List<GroupedOpenApi> groupedOpenApis;
   private final SwaggerUiConfigProperties swaggerUiConfigProperties;
+  private final RoleHierarchy roleHierarchy;
 
   @GetMapping("/v3/api-docs/swagger-config")
   public ResponseEntity<SwaggerConfig> swaggerConfig() {
@@ -60,7 +62,7 @@ public class SwaggerConfigController {
     if (authentication == null || !authentication.isAuthenticated()) {
       return false;
     }
-    return authentication.getAuthorities().stream()
+    return roleHierarchy.getReachableGrantedAuthorities(authentication.getAuthorities()).stream()
         .map(GrantedAuthority::getAuthority)
         .anyMatch("ROLE_ADMIN"::equals);
   }
