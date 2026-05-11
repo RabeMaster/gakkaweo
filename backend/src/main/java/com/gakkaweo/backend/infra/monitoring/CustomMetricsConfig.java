@@ -7,11 +7,23 @@ import io.micrometer.core.aop.TimedAspect;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
+import java.util.concurrent.atomic.AtomicLong;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.Scheduled;
 
 @Configuration
+@RequiredArgsConstructor
 public class CustomMetricsConfig {
+
+  private final DailySentenceRepository dailySentenceRepository;
+  private final AtomicLong unusedSentenceCount = new AtomicLong();
+
+  @Scheduled(fixedRate = 300_000)
+  void refreshUnusedSentenceCount() {
+    unusedSentenceCount.set(dailySentenceRepository.countUnusedActive());
+  }
 
   @Bean
   TimedAspect timedAspect(MeterRegistry registry) {
@@ -36,10 +48,9 @@ public class CustomMetricsConfig {
   }
 
   @Bean
-  MeterBinder unusedSentencesGauge(DailySentenceRepository dailySentenceRepository) {
+  MeterBinder unusedSentencesGauge() {
     return registry ->
-        Gauge.builder(
-                "game.sentences.unused", dailySentenceRepository, repo -> repo.countUnusedActive())
+        Gauge.builder("game.sentences.unused", unusedSentenceCount, AtomicLong::doubleValue)
             .description("Unused active sentences remaining")
             .register(registry);
   }
