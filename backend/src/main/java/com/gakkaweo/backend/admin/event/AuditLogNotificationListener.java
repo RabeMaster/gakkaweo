@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.admin.event;
 
+import com.gakkaweo.backend.domain.admin.entity.AuditSeverity;
 import com.gakkaweo.backend.infra.notification.NotificationLevel;
 import com.gakkaweo.backend.infra.notification.client.DiscordWebhookClient;
 import com.gakkaweo.backend.infra.notification.config.NotificationProperties;
@@ -26,7 +27,7 @@ public class AuditLogNotificationListener {
       return;
     }
 
-    discordWebhookClient.send(NotificationLevel.HIGH, buildEmbed(event));
+    discordWebhookClient.send(levelFor(event.action().severity()), buildEmbed(event));
   }
 
   private DiscordEmbed buildEmbed(AuditLogEvent event) {
@@ -48,6 +49,13 @@ public class AuditLogNotificationListener {
       return targetType;
     }
     return targetType + ":" + targetId;
+  }
+
+  private static NotificationLevel levelFor(AuditSeverity severity) {
+    return switch (severity) {
+      case CRITICAL -> NotificationLevel.HIGH;
+      case ROUTINE -> NotificationLevel.INFO;
+    };
   }
 
   private String safe(String value) {
