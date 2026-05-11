@@ -35,7 +35,7 @@ class AuditLogNotificationListenerTest {
   }
 
   @Test
-  @DisplayName("enabled=true - 모든 감사 액션을 HIGH level로 Discord 전송 + timestamp 포함")
+  @DisplayName("enabled=true - 보안/파괴적 액션은 HIGH level로 Discord 전송 + timestamp 포함")
   void 활성화_전송() {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     AuditLogNotificationListener listener = new AuditLogNotificationListener(client, props(true));
@@ -64,14 +64,14 @@ class AuditLogNotificationListenerTest {
   }
 
   @Test
-  @DisplayName("enabled=true - 사용자 강제 액션 외의 관리자 액션도 그대로 전송")
-  void 문장등록도_전송() {
+  @DisplayName("enabled=true - 루틴 관리 액션은 INFO level로 전송")
+  void 루틴_액션_INFO() {
     DiscordWebhookClient client = mock(DiscordWebhookClient.class);
     AuditLogNotificationListener listener = new AuditLogNotificationListener(client, props(true));
 
     listener.onAuditLog(event(AuditAction.SENTENCE_CREATE, "문장 등록"));
 
-    verify(client).send(eq(NotificationLevel.HIGH), any(DiscordEmbed.class));
+    verify(client).send(eq(NotificationLevel.INFO), any(DiscordEmbed.class));
   }
 
   @Test

@@ -15,6 +15,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       TZ: UTC
     command: postgres -c timezone=UTC
+    ports:
+      - "127.0.0.1:${DB_PORT}:5432"
     networks:
       - internal
     logging: *logging
@@ -37,6 +39,8 @@ services:
       --maxmemory 256mb
       --maxmemory-policy volatile-lru
       --requirepass ${REDIS_PASSWORD}
+    ports:
+      - "127.0.0.1:${REDIS_PORT}:6379"
     networks:
       - internal
     logging: *logging
