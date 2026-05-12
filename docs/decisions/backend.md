@@ -288,6 +288,7 @@ HTTP I/O가 호출 스레드를 블로킹하지 않도록 분리했다.
 ```java
 @Configuration
 @EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
+@RequiredArgsConstructor
 public class AuditConfig {
   private final Clock clock;
 
