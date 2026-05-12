@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
+import { Dialog } from "@/shared/ui/Dialog";
 import { Input } from "@/shared/ui/Input";
 import { useCreateAnnouncement, useUpdateAnnouncement } from "@/features/admin/hooks/useAdminSystem";
 import { ANNOUNCEMENT_TYPE_LABELS, getAnnouncementTypeColor } from "@/shared/config/announcement";
@@ -33,18 +34,6 @@ export function AnnouncementDialog({ announcement, onClose }: AnnouncementDialog
   const { addToast } = useToastStore();
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && !isSaving) {
-        onClose();
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isSaving, onClose]);
 
   function handleSave() {
     if (!title.trim() || !startsAt) {
@@ -89,97 +78,97 @@ export function AnnouncementDialog({ announcement, onClose }: AnnouncementDialog
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true">
-      <div className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-md">
-        <div className="px-6 py-5 border-b-4 border-black dark:border-white">
-          <h2 className="text-xl font-black">{isEdit ? "공지 수정" : "공지 등록"}</h2>
-        </div>
-
-        <div className="px-6 py-5 space-y-4">
-          <div>
-            <label className="block text-sm font-bold mb-1">제목</label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="공지 제목" />
-          </div>
-
-          <div>
-            <label className="block text-sm font-bold mb-1">내용 (선택)</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="공지 내용"
-              rows={3}
-              className="w-full border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-black dark:text-white px-4 py-3 font-medium text-sm focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400"
-            />
-          </div>
-
-          <div className="flex gap-4 items-end">
-            <div>
-              <label className="block text-sm font-bold mb-1">유형</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value as "INFO" | "MAINTENANCE" | "WARNING")}
-                className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5 shadow-brutal-sm dark:[color-scheme:dark]"
-              >
-                {Object.entries(ANNOUNCEMENT_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div
-              className={`border-4 border-black dark:border-white px-3 py-1 text-xs font-black ${getAnnouncementTypeColor(type)}`}
-            >
-              미리보기
-            </div>
-
-            {isEdit && (
-              <div>
-                <label className="block text-sm font-bold mb-1">활성</label>
-                <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={active}
-                    onChange={(e) => setActive(e.target.checked)}
-                    className="w-5 h-5 border-2 border-black dark:border-white accent-yellow-400"
-                  />
-                  {active ? "활성" : "비활성"}
-                </label>
-              </div>
-            )}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-bold mb-1">시작</label>
-              <input
-                type="datetime-local"
-                value={startsAt}
-                onChange={(e) => setStartsAt(e.target.value)}
-                className="w-full border-4 border-black dark:border-white bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-bold shadow-brutal-sm dark:[color-scheme:dark]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold mb-1">종료 (선택)</label>
-              <input
-                type="datetime-local"
-                value={endsAt}
-                onChange={(e) => setEndsAt(e.target.value)}
-                className="w-full border-4 border-black dark:border-white bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-bold shadow-brutal-sm dark:[color-scheme:dark]"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 px-6 py-4 border-t-4 border-black dark:border-white">
+    <Dialog
+      onClose={onClose}
+      title={isEdit ? "공지 수정" : "공지 등록"}
+      maxWidth="max-w-md"
+      disableClose={isSaving}
+      footer={
+        <>
           <Button variant="secondary" size="sm" className="flex-1" onClick={onClose}>
             취소
           </Button>
           <Button size="sm" className="flex-1" onClick={handleSave} isLoading={isSaving}>
             {isEdit ? "수정" : "등록"}
           </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-bold mb-1">제목</label>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="공지 제목" />
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold mb-1">내용 (선택)</label>
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="공지 내용"
+            rows={3}
+            className="w-full border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-black dark:text-white px-4 py-3 font-medium text-sm focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400"
+          />
+        </div>
+
+        <div className="flex gap-4 items-end">
+          <div>
+            <label className="block text-sm font-bold mb-1">유형</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as "INFO" | "MAINTENANCE" | "WARNING")}
+              className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-sm font-bold px-3 py-1.5 shadow-brutal-sm dark:[color-scheme:dark]"
+            >
+              {Object.entries(ANNOUNCEMENT_TYPE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div
+            className={`border-4 border-black dark:border-white px-3 py-1 text-xs font-black ${getAnnouncementTypeColor(type)}`}
+          >
+            미리보기
+          </div>
+
+          {isEdit && (
+            <div>
+              <label className="block text-sm font-bold mb-1">활성</label>
+              <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={active}
+                  onChange={(e) => setActive(e.target.checked)}
+                  className="w-5 h-5 border-2 border-black dark:border-white accent-yellow-400"
+                />
+                {active ? "활성" : "비활성"}
+              </label>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-bold mb-1">시작</label>
+            <input
+              type="datetime-local"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+              className="w-full border-4 border-black dark:border-white bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-bold shadow-brutal-sm dark:[color-scheme:dark]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold mb-1">종료 (선택)</label>
+            <input
+              type="datetime-local"
+              value={endsAt}
+              onChange={(e) => setEndsAt(e.target.value)}
+              className="w-full border-4 border-black dark:border-white bg-white dark:bg-gray-900 px-3 py-1.5 text-sm font-bold shadow-brutal-sm dark:[color-scheme:dark]"
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

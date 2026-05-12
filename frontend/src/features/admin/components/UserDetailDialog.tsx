@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
+import { Dialog } from "@/shared/ui/Dialog";
 import { Input } from "@/shared/ui/Input";
 import {
   useUserDetail,
@@ -74,18 +75,6 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
   const { addToast } = useToastStore();
   const actorRole = useAuthStore((s) => s.user?.role);
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    }
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
-
   function handleAction(action: () => void, confirmMsg: string) {
     if (!window.confirm(confirmMsg)) {
       return;
@@ -97,37 +86,12 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
     addToast(err instanceof ApiError ? err.message : "작업 실패", "error");
   }
 
-  if (isLoading || !user) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal p-8">
-          <p className="font-bold text-gray-400 animate-pulse">로딩 중...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto py-8"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-lg my-auto">
-        <div className="px-6 py-5 border-b-4 border-black dark:border-white flex items-center justify-between">
-          <h2 className="text-xl font-black">사용자 상세</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="닫기"
-            className="text-2xl font-black leading-none hover:text-red-500"
-          >
-            &times;
-          </button>
-        </div>
-
-        <div className="px-6 py-5 space-y-4">
-          {/* 프로필 */}
+    <Dialog onClose={onClose} title="사용자 상세" maxWidth="max-w-lg">
+      {isLoading || !user ? (
+        <p className="font-bold text-gray-400 animate-pulse">로딩 중...</p>
+      ) : (
+        <div className="space-y-4">
           <div className="flex items-center gap-4">
             {user.profileUrl ? (
               <img
@@ -165,7 +129,6 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
             </div>
           </div>
 
-          {/* 활동 요약 */}
           <div className="grid grid-cols-4 gap-2">
             {[
               { label: "참여", value: user.activity.totalParticipations },
@@ -180,14 +143,13 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
             ))}
           </div>
 
-          {/* 액션 */}
           <div className="border-t-2 border-black/20 dark:border-white/20 pt-4 space-y-3">
             {!canModify(actorRole, user.role) && (
               <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
                 이 사용자에 대한 변경 권한이 부족합니다.
               </p>
             )}
-            {/* 역할 변경 */}
+
             <div className="flex flex-col gap-1">
               <div className="flex gap-2 items-center">
                 <span className="text-sm font-bold w-20">역할:</span>
@@ -228,7 +190,6 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
               )}
             </div>
 
-            {/* 차단/해제 */}
             <div className="flex gap-2 items-center">
               <span className="text-sm font-bold w-20">차단:</span>
               {user.banned ? (
@@ -272,7 +233,6 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
               )}
             </div>
 
-            {/* 닉네임 변경 */}
             <div className="flex gap-2 items-center">
               <span className="text-sm font-bold w-20">닉네임:</span>
               <Input
@@ -306,7 +266,6 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
               </Button>
             </div>
 
-            {/* 프로필 이미지 삭제 */}
             {user.profileUrl && (
               <div className="flex gap-2 items-center">
                 <span className="text-sm font-bold w-20">프로필:</span>
@@ -331,7 +290,6 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
               </div>
             )}
 
-            {/* 강제 탈퇴 (SUPERADMIN 전용) */}
             <div className="flex flex-col gap-1">
               <div className="flex gap-2 items-center">
                 <span className="text-sm font-bold w-20">탈퇴:</span>
@@ -365,7 +323,6 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
             </div>
           </div>
 
-          {/* 게임 이력 */}
           <div className="border-t-2 border-black/20 dark:border-white/20 pt-4">
             <button
               type="button"
@@ -414,7 +371,7 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
             )}
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </Dialog>
   );
 }

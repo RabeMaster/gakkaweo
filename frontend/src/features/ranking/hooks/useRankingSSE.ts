@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RankingResponse } from "@/shared/api/types";
+import { API_BASE_URL } from "@/shared/config/env";
 import { useConnectionStore } from "@/shared/stores/useConnectionStore";
 
-const SSE_URL = `${import.meta.env.VITE_API_BASE_URL}/ranking/stream`;
+const SSE_URL = `${API_BASE_URL}/ranking/stream`;
 const INITIAL_DELAY = 2000;
 const MAX_DELAY = 30_000;
 
