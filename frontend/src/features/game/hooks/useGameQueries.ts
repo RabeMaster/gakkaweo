@@ -1,13 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getHints, getHistory, getStatus, getToday, submitGuess } from "@/features/game/api";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { STALE_TIME } from "@/shared/config/query";
 import type { GuessRequest } from "@/shared/api/types";
 
 export function useToday() {
   return useQuery({
     queryKey: ["game", "today"],
     queryFn: getToday,
-    staleTime: Infinity,
+    staleTime: STALE_TIME.IMMUTABLE,
   });
 }
 
@@ -17,7 +18,7 @@ export function useGameStatus(sentenceId: string | undefined) {
   return useQuery({
     queryKey: ["game", "status", sentenceId],
     queryFn: getStatus,
-    staleTime: 30_000,
+    staleTime: STALE_TIME.SHORT,
     enabled: isAuthenticated && !!sentenceId,
   });
 }
@@ -28,7 +29,7 @@ export function useGameHistory(sentenceId: string | undefined) {
   return useQuery({
     queryKey: ["game", "history", sentenceId],
     queryFn: () => getHistory(sentenceId!),
-    staleTime: 0,
+    staleTime: STALE_TIME.NONE,
     enabled: isAuthenticated && !!sentenceId,
   });
 }
@@ -39,7 +40,7 @@ export function useHints(sentenceId: string | undefined, bestSimilarity: number)
   return useQuery({
     queryKey: ["game", "hints", sentenceId],
     queryFn: () => getHints(sentenceId!),
-    staleTime: 60_000,
+    staleTime: STALE_TIME.LONG,
     enabled: isAuthenticated && !!sentenceId && bestSimilarity >= 60,
   });
 }
