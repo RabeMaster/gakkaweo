@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { Dialog } from "@/shared/ui/Dialog";
 import { useThemeStore } from "@/shared/stores/useThemeStore";
 import {
   SOUND_VOLUME_KEY,
@@ -31,7 +32,6 @@ const SOUND_TESTS: { label: string; type: SoundType; color: string }[] = [
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const { theme, setTheme } = useThemeStore();
-  const modalRef = useRef<HTMLDivElement>(null);
   const [volume, setVolume] = useState(getSoundVolume);
 
   function handleVolumeChange(v: number) {
@@ -63,152 +63,90 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (!isOpen) {
-      return;
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isOpen) {
       stopCurrentSound();
     }
   }, [isOpen]);
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="settings-modal-title"
-    >
-      <div
-        ref={modalRef}
-        className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-sm"
-      >
-        <div className="flex items-center justify-between border-b-4 border-black dark:border-white px-6 py-4">
-          <h2 id="settings-modal-title" className="text-xl font-black">
-            설정
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 text-black dark:text-white px-3 py-1 font-black text-lg transition-all duration-100 shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]"
-            aria-label="설정 닫기"
-          >
-            ✕
-          </button>
-        </div>
-
-        <div className="px-6 py-5 space-y-5">
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 text-gray-600 dark:text-gray-400">
-              테마
-            </h3>
-            <div className="flex gap-2">
-              {THEME_OPTIONS.map(({ value, label, icon }) => (
-                <button
-                  type="button"
-                  key={value}
-                  onClick={() => setTheme(value)}
-                  className={[
-                    "flex-1 border-4 border-black dark:border-white px-3 py-2.5 font-bold text-sm transition-all duration-100",
-                    theme === value
-                      ? "bg-black text-white dark:bg-white dark:text-black shadow-none translate-x-0 translate-y-0"
-                      : "bg-white dark:bg-gray-900 text-black dark:text-white shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
-                  ].join(" ")}
-                >
-                  <span className="block text-lg" aria-hidden="true">
-                    {icon}
-                  </span>
-                  <span className="block mt-1">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 text-gray-600 dark:text-gray-400">
-              사운드
-            </h3>
-            <div className="flex items-center gap-3">
+    <Dialog isOpen={isOpen} onClose={onClose} title="설정">
+      <div className="space-y-5">
+        <div>
+          <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 text-gray-600 dark:text-gray-400">
+            테마
+          </h3>
+          <div className="flex gap-2">
+            {THEME_OPTIONS.map(({ value, label, icon }) => (
               <button
                 type="button"
-                onClick={handleMuteToggle}
-                aria-label={volume === 0 ? "음소거 해제" : "음소거"}
-                aria-pressed={volume === 0}
-                className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 w-7 h-7 shrink-0 flex items-center justify-center text-sm transition-all duration-100 shadow-brutal-sm-hover hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
+                key={value}
+                onClick={() => setTheme(value)}
+                className={[
+                  "flex-1 border-4 border-black dark:border-white px-3 py-2.5 font-bold text-sm transition-all duration-100",
+                  theme === value
+                    ? "bg-black text-white dark:bg-white dark:text-black shadow-none translate-x-0 translate-y-0"
+                    : "bg-white dark:bg-gray-900 text-black dark:text-white shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
+                ].join(" ")}
               >
-                {volume === 0 ? "🔇" : "🔊"}
+                <span className="block text-lg" aria-hidden="true">
+                  {icon}
+                </span>
+                <span className="block mt-1">{label}</span>
               </button>
-              <input
-                type="range"
-                aria-label="사운드 볼륨"
-                min="0"
-                max="1"
-                step="0.1"
-                value={volume}
-                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className="flex-1 accent-yellow-400"
-              />
-              <span className="text-sm font-bold tabular-nums w-10 text-right">{Math.round(volume * 100)}%</span>
-            </div>
+            ))}
           </div>
+        </div>
 
-          <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 text-gray-600 dark:text-gray-400">
-              사운드 테스트
-            </h3>
-            <div className="flex gap-2">
-              {SOUND_TESTS.map(({ label, type, color }) => (
-                <button
-                  type="button"
-                  key={type}
-                  onClick={() => playTestSound(type)}
-                  disabled={volume === 0}
-                  className={[
-                    `border-2 border-black dark:border-white px-3 py-1.5 text-xs font-black transition-all duration-100 ${color} text-black`,
-                    "shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
-                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-brutal-sm disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:active:shadow-brutal-sm disabled:active:translate-x-0 disabled:active:translate-y-0",
-                  ].join(" ")}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+        <div>
+          <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 text-gray-600 dark:text-gray-400">
+            사운드
+          </h3>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleMuteToggle}
+              aria-label={volume === 0 ? "음소거 해제" : "음소거"}
+              aria-pressed={volume === 0}
+              className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 w-7 h-7 shrink-0 flex items-center justify-center text-sm transition-all duration-100 shadow-brutal-sm-hover hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
+            >
+              {volume === 0 ? "🔇" : "🔊"}
+            </button>
+            <input
+              type="range"
+              aria-label="사운드 볼륨"
+              min="0"
+              max="1"
+              step="0.1"
+              value={volume}
+              onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+              className="flex-1 accent-yellow-400"
+            />
+            <span className="text-sm font-bold tabular-nums w-10 text-right">{Math.round(volume * 100)}%</span>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-sm font-extrabold uppercase tracking-wider mb-3 text-gray-600 dark:text-gray-400">
+            사운드 테스트
+          </h3>
+          <div className="flex gap-2">
+            {SOUND_TESTS.map(({ label, type, color }) => (
+              <button
+                type="button"
+                key={type}
+                onClick={() => playTestSound(type)}
+                disabled={volume === 0}
+                className={[
+                  `border-2 border-black dark:border-white px-3 py-1.5 text-xs font-black transition-all duration-100 ${color} text-black`,
+                  "shadow-brutal-sm hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]",
+                  "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-brutal-sm disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:active:shadow-brutal-sm disabled:active:translate-x-0 disabled:active:translate-y-0",
+                ].join(" ")}
+              >
+                {label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import type { MeResponse } from "@/shared/api/types";
 import { ApiError } from "@/shared/api/client";
 import { Button } from "@/shared/ui/Button";
+import { Dialog } from "@/shared/ui/Dialog";
 import { Input } from "@/shared/ui/Input";
 import { changeNickname } from "@/features/auth/api";
 
@@ -72,39 +73,12 @@ export function NicknameEditDialog({ onClose, currentNickname, onSuccess }: Nick
   const [nickname, setNickname] = useState(currentNickname);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
   }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isSubmitting) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isSubmitting, onClose]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (!isSubmitting && dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isSubmitting, onClose]);
 
   const handleChange = (value: string) => {
     if (value.length <= MAX_LENGTH) {
@@ -142,55 +116,53 @@ export function NicknameEditDialog({ onClose, currentNickname, onSuccess }: Nick
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true">
-      <div
-        ref={dialogRef}
-        className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-sm"
-      >
-        <div className="px-6 py-5 space-y-4">
-          <h2 className="text-xl font-black">닉네임 변경</h2>
-
-          <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
-            <li>- 한글, 영문, 숫자, 밑줄(_), 공백 사용 가능</li>
-            <li>
-              - {MIN_LENGTH}~{MAX_LENGTH}자, 연속 공백은 하나로 처리
-            </li>
-            <li>- 관리자 사칭 닉네임 사용 불가</li>
-          </ul>
-
-          <div className="space-y-2">
-            <Input
-              ref={inputRef}
-              value={nickname}
-              onChange={(e) => handleChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && canSubmit) {
-                  handleSubmit();
-                }
-              }}
-              placeholder="새 닉네임"
-              maxLength={MAX_LENGTH}
-              disabled={isSubmitting}
-            />
-
-            <div className="flex items-center justify-between min-h-[1.25rem]">
-              {error ? <p className="text-sm font-medium text-red-500">{error}</p> : <span />}
-              <p className="text-sm text-gray-500 tabular-nums">
-                {normalized.length}/{MAX_LENGTH}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex gap-3 px-6 py-4 border-t-4 border-black dark:border-white">
+    <Dialog
+      onClose={onClose}
+      title="닉네임 변경"
+      disableClose={isSubmitting}
+      footer={
+        <>
           <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={isSubmitting}>
             취소
           </Button>
           <Button size="sm" className="flex-1" onClick={handleSubmit} isLoading={isSubmitting} disabled={!canSubmit}>
             변경
           </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <ul className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+          <li>- 한글, 영문, 숫자, 밑줄(_), 공백 사용 가능</li>
+          <li>
+            - {MIN_LENGTH}~{MAX_LENGTH}자, 연속 공백은 하나로 처리
+          </li>
+          <li>- 관리자 사칭 닉네임 사용 불가</li>
+        </ul>
+
+        <div className="space-y-2">
+          <Input
+            ref={inputRef}
+            value={nickname}
+            onChange={(e) => handleChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && canSubmit) {
+                handleSubmit();
+              }
+            }}
+            placeholder="새 닉네임"
+            maxLength={MAX_LENGTH}
+            disabled={isSubmitting}
+          />
+
+          <div className="flex items-center justify-between min-h-[1.25rem]">
+            {error ? <p className="text-sm font-medium text-red-500">{error}</p> : <span />}
+            <p className="text-sm text-gray-500 tabular-nums">
+              {normalized.length}/{MAX_LENGTH}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

@@ -13,7 +13,7 @@
 7. [레이아웃](#7-layout-레이아웃)
 8. [페이지 구성](#8-페이지-구성)
 9. [로그인 프로바이더 색상](#9-로그인-프로바이더-색상)
-10. [컴포넌트 규칙](#10-컴포넌트-규칙) — 버튼, 입력창, 카드, 푸터, 랭킹, 모달, 프로필, 추측 피드백, 힌트, 어드민
+10. [컴포넌트 규칙](#10-컴포넌트-규칙) — 버튼, 입력창, 카드, 다이얼로그, 푸터, 랭킹, 모달, 프로필, 추측 피드백, 힌트, 어드민
 
 ---
 
@@ -213,6 +213,36 @@ border-4 border-black dark:border-white rounded-none shadow-brutal
 dark:shadow-brutal-dark bg-white dark:bg-gray-900 p-6
 ```
 
+### 다이얼로그
+
+공용 컴포넌트 `shared/ui/Dialog.tsx`. 모든 다이얼로그/모달은 이 컴포넌트를 사용한다.
+
+```
+백드롭: fixed inset-0 z-50 bg-black/40
+패널: border-4 border-black dark:border-white bg-white dark:bg-gray-900
+      shadow-brutal max-h-[85vh] flex flex-col
+헤더: border-b-4 px-6 py-5 (제목 + 닫기 X 버튼)
+콘텐츠: px-6 py-5 overflow-y-auto flex-1
+푸터: border-t-4 px-6 py-4 flex gap-3 (footer prop이 있을 때만)
+```
+
+**Props**:
+
+| prop | 타입 | 기본값 | 설명 |
+|------|------|--------|------|
+| `isOpen` | `boolean` | `true` | `false`이면 null 반환. 부모에서 조건부 렌더링 시 생략 가능 |
+| `onClose` | `() => void` | 필수 | Escape/click-outside/X 버튼에 연결 |
+| `title` | `string` | 필수 | 헤더에 표시. `aria-labelledby` 자동 연결 (`useId()`) |
+| `children` | `ReactNode` | 필수 | 콘텐츠 영역 |
+| `footer` | `ReactNode` | - | 없으면 푸터 미렌더. 버튼 조합 전달 |
+| `maxWidth` | `string` | `"max-w-sm"` | 패널 최대 너비 (`max-w-md`, `max-w-lg` 등) |
+| `disableClose` | `boolean` | `false` | 로딩 중 Escape/click-outside/X 차단 |
+| `className` | `string` | `""` | 패널에 추가 클래스 |
+
+**기능**: Escape 키, click-outside, body scroll lock (모듈 레벨 카운터로 중첩 지원), `role="dialog" aria-modal="true" aria-labelledby`
+
+**닫기(X) 버튼**: `border-4 shadow-brutal-sm` sm 상호작용. `disableClose` 시 `opacity-50 cursor-not-allowed`
+
 ### 푸터
 
 ```
@@ -236,6 +266,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 
 ### 플레이 방법 모달
 
+- 공용 `Dialog` 컴포넌트 사용 (`maxWidth="max-w-lg"`, footer 없음)
 - 최초 방문 시 자동 표시 (localStorage `help_modal_shown`). 닫으면 재표시 안 함
 - "플레이 방법" 버튼으로 언제든 재열람 (`border-2 bg-yellow-300 text-xs font-black`)
 - 섹션 간 `border-t-2 border-gray-200 dark:border-gray-800` 구분선
@@ -246,6 +277,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 
 ### 설정 모달
 
+- 공용 `Dialog` 컴포넌트 사용 (footer 없음). 닫을 때 재생 중 사운드 정지
 - **테마**: 라이트/다크/시스템 3버튼 토글. 활성 = `bg-black text-white`
 - **사운드 볼륨**: `input[type=range]` 슬라이더 (`accent-yellow-400`). localStorage `sound_volume` (기본 0.7, 범위 0~1). 상수: `shared/config/sound.ts`. 0이면 🔇, 그 외 🔊
 - **볼륨 아이콘 mute 토글**: 🔊/🔇 아이콘은 `border-2 shadow-brutal-sm-hover w-7 h-7` 버튼. 클릭 시 mute 토글, 이전 볼륨은 localStorage `sound_last_volume`에 보존(0 초과 값만 저장). 접근성: `aria-label` 동적 전환 + `aria-pressed`
@@ -296,7 +328,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **위젯 카드**: `border-4 shadow-brutal-sm`. 라벨 `text-xs uppercase tracking-wide`. 수치 `text-3xl font-black tabular-nums`
 - **상태 배지**: `px-2 py-0.5 text-xs font-black border-2 border-black dark:border-white`. ACTIVE=green-400, USED=blue-300, DISABLED=gray-300, SUPERADMIN=purple-400, ADMIN=red-400, USER=blue-300, 차단=gray-800
 - **SUPERADMIN 전용 액션 가시성**: 강제 탈퇴, 긴급 교체, 랭킹 캐시 리셋, Rate Limit 초기화, 역할 변경은 `useAuthStore().user?.role === "SUPERADMIN"` 검사로 disabled 분기. 비-SUPERADMIN ADMIN에게는 안내 문구(`text-amber-600 dark:text-amber-400`) 노출
-- **다이얼로그**: `border-4 shadow-brutal max-w-lg`. 헤더 `border-b-4 px-6 py-5`. 푸터 `border-t-4`. `role="dialog" aria-modal="true"` + Escape 닫기 필수
+- **다이얼로그**: 공용 `Dialog` 컴포넌트 사용. `maxWidth`는 `max-w-md`~`max-w-lg`. `disableClose`로 로딩 중 보호
 - **텍스트 링크 액션**: 테이블 행 내 액션은 `text-indigo-600 dark:text-indigo-400 font-black text-xs hover:underline`
 - **Pagination**: `Button sm secondary` 이전/다음 + `tabular-nums` 페이지 표시
 - **공지 유형 라벨**: 안내(blue-300), 점검(orange-300), 경고(red-500). select에서도 한글 라벨 사용. SoT는 `shared/config/announcement.ts`

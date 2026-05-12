@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { CSSProperties } from "react";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 import { ApiError } from "@/shared/api/client";
 import { Button } from "@/shared/ui/Button";
+import { Dialog } from "@/shared/ui/Dialog";
 import { uploadProfileImage } from "@/features/auth/api";
 import { cropImage } from "@/features/auth/utils/cropImage";
 import type { MeResponse } from "@/shared/api/types";
@@ -29,37 +30,10 @@ export function ProfileImageCropDialog({ imageSrc, onClose, onSuccess }: Profile
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const dialogRef = useRef<HTMLDivElement>(null);
 
   const onCropComplete = useCallback((_: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
   }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isSubmitting) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isSubmitting, onClose]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (!isSubmitting && dialogRef.current && !dialogRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isSubmitting, onClose]);
 
   const handleSubmit = async () => {
     if (!croppedAreaPixels) {
@@ -84,57 +58,55 @@ export function ProfileImageCropDialog({ imageSrc, onClose, onSuccess }: Profile
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true">
-      <div
-        ref={dialogRef}
-        className="border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-w-sm"
-      >
-        <div className="px-6 py-5 space-y-4">
-          <h2 className="text-xl font-black">프로필 이미지 편집</h2>
-
-          <div className="relative w-full aspect-square border-4 border-black dark:border-white overflow-hidden bg-gray-100 dark:bg-gray-800">
-            <Cropper
-              image={imageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={1}
-              cropShape="rect"
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-              style={{
-                containerStyle: { position: "absolute", inset: 0 },
-              }}
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-bold shrink-0">줌</span>
-            <input
-              type="range"
-              min={1}
-              max={10}
-              step={0.1}
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-full"
-              style={sliderStyle}
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {error && <p className="text-sm font-medium text-red-500">{error}</p>}
-        </div>
-
-        <div className="flex gap-3 px-6 py-4 border-t-4 border-black dark:border-white">
+    <Dialog
+      onClose={onClose}
+      title="프로필 이미지 편집"
+      disableClose={isSubmitting}
+      footer={
+        <>
           <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={isSubmitting}>
             취소
           </Button>
           <Button size="sm" className="flex-1" onClick={handleSubmit} isLoading={isSubmitting} disabled={isSubmitting}>
             저장
           </Button>
+        </>
+      }
+    >
+      <div className="space-y-4">
+        <div className="relative w-full aspect-square border-4 border-black dark:border-white overflow-hidden bg-gray-100 dark:bg-gray-800">
+          <Cropper
+            image={imageSrc}
+            crop={crop}
+            zoom={zoom}
+            aspect={1}
+            cropShape="rect"
+            onCropChange={setCrop}
+            onZoomChange={setZoom}
+            onCropComplete={onCropComplete}
+            style={{
+              containerStyle: { position: "absolute", inset: 0 },
+            }}
+          />
         </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-bold shrink-0">줌</span>
+          <input
+            type="range"
+            min={1}
+            max={10}
+            step={0.1}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className="w-full"
+            style={sliderStyle}
+            disabled={isSubmitting}
+          />
+        </div>
+
+        {error && <p className="text-sm font-medium text-red-500">{error}</p>}
       </div>
-    </div>
+    </Dialog>
   );
 }
