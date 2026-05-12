@@ -106,22 +106,22 @@ Family 기반 Refresh Token Rotation을 구현했다.
 
 ### 가드 3층
 
-| 층 | 위치 | 거부 코드 |
-| --- | --- | --- |
-| Path matcher | `SecurityConfig` (`/admin/**` = ADMIN, 위험 액션 = SUPERADMIN) | `ACCESS_DENIED` |
-| 대상 보호 | `AdminUserService.requireSufficientRoleOver` | `INSUFFICIENT_ROLE` |
-| 부여 정책 | `AdminUserService.requireRoleAssignmentAllowed` | `INSUFFICIENT_ROLE` |
+| 층           | 위치                                                           | 거부 코드           |
+| ------------ | -------------------------------------------------------------- | ------------------- |
+| Path matcher | `SecurityConfig` (`/admin/**` = ADMIN, 위험 액션 = SUPERADMIN) | `ACCESS_DENIED`     |
+| 대상 보호    | `AdminUserService.requireSufficientRoleOver`                   | `INSUFFICIENT_ROLE` |
+| 부여 정책    | `AdminUserService.requireRoleAssignmentAllowed`                | `INSUFFICIENT_ROLE` |
 
 > 거부 사유가 다르므로 응답 코드를 분리해 클라이언트가 구분할 수 있게 했다.
 
 ### 액션별 매트릭스
 
-| 액션 | Path | 대상 보호 | 부여 정책 |
-| --- | --- | --- | --- |
-| 역할 변경 | `ADMIN` | ✓ | ✓ (SUPERADMIN-only) |
-| 차단/해제, 닉네임 강제, 프로필 강제 삭제 | `ADMIN` | ✓ | — |
-| 강제 탈퇴 | `SUPERADMIN` | ✓ | — |
-| 긴급 교체, 랭킹 캐시 리셋, Rate Limit 초기화 | `SUPERADMIN` | — | — |
+| 액션                                         | Path         | 대상 보호 | 부여 정책           |
+| -------------------------------------------- | ------------ | --------- | ------------------- |
+| 역할 변경                                    | `ADMIN`      | ✓         | ✓ (SUPERADMIN-only) |
+| 차단/해제, 닉네임 강제, 프로필 강제 삭제     | `ADMIN`      | ✓         | —                   |
+| 강제 탈퇴                                    | `SUPERADMIN` | ✓         | —                   |
+| 긴급 교체, 랭킹 캐시 리셋, Rate Limit 초기화 | `SUPERADMIN` | —         | —                   |
 
 `ADMIN`은 가역적이고 단일 사용자에 한정된 액션, `SUPERADMIN`은 비가역(강제 탈퇴, 긴급 교체, 캐시 리셋), 시스템 광역(Rate Limit), 권한 부여 메타-액션(역할 변경)을 수행한다.
 
@@ -200,11 +200,11 @@ HALF_OPEN → 일정 시간 후 재시도
 
 운영시 중요 이벤트를 Discord 웹훅을 통해 알리게끔 설계했다.
 
-| 출처                         | 레벨   | 호출 방식                               | 멘션      |
-| ---------------------------- | ------ | --------------------------------------- | --------- |
-| 자정 스케줄러 결과           | `INFO` | `DailySentenceScheduler.notifyDiscord`  | 없음      |
-| 어드민 감사 로그             | `HIGH` | `AuditLogNotificationListener` (이벤트) | Role 멘션 |
-| `GlobalExceptionHandler` 500 | `HIGH` | `ServerErrorNotifier.notify`            | Role 멘션 |
+| 출처                         | 레벨          | 호출 방식                               | 멘션       |
+| ---------------------------- | ------------- | --------------------------------------- | ---------- |
+| 자정 스케줄러 결과           | `INFO`        | `DailySentenceScheduler.notifyDiscord`  | 없음       |
+| 어드민 감사 로그             | severity 기반 | `AuditLogNotificationListener` (이벤트) | CRITICAL만 |
+| `GlobalExceptionHandler` 500 | `HIGH`        | `ServerErrorNotifier.notify`            | Role 멘션  |
 
 ### 레벨 체계
 
@@ -218,6 +218,17 @@ HALF_OPEN → 일정 시간 후 재시도
 `mentionRoleId` 미설정 시 HIGH도 멘션 없이 전송을 하게 해두었다.
 
 `CRITICAL` (`@everyone`) 레벨은 설계 초기에 검토했으나 **현재 @everyone 멘션을 날릴만한 적절한 이벤트가 없어서 YAGNI원칙에 의거하여 보류.** 실사용 시나리오 (DB 연결 불가, Circuit breaker OPEN 등) 확정 시 enum 값 추가 + switch 분기 작업으로 도입 가능하다.
+
+### AuditSeverity
+
+감사 로그의 알림 레벨은 `AuditAction`마다 고정된 `AuditSeverity`로 결정한다. 기존에는 감사 로그 알림이 모두 `HIGH`(멘션 포함)였지만, 문장 등록이나 닉네임 강제 변경 같은 일상 운영 액션까지 멘션이 오면 알림 피로가 심해지기 때문에 2단계로 분리했다.
+
+| Severity   | NotificationLevel | 멘션      | 해당 액션                                                                     |
+| ---------- | ----------------- | --------- | ----------------------------------------------------------------------------- |
+| `CRITICAL` | `HIGH`            | Role 멘션 | 긴급 교체, 역할 변경, 차단/해제, 강제 탈퇴, 랭킹 캐시 리셋, Rate Limit 초기화 |
+| `ROUTINE`  | `INFO`            | 없음      | 문장 CRUD, CSV 업로드, 닉네임 강제, 프로필 강제 삭제, 공지 CRUD               |
+
+`AuditAction` enum이 severity를 필드로 갖고, `AuditLogNotificationListener`에서 severity에 따라 `NotificationLevel`을 결정한다.
 
 ### 감사 로그 알림: 이벤트 기반 (AFTER_COMMIT)
 
@@ -270,9 +281,37 @@ HTTP I/O가 호출 스레드를 블로킹하지 않도록 분리했다.
 
 > 실제로 이전의 개발 경험중에서 UTC와 KST 혼용으로 여러 버그를 경험한 적이 많다.
 
+### JPA Auditing
+
+엔티티 시간 필드(`createdAt`, `updatedAt`)를 Spring Data JPA Auditing으로 자동 관리한다. `@PrePersist`에서 `Instant.now()`를 직접 호출하면 테스트에서 시간을 제어할 수 없으므로, `Clock` 빈을 주입하는 구조를 택했다.
+
+```java
+@Configuration
+@EnableJpaAuditing(dateTimeProviderRef = "auditingDateTimeProvider")
+public class AuditConfig {
+  private final Clock clock;
+
+  @Bean
+  public DateTimeProvider auditingDateTimeProvider() {
+    return () -> Optional.of(clock.instant());
+  }
+}
+```
+
+테스트에서는 `TestClock`을 주입해 시간을 고정하거나 원하는 시점으로 이동시킬 수 있다.
+
+2단계 상속 구조로 엔티티별 필요에 맞게 선택한다.
+
+| 기반 클래스                                    | 필드                         | 사용 엔티티                          |
+| ---------------------------------------------- | ---------------------------- | ------------------------------------ |
+| `BaseTimeEntity`                               | `createdAt` (불변)           | DailySentence, GameSession 외 대부분 |
+| `BaseAuditableEntity` (extends BaseTimeEntity) | + `updatedAt` (수정 시 갱신) | Member, GameSession                  |
+
+`SocialAccount`는 예외로 `connectedAt`이라는 비즈니스 의미의 시간 필드를 갖는다. Auditing이 아닌 `@Column` + `@PrePersist`에서 직접 설정하는 방식을 쓴다.
+
 ### Flyway 마이그레이션
 
-V1~V13까지 적용. 기존 마이그레이션은 절대 수정하지 않고, 새 마이그레이션을 추가한다.
+V1~V17까지 적용. 기존 마이그레이션은 절대 수정하지 않고, 새 마이그레이션을 추가한다.
 
 > 마이그레이션 파일은 `V{timestamp}__{description}.sql` 형식으로 작성한다. 예: `V20260407_01__add_user_email.sql`
 
@@ -325,4 +364,4 @@ Spring Security role 기반으로 admin 그룹 접근을 제어한다.
 
 ---
 
-_마지막 업데이트: 2026-04-22_
+_마지막 업데이트: 2026-05-12_
