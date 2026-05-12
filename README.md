@@ -80,7 +80,7 @@ AI 임베딩 유사도 판별 기반 데일리 웹 게임입니다. 세멘틀(Se
 | **Backend**      | Spring Boot 3.5, Java 21, Spring Security, Spring Data JPA, Flyway, Bucket4j, Resilience4j                    |
 | **AI Service**   | FastAPI, Python 3.14, sentence-transformers ([jhgan/ko-sbert-sts](https://huggingface.co/jhgan/ko-sbert-sts)) |
 | **Database**     | PostgreSQL 16, Redis 7                                                                                        |
-| **Infra**        | Docker Compose, Nginx (reverse proxy), Cloudflare (Full Strict SSL)                                           |
+| **Infra**        | Docker Compose, Nginx (reverse proxy), Cloudflare (Full Strict SSL), Prometheus, Grafana                      |
 | **Deployment**   | Self-hosted Ubuntu server (Docker-based), GitHub Container Registry, SSH/SCP deployment scripts               |
 | **CI/CD**        | GitHub Actions                                                                                                |
 | **Code Quality** | ESLint + Prettier (FE), Spotless + Google Java Format (BE), Ruff (AI), Husky + lint-staged                    |
@@ -125,6 +125,7 @@ gakkaweo/
 │       │   ├── game/            #   GameSession, DailySentence, GuessHistory
 │       │   └── member/          #   Member, SocialAccount, LocalAccount
 │       ├── game/                # 게임 로직
+│       ├── infra/               # 외부 의존성 - AI 클라이언트, 알림, 모니터링
 │       ├── ranking/             # 랭킹 (Redis Sorted Set)
 │       └── ratelimit/           # Rate Limiting (Bucket4j)
 │
@@ -140,10 +141,13 @@ gakkaweo/
 │
 ├── docs-site/                   # Swagger UI 정적 사이트 (GitHub Pages)
 │
+├── infra/                       # Prometheus, Grafana 설정
+│
 ├── docs/                        # 프로젝트 문서
 │   ├── design-system.md         # UI/UX 디자인 시스템
 │   ├── branch-strategy.md       # 브랜치 전략
 │   ├── commit-convention.md     # 커밋 컨벤션
+│   ├── performance/             # DB 성능 분석
 │   └── decisions/               # 기술 의사결정
 │       ├── infra.md             #   인프라
 │       ├── backend.md           #   백엔드
@@ -221,12 +225,12 @@ pnpm dev
 
 ## 문서
 
-| 문서                                     | 설명                                           |
-| ---------------------------------------- | ---------------------------------------------- |
+| 문서                                                       | 설명                                          |
+| ---------------------------------------------------------- | --------------------------------------------- |
 | [API 문서 (Swagger)](https://api.r4b2.xyz/swagger-ui.html) | 런타임 API 문서 (public, admin은 로그인 필요) |
-| [디자인 시스템](docs/design-system.md)   | Neo-Brutalism UI 규칙, 컴포넌트 스타일 가이드  |
-| [브랜치 전략](docs/branch-strategy.md)   | main/dev 기반 브랜치 워크플로우                |
-| [커밋 컨벤션](docs/commit-convention.md) | Conventional Commits 규칙                      |
+| [디자인 시스템](docs/design-system.md)                     | Neo-Brutalism UI 규칙, 컴포넌트 스타일 가이드 |
+| [브랜치 전략](docs/branch-strategy.md)                     | main/dev 기반 브랜치 워크플로우               |
+| [커밋 컨벤션](docs/commit-convention.md)                   | Conventional Commits 규칙                     |
 
 ### 기술 의사결정
 
@@ -245,4 +249,4 @@ pnpm dev
 
 ---
 
-_마지막 업데이트: 2026-04-28_
+_마지막 업데이트: 2026-05-12_

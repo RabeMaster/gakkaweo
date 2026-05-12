@@ -128,6 +128,77 @@ AI Service (/health)    ──┘
 
 Backend는 3개 서비스가 모두 healthy일 때만 시작된다. AI Service는 모델 로딩에 시간이 걸리므로 `start_period: 120s`를 설정했다.
 
+## 모니터링 (Prometheus + Grafana)
+
+홈서버 한 대에서 모든 서비스를 돌리다 보니, CPU/메모리/디스크 상태와 애플리케이션 내부 지표를 한 눈에 보고 싶었다. Spring Boot Actuator + Micrometer가 이미 메트릭 수집 인프라를 제공하므로, 여기에 Prometheus와 Grafana를 얹는 방식으로 구성했다.
+
+### Actuator 포트 분리
+
+Actuator 엔드포인트를 애플리케이션 포트(8080)가 아닌 별도 포트(9090)로 분리했다.
+
+```yaml
+management:
+  server:
+    port: ${MANAGEMENT_PORT:9090}
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+```
+
+이렇게 하면 Nginx가 프록시하는 8080 포트에는 Actuator가 노출되지 않는다. 프로덕션에서는 Docker 네트워크 내부(internal)에서만 Prometheus가 9090에 접근하고, 외부에서는 접근할 수 없다.
+
+### 커스텀 메트릭
+
+Micrometer 기본 JVM/HTTP 메트릭 외에 도메인 메트릭을 추가했다.
+
+| 이름                               | 타입    | 태그                     | 설명                                  |
+| ---------------------------------- | ------- | ------------------------ | ------------------------------------- |
+| `game.guesses.total`               | Counter | `result`=success/failure | 추측 시도 (정답/오답)                 |
+| `game.clears.total`                | Counter | -                        | 클리어 횟수                           |
+| `game.sentences.unused`            | Gauge   | -                        | 미사용 문장 잔량 (5분 주기 갱신)      |
+| `ranking.update`                   | Counter | -                        | 랭킹 업데이트 횟수                    |
+| `auth.login.total`                 | Counter | `provider`, `result`     | 로그인 시도 (프로바이더별, 성공/실패) |
+| `auth.register.total`              | Counter | `provider`               | 회원가입                              |
+| `auth.withdraw.total`              | Counter | -                        | 탈퇴                                  |
+| `discord.webhook.total`            | Counter | `result`=success/failure | Discord 웹훅 전송                     |
+| `ratelimit.rejected`               | Counter | `group`                  | Rate Limit 거부 횟수                  |
+| `ratelimit.buckets.active`         | Gauge   | -                        | 활성 버킷 수                          |
+| `sse.connections`                  | Gauge   | -                        | 활성 SSE 연결 수                      |
+| `scheduler.midnight.duration`      | Timer   | -                        | 자정 스케줄러 실행 시간               |
+| `ranking.cache.rebuild.duration`   | Timer   | -                        | 랭킹 캐시 리빌드 시간                 |
+| `scheduler.redis_cleanup.duration` | Timer   | -                        | Redis 정리 스케줄러 실행 시간         |
+
+Gauge는 `CustomMetricsConfig`에서 `MeterBinder`로 등록하고, Counter는 각 서비스에서 생성자 주입 시 빌더로 등록한다. `@Timed`는 `TimedAspect` 빈으로 활성화했다. 인증 메트릭은 `AuthMetrics` 클래스로 분리해서 프로바이더별 카운터를 일괄 초기화하는 패턴을 사용했다.
+
+### Grafana 프로비저닝
+
+Grafana 대시보드와 데이터소스를 코드로 관리한다. 컨테이너가 새로 생성되어도 수동 설정 없이 동일한 대시보드가 자동으로 로드된다.
+
+```
+infra/
+├── grafana/
+│   ├── dashboards/
+│   │   └── gakkaweo.json         # 대시보드 정의
+│   └── provisioning/
+│       ├── dashboards/
+│       │   └── dashboard.yml     # 대시보드 프로비저닝
+│       └── datasources/
+│           └── prometheus.yml    # 데이터소스 프로비저닝
+└── prometheus/
+    ├── prometheus.dev.yml        # 로컬 환경
+    └── prometheus.prod.yml       # 프로덕션 환경
+```
+
+### 프로덕션 접근 제어
+
+Prometheus와 Grafana 모두 외부에 직접 노출하지 않는다.
+
+- Prometheus: Docker internal 네트워크에만 연결, 포트 바인딩 없음
+- Grafana: `127.0.0.1:3001:3000`으로 localhost만 바인딩
+
+대시보드를 볼 때는 SSH 터널(`ssh -L 3001:localhost:3001`)로 접근한다. Cloudflare 프록시를 통하지 않으므로 인증 우회나 외부 노출 걱정이 없다.
+
 ## CI/CD (GitHub Actions)
 
 ### CI — PR to dev
@@ -174,4 +245,4 @@ backend/.env       # 루트 .env의 심볼릭 링크
 
 ---
 
-_마지막 업데이트: 2026-04-07_
+_마지막 업데이트: 2026-05-12_
