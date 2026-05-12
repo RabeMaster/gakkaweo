@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ErrorFallback } from "@/shared/ui/ErrorFallback";
 
 interface Props {
@@ -17,7 +17,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: unknown, info: React.ErrorInfo) {
+  componentDidCatch(error: unknown, info: ErrorInfo) {
     console.error("ErrorBoundary caught:", error, info.componentStack);
   }
 
