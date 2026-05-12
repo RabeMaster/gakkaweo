@@ -1,10 +1,5 @@
 import type { ErrorBody } from "@/shared/api/types";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
-
-if (!API_BASE) {
-  throw new Error("VITE_API_BASE_URL 환경변수가 설정되지 않았습니다.");
-}
+import { API_BASE_URL } from "@/shared/config/env";
 
 export class ApiError extends Error {
   status: number;
@@ -26,7 +21,7 @@ let refreshPromise: Promise<boolean> | null = null;
 
 async function refreshToken(): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/auth/refresh`, {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
       credentials: "include",
     });
@@ -61,7 +56,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 type ApiFetchOptions = Omit<RequestInit, "body"> & { body?: BodyInit | object | null };
 
 export async function apiFetch<T>(path: string, { body: rawBody, ...restOptions }: ApiFetchOptions = {}): Promise<T> {
-  const url = `${API_BASE}${path}`;
+  const url = `${API_BASE_URL}${path}`;
   const method = restOptions.method?.toUpperCase() ?? "GET";
   const hasBody = method !== "GET" && method !== "HEAD";
 

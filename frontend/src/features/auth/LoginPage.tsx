@@ -7,10 +7,9 @@ import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { type Provider, PROVIDER_COLORS, getLastProvider, saveLastProvider } from "@/shared/config/providers";
 import { KakaoIcon, GoogleIcon, NaverIcon } from "@/shared/config/providerIcons";
 import { queryClient } from "@/shared/api/queryClient";
+import { API_BASE_URL } from "@/shared/config/env";
 import { login } from "@/features/auth/api";
 import { RegisterDialog } from "@/features/auth/components/RegisterDialog";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 const PROVIDERS: {
   id: Provider;
@@ -24,7 +23,7 @@ const PROVIDERS: {
 
 function handleOAuthLogin(provider: Provider) {
   saveLastProvider(provider);
-  window.location.href = `${API_BASE}/oauth2/authorization/${provider}`;
+  window.location.href = `${API_BASE_URL}/oauth2/authorization/${provider}`;
 }
 
 export function LoginPage() {
