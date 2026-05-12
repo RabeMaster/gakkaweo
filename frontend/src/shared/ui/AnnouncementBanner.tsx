@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getActiveAnnouncements } from "@/shared/api/announcements";
 import type { ActiveAnnouncementResponse } from "@/shared/api/types";
 import { getAnnouncementTypeColor } from "@/shared/config/announcement";
+import { STALE_TIME } from "@/shared/config/query";
 
 const STORAGE_KEY = "gakkaweo-dismissed-announcements";
 
@@ -66,7 +67,7 @@ export function AnnouncementBanner() {
   const { data: announcements } = useQuery({
     queryKey: ["announcements", "active"],
     queryFn: getActiveAnnouncements,
-    staleTime: 60_000,
+    staleTime: STALE_TIME.LONG,
   });
 
   const [dismissed, setDismissed] = useState<Set<string>>(loadDismissed);

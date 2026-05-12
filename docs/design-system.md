@@ -74,8 +74,8 @@ boxShadow: {
 | 상태           | 클래스                                                                      |
 | -------------- | --------------------------------------------------------------------------- |
 | 기본           | `shadow-brutal`                                                             |
-| Hover          | `hover:shadow-brutal-hover hover:translate-x-[4px] hover:translate-y-[4px]` |
-| Active (Click) | `active:shadow-none active:translate-x-[6px] active:translate-y-[6px]`      |
+| Hover          | `hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1`         |
+| Active (Click) | `active:shadow-none active:translate-x-1.5 active:translate-y-1.5`          |
 | Disabled       | `opacity-50 cursor-not-allowed pointer-events-none translate-x-0 translate-y-0` (그림자 유지) |
 | Loading        | `opacity-70 cursor-wait shadow-brutal animate-pulse`                        |
 
@@ -84,7 +84,7 @@ boxShadow: {
 | 상태           | 클래스                                                                         |
 | -------------- | ------------------------------------------------------------------------------ |
 | 기본           | `shadow-brutal-sm`                                                             |
-| Hover          | `hover:shadow-brutal-sm-hover hover:translate-x-[2px] hover:translate-y-[2px]` |
+| Hover          | `hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5`    |
 | Active (Click) | `active:shadow-none active:translate-x-[3px] active:translate-y-[3px]`         |
 | Disabled       | `opacity-50 cursor-not-allowed pointer-events-none translate-x-0 translate-y-0` (그림자 유지) |
 | Loading        | `opacity-70 cursor-wait shadow-brutal-sm animate-pulse`                        |
@@ -186,8 +186,8 @@ hue = (similarity / 100) × 120
 ```
 기본: border-4 border-black bg-{color} shadow-brutal rounded-none font-bold
       px-6 py-3 transition-all duration-100
-호버: hover:shadow-brutal-hover hover:translate-x-[4px] hover:translate-y-[4px]
-클릭: active:shadow-none active:translate-x-[6px] active:translate-y-[6px]
+호버: hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1
+클릭: active:shadow-none active:translate-x-1.5 active:translate-y-1.5
 비활성: disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
         disabled:shadow-none disabled:translate-x-0 disabled:translate-y-0
 ```
