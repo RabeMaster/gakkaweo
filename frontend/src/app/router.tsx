@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { Layout } from "@/app/layout/Layout";
 import { RequireAuth, RequireAdminAuth, RedirectIfAuth } from "@/app/guards";
+import { RouteErrorFallback } from "@/shared/ui/ErrorFallback";
 import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { MyPage } from "@/features/auth/MyPage";
@@ -16,6 +17,7 @@ import { TermsOfServicePage } from "@/pages/TermsOfServicePage";
 export const router = createBrowserRouter([
   {
     element: <Layout />,
+    errorElement: <RouteErrorFallback />,
     children: [
       { index: true, element: <HomePage /> },
       {

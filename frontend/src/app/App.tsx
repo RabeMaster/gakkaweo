@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "@/app/ErrorBoundary";
 import { router } from "@/app/router";
 import { queryClient } from "@/shared/api/queryClient";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
@@ -32,8 +33,10 @@ export function App() {
   }, [addToast]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
