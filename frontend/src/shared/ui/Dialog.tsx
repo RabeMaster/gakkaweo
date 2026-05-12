@@ -92,12 +92,12 @@ export function Dialog({
       <div
         ref={panelRef}
         className={[
-          "border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-h-[85vh] flex flex-col",
+          "border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-h-[85vh] flex flex-col mx-4 md:mx-0",
           maxWidth,
           className,
         ].join(" ")}
       >
-        <div className="flex items-center justify-between border-b-4 border-black dark:border-white px-6 py-5 shrink-0">
+        <div className="flex items-center justify-between border-b-4 border-black dark:border-white px-4 py-4 md:px-6 md:py-5 shrink-0">
           <h2 id={titleId} className="text-xl font-black">
             {title}
           </h2>
@@ -117,10 +117,12 @@ export function Dialog({
           </button>
         </div>
 
-        <div className="px-6 py-5 overflow-y-auto flex-1">{children}</div>
+        <div className="px-4 py-4 md:px-6 md:py-5 overflow-y-auto flex-1">{children}</div>
 
         {footer && (
-          <div className="flex gap-3 px-6 py-4 border-t-4 border-black dark:border-white shrink-0">{footer}</div>
+          <div className="flex gap-3 px-4 py-3 md:px-6 md:py-4 border-t-4 border-black dark:border-white shrink-0">
+            {footer}
+          </div>
         )}
       </div>
     </div>

@@ -71,11 +71,11 @@ export function LoginPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="space-y-2">
-        <h1 className="text-4xl font-black">로그인</h1>
+        <h1 className="text-2xl md:text-4xl font-black">로그인</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">소셜 또는 가까워 계정으로 시작하세요</p>
       </div>
 
-      <div className="flex gap-6 items-stretch">
+      <div className="flex flex-col md:flex-row gap-6 md:items-stretch">
         <Card className="flex-1 space-y-4">
           <h2 className="text-lg font-extrabold">소셜 로그인</h2>
           <p
@@ -119,10 +119,16 @@ export function LoginPage() {
           </div>
         </Card>
 
-        <div className="flex flex-col items-center gap-4">
+        <div className="hidden md:flex flex-col items-center gap-4">
           <div className="flex-1 border-l-2 border-gray-300 dark:border-gray-700" />
           <span className="text-sm font-bold text-gray-400">또는</span>
           <div className="flex-1 border-l-2 border-gray-300 dark:border-gray-700" />
+        </div>
+
+        <div className="flex md:hidden items-center gap-4">
+          <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-700" />
+          <span className="text-sm font-bold text-gray-400">또는</span>
+          <div className="flex-1 border-t-2 border-gray-300 dark:border-gray-700" />
         </div>
 
         <Card className="flex-1 space-y-4">

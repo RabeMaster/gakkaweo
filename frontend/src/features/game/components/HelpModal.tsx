@@ -120,7 +120,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </li>
           <li className="flex gap-2">
             <span className="shrink-0 font-black">·</span>
-            <span>좌측 패널에서 확인할 수 있습니다 (로그인 필요)</span>
+            <span>좌측 패널에서 확인할 수 있습니다 (모바일: 하단, 로그인 필요)</span>
           </li>
         </ul>
       </section>

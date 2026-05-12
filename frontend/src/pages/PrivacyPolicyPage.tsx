@@ -19,7 +19,7 @@ export function PrivacyPolicyPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="space-y-2">
-        <h1 className="text-4xl font-black">개인정보 처리방침</h1>
+        <h1 className="text-2xl md:text-4xl font-black">개인정보 처리방침</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">시행일: {EFFECTIVE_DATE}</p>
       </div>
 

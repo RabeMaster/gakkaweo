@@ -7,7 +7,7 @@ export function NotFoundPage() {
 
   return (
     <div className="max-w-md mx-auto space-y-6 text-center">
-      <h1 className="text-6xl font-black">404</h1>
+      <h1 className="text-4xl md:text-6xl font-black">404</h1>
       <Card>
         <p className="text-lg font-medium mb-6">페이지를 찾을 수 없습니다</p>
         <Button variant="primary" onClick={() => navigate("/")}>

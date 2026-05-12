@@ -18,8 +18,8 @@ const linkClassName =
 export function Footer() {
   return (
     <footer className="border-t-4 border-black dark:border-white bg-white dark:bg-gray-950">
-      <div className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="max-w-6xl mx-auto px-4 py-4 md:px-6 md:py-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-3 md:gap-4">
           <span className="text-sm font-bold text-gray-600 dark:text-gray-400">© 2026 가까워</span>
           {LEGAL_LINKS.map((link) => (
             <Link key={link.to} to={link.to} className={linkClassName}>
@@ -28,7 +28,7 @@ export function Footer() {
           ))}
         </div>
 
-        <nav className="flex items-center gap-4">
+        <nav className="flex flex-wrap items-center gap-3 md:gap-4">
           {EXTERNAL_LINKS.map((link) => (
             <a
               key={link.href}

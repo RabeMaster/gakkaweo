@@ -19,7 +19,7 @@ export function Layout() {
     <div className="flex flex-col min-h-screen bg-white dark:bg-gray-950 text-black dark:text-white">
       <Header />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-6 py-8">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 md:px-6 md:py-8">
         <AnnouncementBanner />
         <Outlet />
       </main>
@@ -27,7 +27,7 @@ export function Layout() {
       <Footer />
 
       {toasts.length > 0 && (
-        <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
+        <div className="fixed bottom-4 right-4 left-4 md:left-auto md:bottom-6 md:right-6 flex flex-col gap-3 z-50">
           {toasts.map((toast) => (
             <button
               type="button"
