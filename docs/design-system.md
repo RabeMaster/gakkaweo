@@ -13,7 +13,7 @@
 7. [레이아웃](#7-layout-레이아웃)
 8. [페이지 구성](#8-페이지-구성)
 9. [로그인 프로바이더 색상](#9-로그인-프로바이더-색상)
-10. [컴포넌트 규칙](#10-컴포넌트-규칙) — 버튼, 입력창, 카드, 다이얼로그, 푸터, 랭킹, 모달, 프로필, 추측 피드백, 힌트, 어드민
+10. [컴포넌트 규칙](#10-컴포넌트-규칙) — 버튼, 입력창, 카드, 다이얼로그, 푸터, 랭킹, 모달, 프로필, 추측 피드백, 추측 기록, 힌트, 어드민
 11. [반응형](#11-반응형-responsive)
 
 ---
@@ -72,25 +72,41 @@ boxShadow: {
 
 ### md/lg 버튼 (shadow-brutal, 6px)
 
-| 상태           | 클래스                                                                      |
-| -------------- | --------------------------------------------------------------------------- |
-| 기본           | `shadow-brutal`                                                             |
-| Hover          | `hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1`         |
-| Active (Click) | `active:shadow-none active:translate-x-1.5 active:translate-y-1.5`          |
+| 상태           | 클래스                                                                                        |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| 기본           | `shadow-brutal`                                                                               |
+| Hover          | `hover:shadow-brutal-hover hover:translate-x-1 hover:translate-y-1`                           |
+| Active (Click) | `active:shadow-none active:translate-x-1.5 active:translate-y-1.5`                            |
 | Disabled       | `opacity-50 cursor-not-allowed pointer-events-none translate-x-0 translate-y-0` (그림자 유지) |
-| Loading        | `opacity-70 cursor-wait shadow-brutal animate-pulse`                        |
+| Loading        | `opacity-70 cursor-wait shadow-brutal animate-pulse`                                          |
 
 ### sm 버튼 (shadow-brutal-sm, 3px)
 
-| 상태           | 클래스                                                                         |
-| -------------- | ------------------------------------------------------------------------------ |
-| 기본           | `shadow-brutal-sm`                                                             |
-| Hover          | `hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5`    |
-| Active (Click) | `active:shadow-none active:translate-x-[3px] active:translate-y-[3px]`         |
+| 상태           | 클래스                                                                                        |
+| -------------- | --------------------------------------------------------------------------------------------- |
+| 기본           | `shadow-brutal-sm`                                                                            |
+| Hover          | `hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5`                    |
+| Active (Click) | `active:shadow-none active:translate-x-[3px] active:translate-y-[3px]`                        |
 | Disabled       | `opacity-50 cursor-not-allowed pointer-events-none translate-x-0 translate-y-0` (그림자 유지) |
-| Loading        | `opacity-70 cursor-wait shadow-brutal-sm animate-pulse`                        |
+| Loading        | `opacity-70 cursor-wait shadow-brutal-sm animate-pulse`                                       |
 
 모든 상태 전환에는 `transition-all duration-100`을 적용하여 부드러운 전환을 준다.
+
+### 터치 디바이스 hover 보호 (Tailwind v4)
+
+Tailwind v4는 `hover:` 변형을 `@media (hover: hover)` 안에 래핑한다. 터치 디바이스에서는 hover 상태가 발화하지 않으며, `active:` 상태가 press 피드백을 제공한다.
+
+- `@custom-variant hover (&:hover);` 등으로 hover 보호를 무력화하지 않는다
+- `group-hover:`로만 표시되는 요소는 터치 디바이스에서 보이지 않으므로, hover-only 힌트에 의존하지 않는다
+- 모바일에서 반드시 보여야 하는 요소는 `opacity-100 md:opacity-0 md:group-hover:opacity-100` 패턴 사용
+
+### 공용 훅/컴포넌트
+
+| 이름              | 경로                              | 용도                                                                 |
+| ----------------- | --------------------------------- | -------------------------------------------------------------------- |
+| `useClickOutside` | `shared/hooks/useClickOutside.ts` | click-outside 닫기. `disabled`, `excludeRefs` 옵션                   |
+| `SkeletonRow`     | `shared/ui/SkeletonRow.tsx`       | 로딩 스켈레톤. `height`, `className` props                           |
+| `MobileSideSheet` | `shared/ui/MobileSideSheet.tsx`   | 모바일 전용 오른쪽 드로어. 플로팅 트리거 + 슬라이드 인/아웃 + 백드롭 |
 
 ## 4. Color Palette (색상 규정)
 
@@ -155,25 +171,25 @@ hue = (similarity / 100) × 120
 
 ## 8. 페이지 구성
 
-| 페이지     | 경로       | 설명                                          |
-| ---------- | ---------- | --------------------------------------------- |
-| 게임       | `/`        | 추측 입력, 유사도 결과, 히스토리, 힌트 마스크, 랭킹 패널 (좌측) |
-| 로그인     | `/login`   | 소셜 로그인 + 로컬 로그인 2컬럼 + 회원가입 다이얼로그 |
-| 마이페이지 | `/mypage`  | 프로필 이미지 업로드/삭제, 닉네임 확인 (✏️ 편집), 회원 탈퇴 |
-| 어드민     | `/admin`   | 사이드바+탭 레이아웃 (대시보드/문장/사용자/시스템). ROLE_ADMIN만 접근 |
-| 개인정보 처리방침 | `/privacy` | 개인정보 수집/이용/보호 방침 |
-| 서비스 이용약관 | `/terms` | 서비스 이용 조건 및 규정 |
+| 페이지            | 경로       | 설명                                                                  |
+| ----------------- | ---------- | --------------------------------------------------------------------- |
+| 게임              | `/`        | 추측 입력, 유사도 결과, 히스토리, 힌트 마스크, 랭킹 패널 (좌측)       |
+| 로그인            | `/login`   | 소셜 로그인 + 로컬 로그인 2컬럼 + 회원가입 다이얼로그                 |
+| 마이페이지        | `/mypage`  | 프로필 이미지 업로드/삭제, 닉네임 확인 (✏️ 편집), 회원 탈퇴           |
+| 어드민            | `/admin`   | 사이드바+탭 레이아웃 (대시보드/문장/사용자/시스템). ROLE_ADMIN만 접근 |
+| 개인정보 처리방침 | `/privacy` | 개인정보 수집/이용/보호 방침                                          |
+| 서비스 이용약관   | `/terms`   | 서비스 이용 조건 및 규정                                              |
 
 ## 9. 로그인 프로바이더 색상
 
 각 프로바이더의 공식 브랜드 가이드라인을 준수한다. 로컬 계정은 중립 색상 사용.
 
-| 프로바이더 | 라이트 배경 | 다크 배경      | 텍스트 (라이트)  | 텍스트 (다크)    |
-| ---------- | ----------- | -------------- | ---------------- | ---------------- |
-| 카카오     | `#FEE500`   | `#FEE500`      | `#191919`        | `#191919`        |
-| Google     | `#FFFFFF`   | `#131314`      | `#1F1F1F`        | `#E3E3E3`        |
-| 네이버     | `#03C75A`   | `#03C75A`      | `#FFFFFF`        | `#FFFFFF`        |
-| 가까워     | `gray-200`  | `gray-700`     | `black`          | `white`          |
+| 프로바이더 | 라이트 배경 | 다크 배경  | 텍스트 (라이트) | 텍스트 (다크) |
+| ---------- | ----------- | ---------- | --------------- | ------------- |
+| 카카오     | `#FEE500`   | `#FEE500`  | `#191919`       | `#191919`     |
+| Google     | `#FFFFFF`   | `#131314`  | `#1F1F1F`       | `#E3E3E3`     |
+| 네이버     | `#03C75A`   | `#03C75A`  | `#FFFFFF`       | `#FFFFFF`     |
+| 가까워     | `gray-200`  | `gray-700` | `black`         | `white`       |
 
 - 카카오/네이버는 라이트/다크 공통 배경 (브랜드 색상이 양쪽 모드에서 충분한 대비 제공)
 - Google만 다크모드 전용 배경 (`#131314`) 사용 — 공식 Sign-In 다크 테마 기준
@@ -229,16 +245,16 @@ dark:shadow-brutal-dark bg-white dark:bg-gray-900 p-6
 
 **Props**:
 
-| prop | 타입 | 기본값 | 설명 |
-|------|------|--------|------|
-| `isOpen` | `boolean` | `true` | `false`이면 null 반환. 부모에서 조건부 렌더링 시 생략 가능 |
-| `onClose` | `() => void` | 필수 | Escape/click-outside/X 버튼에 연결 |
-| `title` | `string` | 필수 | 헤더에 표시. `aria-labelledby` 자동 연결 (`useId()`) |
-| `children` | `ReactNode` | 필수 | 콘텐츠 영역 |
-| `footer` | `ReactNode` | - | 없으면 푸터 미렌더. 버튼 조합 전달 |
-| `maxWidth` | `string` | `"max-w-sm"` | 패널 최대 너비 (`max-w-md`, `max-w-lg` 등) |
-| `disableClose` | `boolean` | `false` | 로딩 중 Escape/click-outside/X 차단 |
-| `className` | `string` | `""` | 패널에 추가 클래스 |
+| prop           | 타입         | 기본값       | 설명                                                       |
+| -------------- | ------------ | ------------ | ---------------------------------------------------------- |
+| `isOpen`       | `boolean`    | `true`       | `false`이면 null 반환. 부모에서 조건부 렌더링 시 생략 가능 |
+| `onClose`      | `() => void` | 필수         | Escape/click-outside/X 버튼에 연결                         |
+| `title`        | `string`     | 필수         | 헤더에 표시. `aria-labelledby` 자동 연결 (`useId()`)       |
+| `children`     | `ReactNode`  | 필수         | 콘텐츠 영역                                                |
+| `footer`       | `ReactNode`  | -            | 없으면 푸터 미렌더. 버튼 조합 전달                         |
+| `maxWidth`     | `string`     | `"max-w-sm"` | 패널 최대 너비 (`max-w-md`, `max-w-lg` 등)                 |
+| `disableClose` | `boolean`    | `false`      | 로딩 중 Escape/click-outside/X 차단                        |
+| `className`    | `string`     | `""`         | 패널에 추가 클래스                                         |
 
 **기능**: Escape 키, click-outside, body scroll lock (모듈 레벨 카운터로 중첩 지원), `role="dialog" aria-modal="true" aria-labelledby`
 
@@ -252,7 +268,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 ```
 
 - 좌측: `© 2026 가까워` (`text-sm font-bold text-gray-600 dark:text-gray-400`)
-- 우측: 이용약관, 개인정보처리방침 (내부 Link), GitHub, Blog (외부 `<a>` target="_blank")
+- 우측: 이용약관, 개인정보처리방침 (내부 Link), GitHub, Blog (외부 `<a>` target="\_blank")
 - 링크: `text-sm font-bold text-gray-600 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors`
 - Layout: `flex flex-col min-h-screen` + `<main>` `flex-1` (스티키 푸터)
 
@@ -303,6 +319,13 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **데이터 원천**: `displayGuesses` 파생 (추가 API 없음). 새로고침 시 history API → 자동 복원
 - **FE 정규화**: `normalizeGuessText()` — BE `TextNormalizer`와 동일 로직 (`[^가-힣a-zA-Z0-9\s]` 제거). 서버 호출 전 선검증
 
+### 추측 기록 (GuessHistory)
+
+- **제목**: "추측 기록" 항상 표시 (0개일 때도)
+- **5슬롯 고정**: 페이지당 5개. 부족한 슬롯은 invisible placeholder로 채워 레이아웃 시프트 방지
+- **placeholder**: 실제 아이템과 동일한 DOM 구조 (`border-4`, `p-2 md:p-3`, `SimilarityBadge` 크기 매칭). `invisible aria-hidden`
+- **페이지네이션**: `Button size="sm" variant="secondary"` (어드민 Pagination과 통일)
+
 ### 힌트 패널
 
 - **위치**: 좌측 칼럼, RankingPanel 아래. 부모 `div.w-72.shrink-0.space-y-6`이 RankingPanel + HintPanel 래핑
@@ -346,26 +369,34 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 
 ### 패딩 축소
 
-| 대상 | 모바일 | 데스크톱 |
-|------|--------|----------|
-| Layout main | `px-4 py-6` | `md:px-6 md:py-8` |
-| Card | `p-4` | `md:p-6` |
+| 대상               | 모바일      | 데스크톱          |
+| ------------------ | ----------- | ----------------- |
+| Layout main        | `px-4 py-6` | `md:px-6 md:py-8` |
+| Card               | `p-4`       | `md:p-6`          |
 | Dialog 헤더/콘텐츠 | `px-4 py-4` | `md:px-6 md:py-5` |
-| Dialog 푸터 | `px-4 py-3` | `md:px-6 md:py-4` |
-| Dialog 패널 | `mx-4` | `md:mx-0` |
-| Footer | `px-4 py-4` | `md:px-6 md:py-6` |
-| Header | `px-4 py-3` | `md:px-6 md:py-4` |
+| Dialog 푸터        | `px-4 py-3` | `md:px-6 md:py-4` |
+| Dialog 패널        | `mx-4`      | `md:mx-0`         |
+| Footer             | `px-4 py-4` | `md:px-6 md:py-6` |
+| Header             | `px-4 py-3` | `md:px-6 md:py-4` |
 
 ### 헤더
 
-- 데스크톱: 우측 버튼 그룹 (`hidden md:flex`)
-- 모바일: 햄버거 버튼 (`md:hidden`) + 드롭다운 메뉴 (`border-b-4 border-x-4 shadow-brutal`)
-- 라우트 변경 시 자동 닫기, 외부 클릭 닫기
+- 모바일/데스크톱 동일: 우측 인라인 버튼 그룹 (설정, 관리, 닉네임/로그인)
+- 햄버거 메뉴 없음
 
 ### HomePage (게임)
 
-- 데스크톱: 사이드 패널(좌) + 게임(우) 2단 (`flex-row`)
-- 모바일: 게임(상) -> 사이드 패널(하) 1단 스택 (`flex-col`, `order-2`)
+- 데스크톱: 사이드 패널(좌 w-72) + 게임(우) 2단 (`flex-row`)
+- 모바일: 게임만 표시. 사이드 패널(랭킹/힌트)은 `MobileSideSheet` 드로어로 접근
+
+### MobileSideSheet (모바일 드로어)
+
+- **트리거**: 화면 오른쪽 `top-[38%]` 고정 버튼 2개 (랭킹/힌트). `border-l-4 border-y-4`, hover 시 `bg-yellow-300`
+- **드로어**: 오른쪽에서 슬라이드 인 (`animate-slide-in-right`, w-72). 닫을 때 슬라이드 아웃 (`animate-slide-out-right`)
+- **백드롭**: `fixed inset-0 bg-black/40` (Dialog와 동일)
+- **헤더**: 제목 + ✕ 닫기 버튼. 하단에 랭킹/힌트 탭 전환 바
+- **닫기**: 백드롭 클릭, Escape, ✕ 버튼, 같은 탭 재클릭. body scroll lock 적용
+- **데스크톱**: `md:hidden`으로 숨김
 
 ### LoginPage
 
@@ -380,11 +411,11 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 
 ### 타이포그래피
 
-| 용도 | 모바일 | 데스크톱 |
-|------|--------|----------|
-| 페이지 제목 | `text-2xl` | `md:text-4xl` |
-| 섹션 제목 | `text-xl` | `md:text-2xl` |
-| HintMask 텍스트 | `text-xl` | `md:text-2xl` |
+| 용도            | 모바일     | 데스크톱      |
+| --------------- | ---------- | ------------- |
+| 페이지 제목     | `text-2xl` | `md:text-4xl` |
+| 섹션 제목       | `text-xl`  | `md:text-2xl` |
+| HintMask 텍스트 | `text-xl`  | `md:text-2xl` |
 | GameClearedCard | `text-2xl` | `md:text-3xl` |
 
 ### Toast

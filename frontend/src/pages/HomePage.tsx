@@ -4,6 +4,7 @@ import { useToday, useGameStatus, useHints } from "@/features/game/hooks/useGame
 import { RankingPanel } from "@/features/ranking/components/RankingPanel";
 import { useRankings } from "@/features/ranking/hooks/useRankingQueries";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { MobileSideSheet } from "@/shared/ui/MobileSideSheet";
 
 export function HomePage() {
   const { data: ranking, isLoading: rankingLoading } = useRankings();
@@ -16,18 +17,32 @@ export function HomePage() {
 
   const { data: hints, isLoading: hintsLoading } = useHints(sentenceId, bestSimilarity);
 
+  const rankingPanel = <RankingPanel ranking={ranking} isLoading={rankingLoading} />;
+  const hintPanel = (
+    <HintPanel
+      hints={hints?.hints ?? []}
+      isLoading={hintsLoading}
+      bestSimilarity={bestSimilarity}
+      isAuthenticated={isAuthenticated}
+    />
+  );
+
   return (
-    <div className="flex flex-col md:flex-row gap-6 md:items-start">
-      <div className="order-2 md:order-none w-full md:w-72 md:shrink-0 space-y-6">
-        <RankingPanel ranking={ranking} isLoading={rankingLoading} />
-        <HintPanel
-          hints={hints?.hints ?? []}
-          isLoading={hintsLoading}
-          bestSimilarity={bestSimilarity}
-          isAuthenticated={isAuthenticated}
-        />
+    <>
+      <div className="flex flex-col md:flex-row gap-6 md:items-start">
+        <div className="hidden md:block w-72 shrink-0 space-y-6">
+          {rankingPanel}
+          {hintPanel}
+        </div>
+        <GamePage />
       </div>
-      <GamePage />
-    </div>
+
+      <MobileSideSheet
+        tabs={[
+          { key: "ranking", label: "랭킹", content: rankingPanel },
+          { key: "hint", label: "힌트", content: hintPanel },
+        ]}
+      />
+    </>
   );
 }

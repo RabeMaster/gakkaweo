@@ -170,7 +170,7 @@ export function MyPage() {
                 </svg>
               </div>
             )}
-            <div className="absolute inset-0 border-4 border-black dark:border-white bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="absolute inset-0 border-4 border-black dark:border-white bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
                 <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
               </svg>

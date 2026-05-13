@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { HintEntry } from "@/shared/api/types";
 import { Card } from "@/shared/ui/Card";
+import { SkeletonRow } from "@/shared/ui/SkeletonRow";
 import { SimilarityBadge } from "@/shared/ui/SimilarityBadge";
 
 interface HintPanelProps {
@@ -9,10 +10,6 @@ interface HintPanelProps {
   isLoading: boolean;
   bestSimilarity: number;
   isAuthenticated: boolean;
-}
-
-function SkeletonRow() {
-  return <div className="h-8 bg-gray-200 dark:bg-gray-700 animate-pulse" />;
 }
 
 function HintRow({ hint, isLast }: { hint: HintEntry; isLast: boolean }) {

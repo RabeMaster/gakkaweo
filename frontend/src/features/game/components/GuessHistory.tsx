@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Button } from "@/shared/ui/Button";
 import { SimilarityBadge } from "@/shared/ui/SimilarityBadge";
 
 interface GuessItem {
@@ -13,18 +14,33 @@ interface GuessHistoryProps {
 
 const PAGE_SIZE = 5;
 
+const ITEM_CLASS =
+  "flex items-center justify-between border-4 border-black dark:border-white shadow-brutal bg-white dark:bg-gray-900 p-2 md:p-3";
+
+const PLACEHOLDER_CLASS =
+  "flex items-center justify-between border-4 border-transparent p-2 md:p-3 shadow-brutal invisible";
+
+function PlaceholderRow() {
+  return (
+    <div className={PLACEHOLDER_CLASS} aria-hidden="true">
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-bold tabular-nums shrink-0">#0</span>
+        <span className="font-medium">&nbsp;</span>
+      </div>
+      <span className="inline-block border-2 border-transparent px-2 py-0.5 text-sm font-bold tabular-nums">0.0%</span>
+    </div>
+  );
+}
+
 export function GuessHistory({ guesses }: GuessHistoryProps) {
   const [page, setPage] = useState(0);
 
-  if (guesses.length === 0) {
-    return null;
-  }
-
   const sorted = [...guesses].reverse();
   const total = guesses.length;
-  const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
   const pageGuesses = sorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const placeholderCount = PAGE_SIZE - pageGuesses.length;
 
   return (
     <div className="space-y-3">
@@ -32,25 +48,20 @@ export function GuessHistory({ guesses }: GuessHistoryProps) {
         <h2 className="text-xl md:text-2xl font-extrabold">추측 기록</h2>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              disabled={safePage === 0}
-              onClick={() => setPage(safePage - 1)}
-              className="border-2 border-black dark:border-white px-3 py-1 text-xs font-bold shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px] disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 disabled:hover:shadow-brutal-sm disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:active:shadow-brutal-sm disabled:active:translate-x-0 disabled:active:translate-y-0 bg-white dark:bg-gray-900"
-            >
+            <Button size="sm" variant="secondary" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>
               이전
-            </button>
+            </Button>
             <span className="text-sm font-bold text-gray-500 dark:text-gray-400 tabular-nums">
               {safePage + 1} / {totalPages}
             </span>
-            <button
-              type="button"
+            <Button
+              size="sm"
+              variant="secondary"
               disabled={safePage >= totalPages - 1}
               onClick={() => setPage(safePage + 1)}
-              className="border-2 border-black dark:border-white px-3 py-1 text-xs font-bold shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px] disabled:opacity-50 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 disabled:hover:shadow-brutal-sm disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:active:shadow-brutal-sm disabled:active:translate-x-0 disabled:active:translate-y-0 bg-white dark:bg-gray-900"
             >
               다음
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -59,7 +70,7 @@ export function GuessHistory({ guesses }: GuessHistoryProps) {
         {pageGuesses.map((guess, i) => (
           <div
             key={`${guess.attemptNumber ?? total - (safePage * PAGE_SIZE + i)}-${guess.guessText}`}
-            className="flex items-center justify-between border-4 border-black dark:border-white shadow-brutal bg-white dark:bg-gray-900 p-2 md:p-3"
+            className={ITEM_CLASS}
           >
             <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-gray-500 dark:text-gray-400 tabular-nums shrink-0">
@@ -70,6 +81,8 @@ export function GuessHistory({ guesses }: GuessHistoryProps) {
             <SimilarityBadge similarity={guess.similarity} />
           </div>
         ))}
+        {placeholderCount > 0 &&
+          Array.from({ length: placeholderCount }, (_, i) => <PlaceholderRow key={`placeholder-${i}`} />)}
       </div>
     </div>
   );

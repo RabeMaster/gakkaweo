@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { RefObject } from "react";
+import { useClickOutside } from "@/shared/hooks/useClickOutside";
 
 interface ProfileImagePopoverProps {
   hasImage: boolean;
@@ -17,20 +18,9 @@ export function ProfileImagePopover({
   onClose,
 }: ProfileImagePopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null);
+  const excludeRefs = useMemo(() => [triggerRef], [triggerRef]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (popoverRef.current && !popoverRef.current.contains(target) && !triggerRef.current?.contains(target)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [onClose, triggerRef]);
+  useClickOutside(popoverRef, onClose, { excludeRefs });
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
