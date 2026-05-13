@@ -6,6 +6,7 @@ import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useConnectionStore } from "@/shared/stores/useConnectionStore";
 import { RankingEntryRow } from "@/features/ranking/components/RankingEntryRow";
 import { RankingEmptyState } from "@/features/ranking/components/RankingEmptyState";
+import { SkeletonRow } from "@/shared/ui/SkeletonRow";
 
 const VISIBLE = 5;
 const ROTATE_MS = 3000;
@@ -19,10 +20,6 @@ function getCircularSlice<T>(items: T[], offset: number, count: number): T[] {
 interface RankingPanelProps {
   ranking: RankingResponse | undefined;
   isLoading: boolean;
-}
-
-function SkeletonRow() {
-  return <div className="h-10 bg-gray-200 dark:bg-gray-800 animate-pulse border-2 border-transparent" />;
 }
 
 export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
@@ -106,11 +103,11 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
 
       {isLoading ? (
         <div className="space-y-1.5">
-          <SkeletonRow />
-          <SkeletonRow />
-          <SkeletonRow />
-          <SkeletonRow />
-          <SkeletonRow />
+          <SkeletonRow height="h-10" className="border-2 border-transparent" />
+          <SkeletonRow height="h-10" className="border-2 border-transparent" />
+          <SkeletonRow height="h-10" className="border-2 border-transparent" />
+          <SkeletonRow height="h-10" className="border-2 border-transparent" />
+          <SkeletonRow height="h-10" className="border-2 border-transparent" />
         </div>
       ) : entries.length === 0 ? (
         <RankingEmptyState />
