@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useClickOutside } from "@/shared/hooks/useClickOutside";
 
 interface DialogProps {
   isOpen?: boolean;
@@ -61,22 +62,7 @@ export function Dialog({
     };
   }, [isOpen, disableClose, onClose]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    function handleClickOutside(e: MouseEvent) {
-      if (!disableClose && panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen, disableClose, onClose]);
+  useClickOutside(panelRef, onClose, { disabled: !isOpen || disableClose });
 
   if (!isOpen) {
     return null;
