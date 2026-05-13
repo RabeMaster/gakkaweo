@@ -1,6 +1,14 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
-import { useClickOutside } from "@/shared/hooks/useClickOutside";
+import { createPortal } from "react-dom";
 import { useScrollLock } from "@/shared/hooks/useScrollLock";
+
+const escapeStack: (() => void)[] = [];
+
+function handleGlobalEscape(e: KeyboardEvent) {
+  if (e.key === "Escape" && escapeStack.length > 0) {
+    escapeStack[escapeStack.length - 1]();
+  }
+}
 
 interface DialogProps {
   isOpen?: boolean;
@@ -24,42 +32,55 @@ export function Dialog({
   disableClose = false,
 }: DialogProps) {
   const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useScrollLock(isOpen);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || disableClose) {
       return;
     }
 
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && !disableClose) {
-        onClose();
-      }
+    const handler = () => {
+      onCloseRef.current();
+    };
+    escapeStack.push(handler);
+
+    if (escapeStack.length === 1) {
+      document.addEventListener("keydown", handleGlobalEscape);
     }
 
-    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      const idx = escapeStack.indexOf(handler);
+      if (idx !== -1) {
+        escapeStack.splice(idx, 1);
+      }
+      if (escapeStack.length === 0) {
+        document.removeEventListener("keydown", handleGlobalEscape);
+      }
     };
-  }, [isOpen, disableClose, onClose]);
-
-  useClickOutside(panelRef, onClose, { disabled: !isOpen || disableClose });
+  }, [isOpen, disableClose]);
 
   if (!isOpen) {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 text-black dark:text-white"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !disableClose) {
+          onClose();
+        }
+      }}
     >
       <div
-        ref={panelRef}
         className={[
           "border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-h-[85vh] flex flex-col mx-4 md:mx-0",
           maxWidth,
@@ -94,6 +115,7 @@ export function Dialog({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
