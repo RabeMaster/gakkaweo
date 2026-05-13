@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { HintEntry } from "@/shared/api/types";
+import { HINT_UNLOCK_THRESHOLD } from "@/shared/config/game";
 import { Card } from "@/shared/ui/Card";
 import { SkeletonRow } from "@/shared/ui/SkeletonRow";
 import { SimilarityBadge } from "@/shared/ui/SimilarityBadge";
@@ -81,7 +82,7 @@ function HintList({ hints }: { hints: HintEntry[] }) {
 }
 
 export function HintPanel({ hints, isLoading, bestSimilarity, isAuthenticated }: HintPanelProps) {
-  const isLocked = bestSimilarity < 60;
+  const isLocked = bestSimilarity < HINT_UNLOCK_THRESHOLD;
   const [revealed, setRevealed] = useState(false);
 
   function renderContent() {

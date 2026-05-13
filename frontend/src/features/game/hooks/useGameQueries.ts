@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getHints, getHistory, getStatus, getToday, submitGuess } from "@/features/game/api";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { HINT_UNLOCK_THRESHOLD } from "@/shared/config/game";
 import { STALE_TIME } from "@/shared/config/query";
 import type { GuessRequest } from "@/shared/api/types";
 
@@ -41,7 +42,7 @@ export function useHints(sentenceId: string | undefined, bestSimilarity: number)
     queryKey: ["game", "hints", sentenceId],
     queryFn: () => getHints(sentenceId!),
     staleTime: STALE_TIME.LONG,
-    enabled: isAuthenticated && !!sentenceId && bestSimilarity >= 60,
+    enabled: isAuthenticated && !!sentenceId && bestSimilarity >= HINT_UNLOCK_THRESHOLD,
   });
 }
 

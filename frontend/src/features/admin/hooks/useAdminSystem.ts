@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { REFETCH_INTERVAL } from "@/shared/config/query";
 import {
   createAnnouncement,
   deleteAnnouncement,
@@ -63,7 +64,7 @@ export function useSystemStatus() {
   return useQuery({
     queryKey: ["admin", "system", "status"],
     queryFn: getSystemStatus,
-    refetchInterval: 15_000,
+    refetchInterval: REFETCH_INTERVAL.FAST,
   });
 }
 
