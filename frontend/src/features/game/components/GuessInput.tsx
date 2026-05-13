@@ -44,7 +44,7 @@ export function GuessInput({ onSubmit, isLoading, disabled = false }: GuessInput
 
   return (
     <div ref={wrapperRef} className="space-y-2">
-      <div className="flex gap-3">
+      <div className="flex gap-2 md:gap-3">
         <Input
           value={text}
           onChange={(e) => setText(e.target.value)}

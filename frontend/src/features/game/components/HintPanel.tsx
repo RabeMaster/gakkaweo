@@ -17,7 +17,7 @@ function SkeletonRow() {
 function HintRow({ hint, isLast }: { hint: HintEntry; isLast: boolean }) {
   const textRef = useRef<HTMLSpanElement>(null);
   const [isTruncated, setIsTruncated] = useState(false);
-  const [isHover, setIsHover] = useState(false);
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   useEffect(() => {
     const el = textRef.current;
@@ -33,8 +33,13 @@ function HintRow({ hint, isLast }: { hint: HintEntry; isLast: boolean }) {
         "relative flex items-start justify-between gap-2 py-2",
         isLast ? "" : "border-b-2 border-black/20 dark:border-white/20",
       ].join(" ")}
-      onMouseEnter={() => setIsHover(true)}
-      onMouseLeave={() => setIsHover(false)}
+      onClick={() => {
+        if (isTruncated) {
+          setIsTooltipOpen((prev) => !prev);
+        }
+      }}
+      onMouseEnter={() => setIsTooltipOpen(true)}
+      onMouseLeave={() => setIsTooltipOpen(false)}
     >
       <span ref={textRef} className="text-sm font-medium line-clamp-2 break-all">
         {hint.guessText}
@@ -42,7 +47,7 @@ function HintRow({ hint, isLast }: { hint: HintEntry; isLast: boolean }) {
       <span className="shrink-0">
         <SimilarityBadge similarity={hint.similarity} />
       </span>
-      {isTruncated && isHover && (
+      {isTruncated && isTooltipOpen && (
         <div
           role="tooltip"
           className="absolute z-20 inset-x-0 top-full mt-1 border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal-sm px-3 py-2 text-sm font-medium break-all"
