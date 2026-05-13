@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import type { HintEntry } from "@/shared/api/types";
 import { Card } from "@/shared/ui/Card";
 import { SimilarityBadge } from "@/shared/ui/SimilarityBadge";
@@ -32,13 +33,26 @@ function HintRow({ hint, isLast }: { hint: HintEntry; isLast: boolean }) {
       className={[
         "relative flex items-start justify-between gap-2 py-2",
         isLast ? "" : "border-b-2 border-black/20 dark:border-white/20",
+        isTruncated ? "cursor-pointer" : "",
       ].join(" ")}
+      role={isTruncated ? "button" : undefined}
+      tabIndex={isTruncated ? 0 : undefined}
       onClick={() => {
         if (isTruncated) {
           setIsTooltipOpen((prev) => !prev);
         }
       }}
-      onMouseEnter={() => setIsTooltipOpen(true)}
+      onKeyDown={(e: KeyboardEvent) => {
+        if (isTruncated && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          setIsTooltipOpen((prev) => !prev);
+        }
+      }}
+      onMouseEnter={() => {
+        if (isTruncated) {
+          setIsTooltipOpen(true);
+        }
+      }}
       onMouseLeave={() => setIsTooltipOpen(false)}
     >
       <span ref={textRef} className="text-sm font-medium line-clamp-2 break-all">
