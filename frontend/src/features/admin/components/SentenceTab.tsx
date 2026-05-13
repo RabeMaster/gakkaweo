@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { useSentences, useDeleteSentence } from "@/features/admin/hooks/useAdminSentences";
 import { useSortState } from "@/features/admin/hooks/useSortState";
 import { SortableHeader } from "@/features/admin/components/SortableHeader";
@@ -37,6 +38,7 @@ export function SentenceTab() {
   const { data, isLoading } = useSentences(statusFilter || undefined, sort, page);
   const deleteMutation = useDeleteSentence();
   const { addToast } = useToastStore();
+  const [confirmState, setConfirmState] = useState<{ action: () => void; message: string } | null>(null);
 
   function handleSortChange(field: string) {
     toggleSort(field);
@@ -44,12 +46,13 @@ export function SentenceTab() {
   }
 
   function handleDelete(publicId: string) {
-    if (!window.confirm("정말 삭제하시겠습니까?")) {
-      return;
-    }
-    deleteMutation.mutate(publicId, {
-      onSuccess: () => addToast("문장이 삭제되었습니다.", "success"),
-      onError: (err) => addToast(err instanceof ApiError ? err.message : "삭제 실패", "error"),
+    setConfirmState({
+      action: () =>
+        deleteMutation.mutate(publicId, {
+          onSuccess: () => addToast("문장이 삭제되었습니다.", "success"),
+          onError: (err) => addToast(err instanceof ApiError ? err.message : "삭제 실패", "error"),
+        }),
+      message: "정말 삭제하시겠습니까?",
     });
   }
 
@@ -183,6 +186,20 @@ export function SentenceTab() {
 
       {isCsvOpen && <CsvUploadDialog onClose={() => setIsCsvOpen(false)} />}
       {isSimilarityOpen && <SimilarityTestDialog onClose={() => setIsSimilarityOpen(false)} />}
+
+      {confirmState && (
+        <ConfirmDialog
+          isOpen
+          onClose={() => setConfirmState(null)}
+          onConfirm={() => {
+            confirmState.action();
+            setConfirmState(null);
+          }}
+          title="삭제 확인"
+          message={confirmState.message}
+          confirmLabel="삭제"
+        />
+      )}
     </div>
   );
 }
