@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
+import { useScrollLock } from "@/shared/hooks/useScrollLock";
 
 interface DialogProps {
   isOpen?: boolean;
@@ -11,8 +12,6 @@ interface DialogProps {
   maxWidth?: string;
   disableClose?: boolean;
 }
-
-let openCount = 0;
 
 export function Dialog({
   isOpen = true,
@@ -27,23 +26,7 @@ export function Dialog({
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    openCount++;
-    if (openCount === 1) {
-      document.body.style.overflow = "hidden";
-    }
-
-    return () => {
-      openCount--;
-      if (openCount === 0) {
-        document.body.style.overflow = "";
-      }
-    };
-  }, [isOpen]);
+  useScrollLock(isOpen);
 
   useEffect(() => {
     if (!isOpen) {

@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useRef, useEffect, useCallback, type ReactNode, type AnimationEvent } from "react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
+import { useScrollLock } from "@/shared/hooks/useScrollLock";
 
 type TabKey = "ranking" | "hint";
 
@@ -28,12 +29,12 @@ export function MobileSideSheet({ tabs }: MobileSideSheetProps) {
 
   useClickOutside(drawerRef, handleClose, { disabled: !isOpen || isClosing });
 
+  useScrollLock(isOpen);
+
   useEffect(() => {
     if (!isOpen) {
       return;
     }
-
-    document.body.style.overflow = "hidden";
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -43,12 +44,14 @@ export function MobileSideSheet({ tabs }: MobileSideSheetProps) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.body.style.overflow = "";
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, handleClose]);
 
-  function handleAnimationEnd() {
+  function handleAnimationEnd(e: AnimationEvent<HTMLDivElement>) {
+    if (e.target !== e.currentTarget) {
+      return;
+    }
     if (isClosing) {
       setActiveTab(null);
       setIsClosing(false);
