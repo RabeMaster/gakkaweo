@@ -40,7 +40,7 @@ public class SimilarityService implements SimilarityClient {
   @Override
   public BigDecimal testSimilarity(String sentenceText, String guessText) {
     String normalized = textNormalizer.normalize(guessText);
-    if (normalized.isEmpty()) {
+    if (normalized.length() < 2) {
       throw new BusinessException(ErrorCode.INVALID_GUESS_TEXT);
     }
     return callWithCircuitBreaker(sentenceText, normalized);
@@ -50,7 +50,7 @@ public class SimilarityService implements SimilarityClient {
   public BigDecimal calculateSimilarity(
       Long sentenceId, String guessText, String sentenceText, Duration cacheTtl) {
     String normalized = textNormalizer.normalize(guessText);
-    if (normalized.isEmpty()) {
+    if (normalized.length() < 2) {
       throw new BusinessException(ErrorCode.INVALID_GUESS_TEXT);
     }
     String cacheKey = buildCacheKey(sentenceId, normalized);

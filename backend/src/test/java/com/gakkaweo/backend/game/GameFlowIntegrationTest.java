@@ -221,6 +221,25 @@ class GameFlowIntegrationTest extends IntegrationTestBase {
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
       assertThat(response.getBody().code()).isEqualTo("INVALID_GUESS_TEXT");
     }
+
+    @Test
+    @DisplayName("INVALID_GUESS_TEXT - 미완성 한글 입력 (정규화 후 1글자)")
+    void 미완성한글_400() {
+      Member member = testAuthHelper.createMember();
+      DailySentence sentence = testAuthHelper.createTodaySentence("안녕하세요");
+
+      HttpHeaders headers = authedJson(member);
+
+      ResponseEntity<ErrorBody> response =
+          restTemplate.exchange(
+              url("/daily/guess"),
+              HttpMethod.POST,
+              new HttpEntity<>(new GuessRequest(sentence.getPublicId(), "ㄱ디"), headers),
+              ErrorBody.class);
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+      assertThat(response.getBody().code()).isEqualTo("INVALID_GUESS_TEXT");
+    }
   }
 
   @Nested

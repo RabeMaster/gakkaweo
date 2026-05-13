@@ -71,6 +71,15 @@ class SimilarityServiceTest {
   }
 
   @Test
+  @DisplayName("testSimilarity - 정규화 후 1글자이면 INVALID_GUESS_TEXT")
+  void testSimilarity_1글자() {
+    assertThatThrownBy(() -> service.testSimilarity("원문", "ㄱ디"))
+        .isInstanceOf(BusinessException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.INVALID_GUESS_TEXT);
+  }
+
+  @Test
   @DisplayName("calculateSimilarity - 캐시 HIT 시 AI 호출 안 함")
   void calculate_캐시HIT() {
     when(valueOps.get(anyString())).thenReturn("88.0");
@@ -102,6 +111,17 @@ class SimilarityServiceTest {
         .isInstanceOf(BusinessException.class)
         .extracting("errorCode")
         .isEqualTo(ErrorCode.INVALID_GUESS_TEXT);
+  }
+
+  @Test
+  @DisplayName("calculateSimilarity - 정규화 후 1글자이면 INVALID_GUESS_TEXT")
+  void calculate_1글자() {
+    assertThatThrownBy(() -> service.calculateSimilarity(1L, "ㄱ디", "원문", Duration.ofMinutes(10)))
+        .isInstanceOf(BusinessException.class)
+        .extracting("errorCode")
+        .isEqualTo(ErrorCode.INVALID_GUESS_TEXT);
+
+    verify(aiServiceClient, never()).calculateSimilarity(anyString(), anyString());
   }
 
   @Test

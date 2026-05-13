@@ -52,7 +52,7 @@ public class TestSimilarityClient implements SimilarityClient {
       throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
     }
     String normalized = normalizeKey(guessText);
-    if (normalized.isEmpty()) {
+    if (normalized.length() < 2) {
       throw new BusinessException(ErrorCode.INVALID_GUESS_TEXT);
     }
     return programmedScores.getOrDefault(normalized, defaultScore);

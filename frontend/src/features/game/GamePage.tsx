@@ -205,8 +205,8 @@ export function GamePage() {
     setInputError(null);
 
     const normalizedInput = normalizeGuessText(text);
-    if (!normalizedInput) {
-      setInputError("유효한 문자(한글, 영문, 숫자)를 포함해야 합니다");
+    if (normalizedInput.length < 2) {
+      setInputError("유효한 문자(한글, 영문, 숫자)를 2자 이상 포함해야 합니다");
       return;
     }
 
