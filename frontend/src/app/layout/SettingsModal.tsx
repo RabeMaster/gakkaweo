@@ -106,9 +106,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               onClick={handleMuteToggle}
               aria-label={volume === 0 ? "음소거 해제" : "음소거"}
               aria-pressed={volume === 0}
-              className="border-2 border-black dark:border-white bg-white dark:bg-gray-900 w-7 h-7 shrink-0 flex items-center justify-center text-sm transition-all duration-100 shadow-brutal-sm-hover hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
+              className="relative border-2 border-black dark:border-white bg-white dark:bg-gray-900 w-7 h-7 shrink-0 flex items-center justify-center text-sm transition-all duration-100 shadow-brutal-sm-hover hover:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] active:shadow-none active:translate-x-[1px] active:translate-y-[1px]"
             >
               {volume === 0 ? "🔇" : "🔊"}
+              <span className="absolute -inset-2" aria-hidden="true" />
             </button>
             <input
               type="range"

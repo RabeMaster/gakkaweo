@@ -61,6 +61,7 @@ export function ProfileImageCropDialog({ imageSrc, onClose, onSuccess }: Profile
     <Dialog
       onClose={onClose}
       title="프로필 이미지 편집"
+      maxWidth="max-w-md"
       disableClose={isSubmitting}
       footer={
         <>
