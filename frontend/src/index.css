@@ -74,3 +74,29 @@ body {
     transform: translateX(100%);
   }
 }
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@utility animate-slide-in-right {
+  animation: slide-in-right 200ms ease-out;
+}
+
+@utility animate-slide-out-right {
+  animation: slide-out-right 200ms ease-in forwards;
+}
