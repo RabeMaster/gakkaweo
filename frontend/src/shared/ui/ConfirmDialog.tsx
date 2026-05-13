@@ -28,16 +28,16 @@ export function ConfirmDialog({
       disableClose={isLoading}
       footer={
         <>
-          <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={isLoading}>
+          <Button variant="secondary" size="sm" className="flex-1 min-h-[44px]" onClick={onClose} disabled={isLoading}>
             취소
           </Button>
-          <Button variant="danger" size="sm" className="flex-1" onClick={onConfirm} isLoading={isLoading}>
+          <Button variant="danger" size="sm" className="flex-1 min-h-[44px]" onClick={onConfirm} isLoading={isLoading}>
             {confirmLabel}
           </Button>
         </>
       }
     >
-      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">{message}</p>
+      <p className="text-sm text-gray-600 dark:text-gray-400 font-medium whitespace-pre-line">{message}</p>
     </Dialog>
   );
 }

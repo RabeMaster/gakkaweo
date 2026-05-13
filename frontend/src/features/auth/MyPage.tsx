@@ -7,7 +7,8 @@ import { Card } from "@/shared/ui/Card";
 import { Button } from "@/shared/ui/Button";
 import { logout, deleteAccount, deleteProfileImage } from "@/features/auth/api";
 import { resolveProfileUrl } from "@/shared/utils/url";
-import { ConfirmDialog } from "@/features/auth/components/ConfirmDialog";
+import { DefaultAvatar } from "@/shared/ui/DefaultAvatar";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { NicknameEditDialog } from "@/features/auth/components/NicknameEditDialog";
 import { ProfileImageCropDialog } from "@/features/auth/components/ProfileImageCropDialog";
 import { ProfileImagePopover } from "@/features/auth/components/ProfileImagePopover";
@@ -157,18 +158,7 @@ export function MyPage() {
                 className="w-24 h-24 border-4 border-black dark:border-white object-cover"
               />
             ) : (
-              <div className="w-24 h-24 border-4 border-black dark:border-white bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="text-gray-400 dark:text-gray-500"
-                >
-                  <circle cx="12" cy="9" r="3.5" />
-                  <path d="M12 14c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" />
-                </svg>
-              </div>
+              <DefaultAvatar size="lg" />
             )}
             <div className="absolute inset-0 border-4 border-black dark:border-white bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
@@ -258,7 +248,7 @@ export function MyPage() {
         onClose={() => setIsDeleteConfirmOpen(false)}
         onConfirm={handleDeleteAccount}
         title="회원 탈퇴"
-        message="탈퇴 시 게임 기록이 익명 처리되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?"
+        message={`탈퇴 시 게임 기록이 익명 처리되며 복구할 수 없습니다.\n정말 탈퇴하시겠습니까?`}
         confirmLabel="탈퇴하기"
         isLoading={isDeleting}
       />

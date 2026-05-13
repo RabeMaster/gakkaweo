@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/shared/ui/Button";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import {
   useAnnouncements,
   useSystemStatus,
@@ -13,6 +14,7 @@ import { getAnnouncementTypeColor, getAnnouncementTypeLabel } from "@/shared/con
 import type { AnnouncementResponse } from "@/features/admin/types";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
+import { isSuperAdmin } from "@/shared/utils/role";
 import { ApiError } from "@/shared/api/client";
 
 function StatusIndicator({ healthy, label }: { healthy: boolean; label: string }) {
@@ -41,39 +43,54 @@ export function SystemTab() {
   const resetRate = useResetRateLimit();
   const deleteMutation = useDeleteAnnouncement();
   const { addToast } = useToastStore();
-  const isSuperAdmin = useAuthStore((s) => s.user?.role === "SUPERADMIN");
+  const superAdmin = isSuperAdmin(useAuthStore((s) => s.user?.role));
 
   const [announcementEdit, setAnnouncementEdit] = useState<AnnouncementResponse | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [showAuditLog, setShowAuditLog] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    action: () => void;
+    title: string;
+    message: string;
+    confirmLabel: string;
+  } | null>(null);
 
   function handleResetCache() {
-    if (!window.confirm("랭킹 캐시를 리셋하시겠습니까?")) {
-      return;
-    }
-    resetCache.mutate(undefined, {
-      onSuccess: () => addToast("랭킹 캐시가 리셋되었습니다.", "success"),
-      onError: (err) => addToast(err instanceof ApiError ? err.message : "리셋 실패", "error"),
+    setConfirmState({
+      action: () =>
+        resetCache.mutate(undefined, {
+          onSuccess: () => addToast("랭킹 캐시가 리셋되었습니다.", "success"),
+          onError: (err) => addToast(err instanceof ApiError ? err.message : "리셋 실패", "error"),
+        }),
+      title: "캐시 리셋",
+      message: "랭킹 캐시를 리셋하시겠습니까?",
+      confirmLabel: "리셋",
     });
   }
 
   function handleResetRate() {
-    if (!window.confirm("Rate Limit을 초기화하시겠습니까?")) {
-      return;
-    }
-    resetRate.mutate(undefined, {
-      onSuccess: () => addToast("Rate Limit이 초기화되었습니다.", "success"),
-      onError: (err) => addToast(err instanceof ApiError ? err.message : "초기화 실패", "error"),
+    setConfirmState({
+      action: () =>
+        resetRate.mutate(undefined, {
+          onSuccess: () => addToast("Rate Limit이 초기화되었습니다.", "success"),
+          onError: (err) => addToast(err instanceof ApiError ? err.message : "초기화 실패", "error"),
+        }),
+      title: "Rate Limit 초기화",
+      message: "Rate Limit을 초기화하시겠습니까?",
+      confirmLabel: "초기화",
     });
   }
 
   function handleDeleteAnnouncement(id: number) {
-    if (!window.confirm("이 공지를 삭제하시겠습니까?")) {
-      return;
-    }
-    deleteMutation.mutate(id, {
-      onSuccess: () => addToast("공지가 삭제되었습니다.", "success"),
-      onError: (err) => addToast(err instanceof ApiError ? err.message : "삭제 실패", "error"),
+    setConfirmState({
+      action: () =>
+        deleteMutation.mutate(id, {
+          onSuccess: () => addToast("공지가 삭제되었습니다.", "success"),
+          onError: (err) => addToast(err instanceof ApiError ? err.message : "삭제 실패", "error"),
+        }),
+      title: "공지 삭제",
+      message: "이 공지를 삭제하시겠습니까?",
+      confirmLabel: "삭제",
     });
   }
 
@@ -112,7 +129,7 @@ export function SystemTab() {
                 size="sm"
                 variant="secondary"
                 onClick={handleResetCache}
-                disabled={!isSuperAdmin}
+                disabled={!superAdmin}
                 isLoading={resetCache.isPending}
               >
                 랭킹 캐시 리셋
@@ -121,13 +138,13 @@ export function SystemTab() {
                 size="sm"
                 variant="secondary"
                 onClick={handleResetRate}
-                disabled={!isSuperAdmin}
+                disabled={!superAdmin}
                 isLoading={resetRate.isPending}
               >
                 Rate Limit 초기화
               </Button>
             </div>
-            {!isSuperAdmin && (
+            {!superAdmin && (
               <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
                 SUPERADMIN만 시스템 리셋을 수행할 수 있습니다.
               </p>
@@ -209,6 +226,20 @@ export function SystemTab() {
             setAnnouncementEdit(null);
             setIsCreateOpen(false);
           }}
+        />
+      )}
+
+      {confirmState && (
+        <ConfirmDialog
+          isOpen
+          onClose={() => setConfirmState(null)}
+          onConfirm={() => {
+            confirmState.action();
+            setConfirmState(null);
+          }}
+          title={confirmState.title}
+          message={confirmState.message}
+          confirmLabel={confirmState.confirmLabel}
         />
       )}
     </div>

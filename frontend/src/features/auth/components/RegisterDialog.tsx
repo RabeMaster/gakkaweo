@@ -101,10 +101,22 @@ export function RegisterDialog({ onClose, onSuccess }: RegisterDialogProps) {
       disableClose={isSubmitting}
       footer={
         <>
-          <Button variant="secondary" size="sm" className="flex-1" onClick={onClose} disabled={isSubmitting}>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1 min-h-[44px]"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             취소
           </Button>
-          <Button size="sm" className="flex-1" onClick={handleSubmit} isLoading={isSubmitting} disabled={!canSubmit}>
+          <Button
+            size="sm"
+            className="flex-1 min-h-[44px]"
+            onClick={handleSubmit}
+            isLoading={isSubmitting}
+            disabled={!canSubmit}
+          >
             가입
           </Button>
         </>

@@ -1,3 +1,11 @@
+export interface PagedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
 // --- Sentence ---
 
 export interface SentenceResponse {
@@ -10,13 +18,7 @@ export interface SentenceResponse {
   createdAt: string;
 }
 
-export interface SentenceListResponse {
-  content: SentenceResponse[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
+export type SentenceListResponse = PagedResponse<SentenceResponse>;
 
 export interface SentenceStatsResponse {
   totalSessions: number;
@@ -57,13 +59,7 @@ export interface AdminUserResponse {
   createdAt: string;
 }
 
-export interface UserListResponse {
-  content: AdminUserResponse[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-}
+export type UserListResponse = PagedResponse<AdminUserResponse>;
 
 export interface ActivitySummary {
   totalParticipations: number;
@@ -188,10 +184,4 @@ export interface AuditLog {
   createdAt: string;
 }
 
-export interface AuditLogPage {
-  content: AuditLog[];
-  totalElements: number;
-  totalPages: number;
-  page: number;
-  size: number;
-}
+export type AuditLogPage = PagedResponse<AuditLog>;

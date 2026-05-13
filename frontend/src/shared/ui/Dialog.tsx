@@ -1,5 +1,6 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
-import { useClickOutside } from "@/shared/hooks/useClickOutside";
+import { useId, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { useEscapeStack } from "@/shared/hooks/useEscapeStack";
 import { useScrollLock } from "@/shared/hooks/useScrollLock";
 
 interface DialogProps {
@@ -24,42 +25,32 @@ export function Dialog({
   disableClose = false,
 }: DialogProps) {
   const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
 
   useScrollLock(isOpen);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return;
+  useEscapeStack(() => {
+    if (!disableClose) {
+      onClose();
     }
-
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && !disableClose) {
-        onClose();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, disableClose, onClose]);
-
-  useClickOutside(panelRef, onClose, { disabled: !isOpen || disableClose });
+  }, isOpen);
 
   if (!isOpen) {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 text-black dark:text-white"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !disableClose) {
+          onClose();
+        }
+      }}
     >
       <div
-        ref={panelRef}
         className={[
           "border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-h-[85vh] flex flex-col mx-4 md:mx-0",
           maxWidth,
@@ -94,6 +85,7 @@ export function Dialog({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

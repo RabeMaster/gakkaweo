@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { getDateStats, getFullRanking, getGuessLog, getTodayWidget, getTrends } from "@/features/admin/api";
+import { REFETCH_INTERVAL } from "@/shared/config/query";
 
 export function useTodayWidget() {
   return useQuery({
     queryKey: ["admin", "dashboard", "today"],
     queryFn: getTodayWidget,
-    refetchInterval: 30_000,
+    refetchInterval: REFETCH_INTERVAL.NORMAL,
   });
 }
 
