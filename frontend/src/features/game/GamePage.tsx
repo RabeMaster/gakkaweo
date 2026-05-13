@@ -240,7 +240,7 @@ export function GamePage() {
     const message = todayError instanceof ApiError ? todayError.message : "문제를 불러올 수 없습니다.";
     return (
       <div className="max-w-2xl flex-1 min-w-0 space-y-6">
-        <h1 className="text-4xl font-black">오늘의 문장</h1>
+        <h1 className="text-2xl md:text-4xl font-black">오늘의 문장</h1>
         <Card>
           <p className="text-lg font-bold text-red-500">{message}</p>
         </Card>
@@ -254,10 +254,10 @@ export function GamePage() {
 
   return (
     <div className="max-w-2xl flex-1 min-w-0 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-black">오늘의 문장</h1>
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-bold text-gray-600 dark:text-gray-400">
+      <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-2xl md:text-4xl font-black">오늘의 문장</h1>
+        <div className="flex items-center gap-2 md:gap-3">
+          <span className="text-xs md:text-sm font-bold text-gray-600 dark:text-gray-400 whitespace-nowrap">
             {isExpired ? (
               "새 문장 준비 중..."
             ) : (
@@ -269,7 +269,7 @@ export function GamePage() {
           <button
             type="button"
             onClick={() => setIsHelpOpen(true)}
-            className="border-2 border-black dark:border-white bg-yellow-300 text-black px-2 py-0.5 text-xs font-black shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]"
+            className="shrink-0 border-2 border-black dark:border-white bg-yellow-300 text-black px-2 py-0.5 text-xs font-black shadow-brutal-sm transition-all duration-100 hover:shadow-brutal-sm-hover hover:translate-x-0.5 hover:translate-y-0.5 active:shadow-none active:translate-x-[3px] active:translate-y-[3px]"
             aria-label="플레이 방법"
           >
             플레이 방법

@@ -14,6 +14,7 @@
 8. [페이지 구성](#8-페이지-구성)
 9. [로그인 프로바이더 색상](#9-로그인-프로바이더-색상)
 10. [컴포넌트 규칙](#10-컴포넌트-규칙) — 버튼, 입력창, 카드, 다이얼로그, 푸터, 랭킹, 모달, 프로필, 추측 피드백, 힌트, 어드민
+11. [반응형](#11-반응형-responsive)
 
 ---
 
@@ -137,8 +138,8 @@ hue = (similarity / 100) × 120
 
 | 용도        | 클래스                                     |
 | ----------- | ------------------------------------------ |
-| 페이지 제목 | `text-4xl font-black`                      |
-| 섹션 제목   | `text-2xl font-extrabold`                  |
+| 페이지 제목 | `text-2xl md:text-4xl font-black`          |
+| 섹션 제목   | `text-xl md:text-2xl font-extrabold`       |
 | 유사도 수치 | `text-3xl font-black tabular-nums`         |
 | 본문        | `text-base font-medium`                    |
 | 보조 텍스트 | `text-sm text-gray-600 dark:text-gray-400` |
@@ -147,10 +148,10 @@ hue = (similarity / 100) × 120
 
 ## 7. Layout (레이아웃)
 
-- **PC 전용**: 최소 너비 기준 설계, 모바일 미지원
-- **반응형**: 화면 크기에 따라 유연하게 조절 (넓은 모니터에서도 자연스럽게)
+- **반응형**: mobile-first. `md:` (768px) breakpoint 기준. 접두사 없는 클래스 = 모바일, `md:` = 데스크톱
 - **최대 너비**: 게임 영역은 `max-w-2xl` 또는 `max-w-3xl` 중앙 정렬
 - **간격**: Tailwind 기본 spacing 사용 (`p-4`, `gap-4`, `space-y-4` 등)
+- **어드민**: `/admin`은 데스크톱 전용 (반응형 미적용)
 
 ## 8. 페이지 구성
 
@@ -262,7 +263,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **1등 배지**: 트로피 SVG 아이콘 (`text-black`)
 - **배지 색상**: 1등=`yellow-400/300`, 2등=`slate-300/400`, 3등=`amber-600/500 text-white`. 4+등=`gray-200/700`
 - **라이브 인디케이터**: `live-pulse` 애니메이션 (초록 펄스 도트) + `sseConnectionCount` (Zustand store, HEARTBEAT 기반)
-- **재생/정지 버튼**: `border-2 shadow-brutal-sm-hover w-7 h-7`. 호버 시 `-top-7` 위치 툴팁 (재생/정지)
+- **재생/정지 버튼**: `border-2 shadow-brutal-sm-hover w-7 h-7`. 호버 시 `-top-7 right-0` 우측 기준 툴팁 (재생/정지)
 
 ### 플레이 방법 모달
 
@@ -311,6 +312,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **상태 분기**: (1) 비로그인 → 로그인 유도 (2) bestSimilarity < 60 → 잠금 안내 (3) 빈 목록 (4) 힌트 목록 (스포일러 처리)
 - **스포일러**: 힌트 목록 기본 `blur-sm` 처리. 클릭 시 전체 해제. 새로고침 시 자동 리셋 (React state, localStorage 미사용)
 - **행 구분선**: `border-b-2 border-black/20 dark:border-white/20` (마지막 항목 제외)
+- **HintRow 툴팁**: `line-clamp-2` + `scrollHeight > clientHeight` 검출 시 hover + click(터치) 커스텀 툴팁 (네이티브 `title` 미사용). 데스크톱 hover와 모바일 터치 모두 지원
 - **갱신**: 매 추측 시 `["game", "hints", sentenceId]` invalidate + `staleTime: 60_000`
 - **힌트 범위**: 요청자의 bestSimilarity 미만 추측만 표시 (서버측 필터링)
 
@@ -332,4 +334,60 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **텍스트 링크 액션**: 테이블 행 내 액션은 `text-indigo-600 dark:text-indigo-400 font-black text-xs hover:underline`
 - **Pagination**: `Button sm secondary` 이전/다음 + `tabular-nums` 페이지 표시
 - **공지 유형 라벨**: 안내(blue-300), 점검(orange-300), 경고(red-500). select에서도 한글 라벨 사용. SoT는 `shared/config/announcement.ts`
-- **공지 배너**: `shared/ui/AnnouncementBanner.tsx`. 유형별 색상 배경 + `shadow-brutal-sm`. 닫기 시 localStorage `id_startsAt` 복합 키 저장
+- **공지 배너**: `shared/ui/AnnouncementBanner.tsx`. 유형별 색상 배경 + `shadow-brutal-sm`. content `break-words` (긴 단어 wrap). 닫기 버튼 `-m-3 p-3` 터치 타겟 확보. 닫기 시 localStorage `id_startsAt` 복합 키 저장
+
+## 11. 반응형 (Responsive)
+
+### Breakpoint
+
+- `md:` (768px) 단일 breakpoint. Tailwind 기본값
+- mobile-first: 접두사 없는 클래스 = 모바일, `md:` = 데스크톱 오버라이드
+- 어드민(`/admin`)은 대상 제외 (데스크톱 전용)
+
+### 패딩 축소
+
+| 대상 | 모바일 | 데스크톱 |
+|------|--------|----------|
+| Layout main | `px-4 py-6` | `md:px-6 md:py-8` |
+| Card | `p-4` | `md:p-6` |
+| Dialog 헤더/콘텐츠 | `px-4 py-4` | `md:px-6 md:py-5` |
+| Dialog 푸터 | `px-4 py-3` | `md:px-6 md:py-4` |
+| Dialog 패널 | `mx-4` | `md:mx-0` |
+| Footer | `px-4 py-4` | `md:px-6 md:py-6` |
+| Header | `px-4 py-3` | `md:px-6 md:py-4` |
+
+### 헤더
+
+- 데스크톱: 우측 버튼 그룹 (`hidden md:flex`)
+- 모바일: 햄버거 버튼 (`md:hidden`) + 드롭다운 메뉴 (`border-b-4 border-x-4 shadow-brutal`)
+- 라우트 변경 시 자동 닫기, 외부 클릭 닫기
+
+### HomePage (게임)
+
+- 데스크톱: 사이드 패널(좌) + 게임(우) 2단 (`flex-row`)
+- 모바일: 게임(상) -> 사이드 패널(하) 1단 스택 (`flex-col`, `order-2`)
+
+### LoginPage
+
+- 데스크톱: 소셜 + 세로 구분선 + 가까워 2단 (`flex-row`)
+- 모바일: 소셜 -> 가로 구분선("또는") -> 가까워 1단 스택 (`flex-col`)
+- 세로 구분선: `hidden md:flex` / 가로 구분선: `flex md:hidden`
+
+### Footer
+
+- 데스크톱: 좌우 배치 (`flex-row justify-between`)
+- 모바일: 세로 스택 (`flex-col gap-4`), 링크 `flex-wrap`
+
+### 타이포그래피
+
+| 용도 | 모바일 | 데스크톱 |
+|------|--------|----------|
+| 페이지 제목 | `text-2xl` | `md:text-4xl` |
+| 섹션 제목 | `text-xl` | `md:text-2xl` |
+| HintMask 텍스트 | `text-xl` | `md:text-2xl` |
+| GameClearedCard | `text-2xl` | `md:text-3xl` |
+
+### Toast
+
+- 모바일: `bottom-4 right-4 left-4` (전체 너비)
+- 데스크톱: `md:left-auto md:bottom-6 md:right-6` (우측 하단)

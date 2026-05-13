@@ -139,7 +139,7 @@ export function MyPage() {
 
   return (
     <div className="max-w-md mx-auto space-y-6">
-      <h1 className="text-4xl font-black">마이페이지</h1>
+      <h1 className="text-2xl md:text-4xl font-black">마이페이지</h1>
 
       <Card className="flex flex-col items-center space-y-4 py-8">
         <div className="relative">

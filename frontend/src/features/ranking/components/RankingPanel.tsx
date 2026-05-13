@@ -97,7 +97,7 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
             aria-label={isPaused ? "자동 순환 시작" : "자동 순환 정지"}
           >
             {isPaused ? "▶" : "❚❚"}
-            <span className="absolute -top-7 left-1/2 -translate-x-1/2 hidden group-hover:block bg-black dark:bg-white text-white dark:text-black text-[10px] font-bold px-1.5 py-0.5 whitespace-nowrap z-50">
+            <span className="absolute -top-7 right-0 hidden group-hover:block bg-black dark:bg-white text-white dark:text-black text-[10px] font-bold px-1.5 py-0.5 whitespace-nowrap z-50">
               {isPaused ? "재생" : "정지"}
             </span>
           </button>

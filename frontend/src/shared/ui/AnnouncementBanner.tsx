@@ -47,14 +47,16 @@ function BannerItem({
       <div className="flex-1 min-w-0">
         <p className="font-black text-sm">{announcement.title}</p>
         {announcement.content && (
-          <p className="whitespace-pre-line text-xs font-medium mt-0.5 opacity-80">{announcement.content}</p>
+          <p className="whitespace-pre-line break-words text-xs font-medium mt-0.5 opacity-80">
+            {announcement.content}
+          </p>
         )}
       </div>
       <button
         type="button"
         onClick={() => onDismiss(toDismissKey(announcement))}
         aria-label="공지 닫기"
-        className="text-lg font-black leading-none shrink-0 hover:opacity-60 transition-opacity"
+        className="-m-3 p-3 text-lg font-black leading-none shrink-0 hover:opacity-60 transition-opacity"
       >
         &times;
       </button>

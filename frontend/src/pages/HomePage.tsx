@@ -17,8 +17,8 @@ export function HomePage() {
   const { data: hints, isLoading: hintsLoading } = useHints(sentenceId, bestSimilarity);
 
   return (
-    <div className="flex gap-6 items-start">
-      <div className="w-72 shrink-0 space-y-6">
+    <div className="flex flex-col md:flex-row gap-6 md:items-start">
+      <div className="order-2 md:order-none w-full md:w-72 md:shrink-0 space-y-6">
         <RankingPanel ranking={ranking} isLoading={rankingLoading} />
         <HintPanel
           hints={hints?.hints ?? []}
