@@ -263,7 +263,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **1등 배지**: 트로피 SVG 아이콘 (`text-black`)
 - **배지 색상**: 1등=`yellow-400/300`, 2등=`slate-300/400`, 3등=`amber-600/500 text-white`. 4+등=`gray-200/700`
 - **라이브 인디케이터**: `live-pulse` 애니메이션 (초록 펄스 도트) + `sseConnectionCount` (Zustand store, HEARTBEAT 기반)
-- **재생/정지 버튼**: `border-2 shadow-brutal-sm-hover w-7 h-7`. 호버 시 `-top-7` 위치 툴팁 (재생/정지)
+- **재생/정지 버튼**: `border-2 shadow-brutal-sm-hover w-7 h-7`. 호버 시 `-top-7 right-0` 우측 기준 툴팁 (재생/정지)
 
 ### 플레이 방법 모달
 
@@ -312,6 +312,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **상태 분기**: (1) 비로그인 → 로그인 유도 (2) bestSimilarity < 60 → 잠금 안내 (3) 빈 목록 (4) 힌트 목록 (스포일러 처리)
 - **스포일러**: 힌트 목록 기본 `blur-sm` 처리. 클릭 시 전체 해제. 새로고침 시 자동 리셋 (React state, localStorage 미사용)
 - **행 구분선**: `border-b-2 border-black/20 dark:border-white/20` (마지막 항목 제외)
+- **HintRow 툴팁**: `line-clamp-2` + `scrollHeight > clientHeight` 검출 시 hover + click(터치) 커스텀 툴팁 (네이티브 `title` 미사용). 데스크톱 hover와 모바일 터치 모두 지원
 - **갱신**: 매 추측 시 `["game", "hints", sentenceId]` invalidate + `staleTime: 60_000`
 - **힌트 범위**: 요청자의 bestSimilarity 미만 추측만 표시 (서버측 필터링)
 
@@ -333,7 +334,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **텍스트 링크 액션**: 테이블 행 내 액션은 `text-indigo-600 dark:text-indigo-400 font-black text-xs hover:underline`
 - **Pagination**: `Button sm secondary` 이전/다음 + `tabular-nums` 페이지 표시
 - **공지 유형 라벨**: 안내(blue-300), 점검(orange-300), 경고(red-500). select에서도 한글 라벨 사용. SoT는 `shared/config/announcement.ts`
-- **공지 배너**: `shared/ui/AnnouncementBanner.tsx`. 유형별 색상 배경 + `shadow-brutal-sm`. 닫기 시 localStorage `id_startsAt` 복합 키 저장
+- **공지 배너**: `shared/ui/AnnouncementBanner.tsx`. 유형별 색상 배경 + `shadow-brutal-sm`. content `break-words` (긴 단어 wrap). 닫기 버튼 `-m-3 p-3` 터치 타겟 확보. 닫기 시 localStorage `id_startsAt` 복합 키 저장
 
 ## 11. 반응형 (Responsive)
 
@@ -384,6 +385,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 | 페이지 제목 | `text-2xl` | `md:text-4xl` |
 | 섹션 제목 | `text-xl` | `md:text-2xl` |
 | HintMask 텍스트 | `text-xl` | `md:text-2xl` |
+| GameClearedCard | `text-2xl` | `md:text-3xl` |
 
 ### Toast
 
