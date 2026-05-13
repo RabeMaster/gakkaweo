@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect, useCallback, type ReactNode, type AnimationEvent } from "react";
+import { useState, useRef, useCallback, type ReactNode, type AnimationEvent } from "react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
+import { useEscapeStack } from "@/shared/hooks/useEscapeStack";
 import { useScrollLock } from "@/shared/hooks/useScrollLock";
 
 type TabKey = "ranking" | "hint";
@@ -30,23 +31,7 @@ export function MobileSideSheet({ tabs }: MobileSideSheetProps) {
   useClickOutside(drawerRef, handleClose, { disabled: !isOpen || isClosing });
 
   useScrollLock(isOpen);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        handleClose();
-      }
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, handleClose]);
+  useEscapeStack(handleClose, isOpen && !isClosing);
 
   function handleAnimationEnd(e: AnimationEvent<HTMLDivElement>) {
     if (e.target !== e.currentTarget) {

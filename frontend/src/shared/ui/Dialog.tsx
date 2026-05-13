@@ -1,14 +1,7 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useEscapeStack } from "@/shared/hooks/useEscapeStack";
 import { useScrollLock } from "@/shared/hooks/useScrollLock";
-
-const escapeStack: (() => void)[] = [];
-
-function handleGlobalEscape(e: KeyboardEvent) {
-  if (e.key === "Escape" && escapeStack.length > 0) {
-    escapeStack[escapeStack.length - 1]();
-  }
-}
 
 interface DialogProps {
   isOpen?: boolean;
@@ -32,37 +25,14 @@ export function Dialog({
   disableClose = false,
 }: DialogProps) {
   const titleId = useId();
-  const onCloseRef = useRef(onClose);
-  useEffect(() => {
-    onCloseRef.current = onClose;
-  });
 
   useScrollLock(isOpen);
 
-  useEffect(() => {
-    if (!isOpen || disableClose) {
-      return;
+  useEscapeStack(() => {
+    if (!disableClose) {
+      onClose();
     }
-
-    const handler = () => {
-      onCloseRef.current();
-    };
-    escapeStack.push(handler);
-
-    if (escapeStack.length === 1) {
-      document.addEventListener("keydown", handleGlobalEscape);
-    }
-
-    return () => {
-      const idx = escapeStack.indexOf(handler);
-      if (idx !== -1) {
-        escapeStack.splice(idx, 1);
-      }
-      if (escapeStack.length === 0) {
-        document.removeEventListener("keydown", handleGlobalEscape);
-      }
-    };
-  }, [isOpen, disableClose]);
+  }, isOpen);
 
   if (!isOpen) {
     return null;

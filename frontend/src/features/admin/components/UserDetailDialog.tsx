@@ -67,7 +67,12 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
   const { data: history } = useUserHistory(publicId);
   const [newNickname, setNewNickname] = useState("");
   const [showHistory, setShowHistory] = useState(false);
-  const [confirmState, setConfirmState] = useState<{ action: () => void; message: string } | null>(null);
+  const [confirmState, setConfirmState] = useState<{
+    action: () => void;
+    title: string;
+    message: string;
+    confirmLabel: string;
+  } | null>(null);
 
   const banMutation = useBanUser();
   const unbanMutation = useUnbanUser();
@@ -78,8 +83,8 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
   const { addToast } = useToastStore();
   const actorRole = useAuthStore((s) => s.user?.role);
 
-  function handleAction(action: () => void, confirmMsg: string) {
-    setConfirmState({ action, message: confirmMsg });
+  function handleAction(action: () => void, title: string, message: string, confirmLabel: string) {
+    setConfirmState({ action, title, message, confirmLabel });
   }
 
   function onError(err: Error) {
@@ -161,7 +166,9 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                                   { publicId, role: toggle.nextRole },
                                   { onSuccess: () => addToast("역할이 변경되었습니다.", "success"), onError },
                                 ),
+                              "역할 변경",
                               `${toggle.label}하시겠습니까?`,
+                              toggle.nextRole === "ADMIN" ? "승격" : "강등",
                             )
                           }
                           disabled={!canChangeRole(actorRole, user.role)}
@@ -193,7 +200,9 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                             onSuccess: () => addToast("차단이 해제되었습니다.", "success"),
                             onError,
                           }),
+                        "차단 해제",
                         "차단을 해제하시겠습니까?",
+                        "해제",
                       )
                     }
                     disabled={!canModify(actorRole, user.role)}
@@ -212,7 +221,9 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                             onSuccess: () => addToast("차단되었습니다.", "success"),
                             onError,
                           }),
+                        "사용자 차단",
                         "이 사용자를 차단하시겠습니까?",
+                        "차단",
                       )
                     }
                     disabled={!canModify(actorRole, user.role)}
@@ -246,7 +257,9 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                             onError,
                           },
                         ),
+                      "닉네임 변경",
                       `닉네임을 "${newNickname.trim()}"(으)로 변경하시겠습니까?`,
+                      "변경",
                     )
                   }
                   disabled={!newNickname.trim() || !canModify(actorRole, user.role)}
@@ -269,7 +282,9 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                             onSuccess: () => addToast("프로필 이미지가 삭제되었습니다.", "success"),
                             onError,
                           }),
+                        "프로필 삭제",
                         "프로필 이미지를 삭제하시겠습니까?",
+                        "삭제",
                       )
                     }
                     disabled={!canModify(actorRole, user.role)}
@@ -296,7 +311,9 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
                             },
                             onError,
                           }),
-                        "이 사용자를 강제 탈퇴시키겠습니까? 되돌릴 수 없습니다.",
+                        "강제 탈퇴",
+                        "이 사용자를 강제 탈퇴시키겠습니까?\n되돌릴 수 없습니다.",
+                        "탈퇴",
                       )
                     }
                     disabled={actorRole !== "SUPERADMIN" || user.role === "SUPERADMIN"}
@@ -374,9 +391,9 @@ export function UserDetailDialog({ publicId, onClose }: UserDetailDialogProps) {
             confirmState.action();
             setConfirmState(null);
           }}
-          title="확인"
+          title={confirmState.title}
           message={confirmState.message}
-          confirmLabel="확인"
+          confirmLabel={confirmState.confirmLabel}
         />
       )}
     </>
