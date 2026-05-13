@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { RankingEntry } from "@/shared/api/types";
 import { getSimilarityColor } from "@/shared/utils/similarity";
+import { DefaultAvatar } from "@/shared/ui/DefaultAvatar";
 import { resolveProfileUrl } from "@/shared/utils/url";
 
 interface RankingEntryRowProps {
@@ -29,24 +30,6 @@ function TrophyIcon() {
       <rect x="10" y="17" width="4" height="2" />
       <rect x="7" y="19" width="10" height="2.5" />
     </svg>
-  );
-}
-
-function DefaultAvatar() {
-  return (
-    <div className="w-7 h-7 border-2 border-black dark:border-white bg-gray-200 dark:bg-gray-800 flex items-center justify-center shrink-0">
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        className="text-gray-400 dark:text-gray-500"
-        aria-hidden="true"
-      >
-        <circle cx="12" cy="9" r="3.5" />
-        <path d="M12 14c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" />
-      </svg>
-    </div>
   );
 }
 

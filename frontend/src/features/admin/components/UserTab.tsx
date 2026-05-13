@@ -7,6 +7,7 @@ import { useSortState } from "@/features/admin/hooks/useSortState";
 import { SortableHeader } from "@/features/admin/components/SortableHeader";
 import { UserDetailDialog } from "@/features/admin/components/UserDetailDialog";
 import { Pagination } from "@/features/admin/components/Pagination";
+import { DefaultAvatar } from "@/shared/ui/DefaultAvatar";
 import { resolveProfileUrl } from "@/shared/utils/url";
 
 function RoleBadge({ role }: { role: string }) {
@@ -139,18 +140,7 @@ export function UserTab() {
                             className="w-7 h-7 shrink-0 border-2 border-black dark:border-white object-cover"
                           />
                         ) : (
-                          <div className="w-7 h-7 shrink-0 border-2 border-black dark:border-white bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                            <svg
-                              width="14"
-                              height="14"
-                              viewBox="0 0 24 24"
-                              fill="currentColor"
-                              className="text-gray-400 dark:text-gray-500"
-                            >
-                              <circle cx="12" cy="9" r="3.5" />
-                              <path d="M12 14c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z" />
-                            </svg>
-                          </div>
+                          <DefaultAvatar />
                         )}
                         <span className="font-bold">{u.nickname}</span>
                       </div>
