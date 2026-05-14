@@ -14,7 +14,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +36,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private final BucketStore bucketStore;
   private final ObjectMapper objectMapper;
   private final MeterRegistry meterRegistry;
+  private final Clock clock;
 
   @Value("${management.server.port:#{null}}")
   private Integer managementPort;
@@ -96,7 +97,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             errorCode.getStatus().value(),
             errorCode.name(),
             errorCode.getMessage(),
-            Instant.now().toString());
+            clock.instant().toString());
 
     response.setStatus(errorCode.getStatus().value());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);

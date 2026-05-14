@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-type Theme = "light" | "dark" | "system";
+export type Theme = "light" | "dark" | "system";
 
 const VALID_THEMES: Theme[] = ["light", "dark", "system"];
 

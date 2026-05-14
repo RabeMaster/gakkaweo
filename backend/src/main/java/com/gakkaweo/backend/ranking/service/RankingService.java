@@ -37,7 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Slf4j
@@ -120,7 +119,6 @@ public class RankingService {
     }
   }
 
-  @Transactional(readOnly = true)
   public RankingResponse getRankingsForUser(UUID memberPublicId) {
     try {
       LocalDate today = LocalDate.now(clock);

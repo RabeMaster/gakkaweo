@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import type { RefObject } from "react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
+import { useEscapeStack } from "@/shared/hooks/useEscapeStack";
 
 interface ProfileImagePopoverProps {
   hasImage: boolean;
@@ -21,19 +22,7 @@ export function ProfileImagePopover({
   const excludeRefs = useMemo(() => [triggerRef], [triggerRef]);
 
   useClickOutside(popoverRef, onClose, { excludeRefs });
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose]);
+  useEscapeStack(onClose, true);
 
   return (
     <div
