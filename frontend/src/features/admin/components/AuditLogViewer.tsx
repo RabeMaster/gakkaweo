@@ -3,6 +3,7 @@ import { Button } from "@/shared/ui/Button";
 import { useAuditLogs } from "@/features/admin/hooks/useAdminSystem";
 import { useSortState } from "@/features/admin/hooks/useSortState";
 import { SortableHeader } from "@/features/admin/components/SortableHeader";
+import { Pagination } from "@/features/admin/components/Pagination";
 import { AuditLogDetailDialog } from "@/features/admin/components/AuditLogDetailDialog";
 import { AUDIT_ACTION_LABELS, getAuditActionLabel, getAuditTargetTypeLabel } from "@/features/admin/labels";
 import type { AuditLog } from "@/features/admin/types";
@@ -164,24 +165,7 @@ export function AuditLogViewer() {
             </table>
           </div>
 
-          {data.totalPages > 1 && (
-            <div className="flex items-center gap-2 justify-center">
-              <Button size="sm" variant="secondary" disabled={page === 0} onClick={() => setPage(page - 1)}>
-                이전
-              </Button>
-              <span className="text-xs font-bold tabular-nums">
-                {page + 1} / {data.totalPages}
-              </span>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={page >= data.totalPages - 1}
-                onClick={() => setPage(page + 1)}
-              >
-                다음
-              </Button>
-            </div>
-          )}
+          <Pagination page={page} totalPages={data.totalPages} onPageChange={setPage} />
         </>
       ) : (
         <p className="text-gray-500 dark:text-gray-400 font-bold text-sm">로그가 없습니다.</p>

@@ -61,7 +61,7 @@ export function Button({
         isLoading
           ? `opacity-70 cursor-wait ${INTERACTION_CLASSES[size].base} animate-pulse`
           : isDisabled
-            ? `opacity-50 cursor-not-allowed ${INTERACTION_CLASSES[size].base}`
+            ? `opacity-50 cursor-not-allowed pointer-events-none translate-x-0 translate-y-0 ${INTERACTION_CLASSES[size].base}`
             : `${INTERACTION_CLASSES[size].base} ${INTERACTION_CLASSES[size].hover} ${INTERACTION_CLASSES[size].active}`,
         className,
       ].join(" ")}

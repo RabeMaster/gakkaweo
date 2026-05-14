@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Dialog } from "@/shared/ui/Dialog";
-import { useThemeStore } from "@/shared/stores/useThemeStore";
+import { useThemeStore, type Theme } from "@/shared/stores/useThemeStore";
 import {
   SOUND_VOLUME_KEY,
   type SoundType,
@@ -11,8 +11,6 @@ import {
   setLastVolume,
   stopCurrentSound,
 } from "@/shared/config/sound";
-
-type Theme = "light" | "dark" | "system";
 
 const THEME_OPTIONS: { value: Theme; label: string; icon: string }[] = [
   { value: "light", label: "라이트", icon: "☀" },
