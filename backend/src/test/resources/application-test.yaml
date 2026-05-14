@@ -124,6 +124,12 @@ resilience4j:
       schedulerSelectToday:
         max-attempts: 3
         wait-duration: 10ms
+      redisCleanupOrphanScan:
+        max-attempts: 3
+        wait-duration: 10ms
+      redisCleanupRankingPurge:
+        max-attempts: 3
+        wait-duration: 10ms
 
 logging:
   level:

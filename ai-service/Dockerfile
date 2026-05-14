@@ -1,5 +1,5 @@
-# python:3.13-slim (CPU-only, PyTorch CPU wheel)
-FROM python:3.13-slim
+# python:3.14-slim (CPU-only, PyTorch CPU wheel)
+FROM python:3.14-slim
 
 WORKDIR /app
 
@@ -9,6 +9,10 @@ RUN pip install --no-cache-dir -r requirements.lock \
     --extra-index-url https://download.pytorch.org/whl/cpu
 
 COPY app/ ./app/
+
+RUN groupadd --gid 1000 appgroup \
+    && useradd --uid 1000 --gid appgroup --no-create-home appuser
+USER appuser
 
 EXPOSE 8000
 
