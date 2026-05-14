@@ -21,6 +21,13 @@ public class AuditLogNotificationListener {
   private final DiscordWebhookClient discordWebhookClient;
   private final NotificationProperties notificationProperties;
 
+  private static NotificationLevel levelFor(AuditSeverity severity) {
+    return switch (severity) {
+      case CRITICAL -> NotificationLevel.HIGH;
+      case ROUTINE -> NotificationLevel.INFO;
+    };
+  }
+
   @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
   public void onAuditLog(AuditLogEvent event) {
     if (!notificationProperties.auditAlert().enabled()) {
@@ -49,13 +56,6 @@ public class AuditLogNotificationListener {
       return targetType;
     }
     return targetType + ":" + targetId;
-  }
-
-  private static NotificationLevel levelFor(AuditSeverity severity) {
-    return switch (severity) {
-      case CRITICAL -> NotificationLevel.HIGH;
-      case ROUTINE -> NotificationLevel.INFO;
-    };
   }
 
   private String safe(String value) {
