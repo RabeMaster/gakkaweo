@@ -187,6 +187,10 @@ node_modules/
 package-lock.json
 
 # End of https://www.toptal.com/developers/gitignore/api/windows,linux,visualstudiocode,intellij+all,venv,dotenv,git
+# Runtime directories (prod compose volumes)
+uploads/
+dumps/
+
 .playwright-mcp/
 .claude/
 CLAUDE.md

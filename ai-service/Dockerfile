@@ -1,5 +1,5 @@
-# python:3.13-slim (CPU-only, PyTorch CPU wheel)
-FROM python:3.13-slim
+# python:3.14-slim (CPU-only, PyTorch CPU wheel)
+FROM python:3.14-slim
 
 WORKDIR /app
 
