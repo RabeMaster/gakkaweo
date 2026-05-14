@@ -133,6 +133,102 @@ useEffect(() => { setSomething(prop); }, [prop]);
 
 > TMI) 게임을 플레이할 때, 갑자기 큰 소리가 나면 놀랄 수 있기 때문에, 사운드 볼륨을 조절할 수 있는 기능을 제공하기로 결정했다. 또한, 효과음을 찾는데 장장 1시간이 넘게 걸렸고, 갑자기 놀라거나, 너무 소리가 크거나, 고 음역대가 귀를 거슬리게 할 수 있기 때문에, 직접 DAW(Fl Studio)를 사용해서 시작과 끝에 페이드인/아웃을 넣고, EQ를 걸어서 High를 깎아서 귀에 덜 거슬리도록 편집했다.
 
+### GuessHistory 레이아웃
+
+페이지당 5개의 슬롯을 고정하고, 데이터가 부족한 슬롯은 invisible placeholder로 채운다.
+
+placeholder는 실제 아이템과 동일한 DOM 구조(`border-4`, `p-2 md:p-3`, `SimilarityBadge` 크기)를 유지하되, `invisible aria-hidden`으로 처리하여 시각적으로는 보이지 않지만 공간은 차지하게 했다.
+
+> 추측 기록이 추가될 때마다 높이가 변하면 아래 요소들이 밀려나는 레이아웃 시프트가 발생한다. 처음에는 min-height를 고정하는 방식을 시도했지만, 아이템 높이가 반응형으로 달라지면서 정확한 값을 맞추기 어려웠다. 실제 DOM 구조와 동일한 placeholder를 invisible로 렌더링하면, 아이템 크기가 바뀌어도 자동으로 맞춰지기 때문에 이 방식을 채택했다.
+
+### 상수 중앙화
+
+TanStack Query의 `staleTime`과 환경 변수를 중앙에서 관리한다.
+
+- **staleTime**: `shared/config/query.ts`에서 `STALE_TIME.NONE(0)`, `SHORT(30_000)`, `LONG(60_000)`, `IMMUTABLE(Infinity)` 4단계로 정의한다. 각 `useQuery` 호출에서 이 상수를 참조한다.
+- **refetchInterval**: 같은 파일에서 `REFETCH_INTERVAL.FAST(15_000)`, `NORMAL(30_000)`을 정의한다.
+- **API_BASE_URL**: `shared/config/env.ts`에서 `VITE_API_BASE_URL` 환경 변수를 모듈 로드 시점에 검증하고, 없으면 즉시 에러를 던진다.
+
+> staleTime을 각 useQuery 호출마다 매직 넘버로 넣으면, 전체 캐싱 정책을 변경할 때 모든 파일을 찾아서 바꿔야 한다. 상수로 중앙화하면 한 곳만 수정하면 되고, "이 데이터는 어떤 수준의 freshness가 필요한가"를 네이밍으로 명시할 수 있다.
+
+> 환경 변수 검증도 비슷한 맥락이다. `import.meta.env.VITE_API_BASE_URL`을 여기저기서 직접 읽으면, 값이 빠졌을 때 런타임 도중에 `undefined/api/...` 같은 URL로 요청이 나가서 디버깅이 어렵다. 모듈 초기화 시점에 fail-fast하면 원인을 바로 찾을 수 있다.
+
+### 에러 바운더리
+
+React의 Error Boundary는 class 컴포넌트로만 구현할 수 있다. 이 제약 때문에 `ErrorBoundary` class 컴포넌트에서 에러를 감지하고, `ErrorFallback` 함수 컴포넌트에서 UI를 렌더링하는 구조로 분리했다.
+
+- **ErrorFallback**: 개발 환경(`import.meta.env.DEV`)에서만 스택 트레이스를 노출하고, "다시 시도"와 "홈으로" 버튼을 제공한다.
+- **라우터 통합**: `router.tsx`에서 루트 레벨 `errorElement`로 `RouteErrorFallback`을 설정하여, 라우트 내 에러도 동일한 UI로 처리한다.
+
+> class 컴포넌트 안에서 복잡한 UI를 작성하면 훅을 쓸 수 없어서 유지보수가 어려워진다. 에러 감지(class)와 에러 표시 UI(함수)를 분리하면 UI 쪽은 자유롭게 훅을 쓸 수 있다.
+
+## 모바일 반응형
+
+`md:` (768px) 단일 breakpoint로 모바일과 데스크톱을 구분한다. mobile-first 전략이므로, 접두사 없는 클래스가 모바일이고 `md:` 접두사가 데스크톱 오버라이드다.
+
+| 페이지 | 모바일 | 데스크톱 |
+|--------|--------|----------|
+| 게임 (/) | 게임 칼럼만 표시. 랭킹/힌트는 MobileSideSheet 드로어로 접근 | 사이드 패널(좌 w-72) + 게임(우) 2단 |
+| 로그인 (/login) | 소셜 → 가로 구분선("또는") → 가까워 1단 스택 | 소셜 + 세로 구분선 + 가까워 2단 |
+| 푸터 | 세로 스택, 링크 flex-wrap | 좌우 배치 justify-between |
+
+> 이 게임의 UI가 비교적 단순해서 모바일/데스크톱 2단계면 충분하다고 판단했다. 태블릿을 별도로 다루면 CSS만 복잡해지고, 실사용자 대부분이 폰이나 데스크톱일 것으로 예상했다. 어드민(`/admin`)은 데스크톱 전용이라 반응형 대상에서 제외했다.
+
+## 오버레이 시스템
+
+모달, 드로어 등 오버레이 컴포넌트들은 공통적으로 Escape 닫기, click-outside 닫기, body scroll lock이 필요하다. 이 세 가지 동작을 각각 커스텀 훅으로 분리하고, 오버레이 컴포넌트에서 조합하는 구조로 설계했다.
+
+### Dialog
+
+모든 모달의 기반이 되는 공용 컴포넌트다. `createPortal(document.body)`로 렌더링하여 부모 CSS의 간섭을 받지 않는다.
+
+- `useEscapeStack`, `useScrollLock`을 내부에서 호출한다.
+- Click-outside는 백드롭의 `onMouseDown === e.currentTarget` 검사로 구현한다.
+- `useId()`로 `aria-labelledby`를 동적 연결한다.
+- `disableClose` prop을 켜면 로딩 중 Escape, click-outside, 닫기 버튼을 모두 차단한다.
+
+> 처음에는 `react-modal` 같은 라이브러리를 고려했지만, 네오 브루탈리즘 스타일링에 맞추려면 결국 대부분의 CSS를 오버라이드해야 해서, 직접 만드는 편이 간결했다. Portal 없이 relative 포지셔닝만 쓰면 `overflow: hidden`인 부모 안에서 잘리는 문제가 있어서, Portal을 채택했다.
+
+### ConfirmDialog
+
+`Dialog`를 래핑하여 "정말 삭제하시겠습니까?" 류의 확인/취소 패턴을 표준화한 컴포넌트다.
+
+- 상단 메시지(`whitespace-pre-line`으로 개행 지원) + 하단 취소/확인 버튼으로 구성한다.
+- `isLoading` 시 양쪽 버튼 disabled + `disableClose` 전파로 중복 실행을 방지한다.
+
+### MobileSideSheet
+
+모바일에서 랭킹/힌트 패널을 보여주는 오른쪽 드로어다. `md:hidden`으로 데스크톱에서는 숨긴다.
+
+- 화면 오른쪽 고정 트리거 버튼(랭킹/힌트) → 탭하면 `animate-slide-in-right`로 열린다.
+- 탭 전환 헤더로 랭킹/힌트를 같은 드로어 안에서 전환할 수 있다.
+- `useClickOutside`, `useEscapeStack`, `useScrollLock` 세 훅을 모두 사용한다.
+- 닫을 때는 `isClosing` 상태를 거쳐 슬라이드 아웃 애니메이션이 끝난 후 상태를 리셋한다.
+
+> 처음에는 랭킹과 힌트를 각각 별도 드로어로 열까 고민했는데, 하나의 드로어에 탭 전환을 넣는 것이 전환 비용이 낮고 사용자 경험이 더 자연스러웠다.
+
+### 공용 훅
+
+| 훅 | 역할 | 구현 방식 |
+|----|------|-----------|
+| `useEscapeStack` | Escape 키 처리 | 모듈 레벨 스택. 최상위 핸들러만 호출하여 Dialog 위에 Dialog가 떴을 때 아래 것이 닫히는 문제를 방지 |
+| `useScrollLock` | body scroll lock | 모듈 레벨 카운터. 다중 오버레이 동시 활성화 시 마지막이 닫힐 때만 unlock. scrollbar width `paddingRight` 보상 |
+| `useClickOutside` | click-outside 닫기 | `mousedown` 이벤트 기반. `excludeRefs`로 특정 요소 제외 가능 |
+
+> `useEscapeStack`이 없었을 때 Dialog 중첩 시 Escape를 누르면 두 Dialog가 동시에 닫히는 문제가 있었다. 전역 스택을 두고 최상위 핸들러만 호출하면 이 문제가 해결된다. `useScrollLock`도 비슷하게, 카운터 없이 단순히 `overflow: hidden`을 토글하면 Dialog A가 닫힐 때 Dialog B가 아직 열려 있는데도 스크롤이 풀려버린다.
+
+## 공용 UI 컴포넌트
+
+`shared/ui/`에 위치하는, 특정 도메인에 종속되지 않는 범용 컴포넌트들이다.
+
+| 컴포넌트 | 역할 |
+|----------|------|
+| `DefaultAvatar` | 프로필 사진이 없을 때 표시하는 기본 아바타. `size` prop으로 sm/md/lg 3단계. 인라인 SVG 아이콘 사용 |
+| `SkeletonRow` | 데이터 로딩 중 표시하는 스켈레톤. `animate-pulse` + `height`, `className` props |
+| `AnnouncementBanner` | 공지사항 배너. 유형별(안내/점검/경고) 색상 분기. 닫기 시 localStorage에 기록하여 중복 표시 방지 |
+
+> 공용 컴포넌트의 기준은 "두 개 이상의 feature에서 사용하는가"다. 한 feature에서만 쓰이는 컴포넌트는 해당 feature 디렉토리에 둔다. 다만 Dialog처럼 기능이 복잡하고 일관된 동작이 중요한 것은 한 곳에서만 쓰더라도 `shared/`에 두어 중앙 관리한다.
+
 ---
 
-_마지막 업데이트: 2026-04-07_
+_마지막 업데이트: 2026-05-14_
