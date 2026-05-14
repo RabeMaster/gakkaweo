@@ -16,6 +16,10 @@ public class AuthMetrics {
 
   private final MeterRegistry meterRegistry;
 
+  private static String sanitize(String provider) {
+    return ALLOWED_PROVIDERS.contains(provider) ? provider : "unknown";
+  }
+
   @PostConstruct
   void initCounters() {
     for (String provider : PROVIDERS) {
@@ -62,10 +66,6 @@ public class AuthMetrics {
 
   public void recordRegister(String provider) {
     meterRegistry.counter("auth.register.total", "provider", sanitize(provider)).increment();
-  }
-
-  private static String sanitize(String provider) {
-    return ALLOWED_PROVIDERS.contains(provider) ? provider : "unknown";
   }
 
   public void recordWithdraw() {
