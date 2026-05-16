@@ -5,7 +5,7 @@
 ## 브랜치 구조
 
 ```
-main         1 ← 운영 배포 (main 머지 시 CD 자동 배포)
+main          ← 운영 배포 (main 머지 시 CD 자동 배포)
  └── dev      ← 개발 통합 (CI만 동작, 배포 안 됨)
       ├── feat/#15-로그인-기능
       ├── fix/#22-토큰-만료-오류
@@ -46,8 +46,7 @@ chore/#8-도커-설정
 | ---------------- | ------------------------------ |
 | PR to dev        | CI (lint, format, build, test) |
 | PR to main       | CI (동일)                      |
-| main 머지 (push) | CD (빌드 → 배포)               |
-| dev 푸시         | CI만 동작, 배포 없음           |
+| main 머지 (push) | CD (빌드 → 배포)              |
 
 ## 워크플로우
 
@@ -55,11 +54,13 @@ chore/#8-도커-설정
 
 1. **이슈 생성** - GitHub에서 이슈 템플릿을 사용하여 이슈를 생성합니다.
 2. **브랜치 생성** - dev에서 이슈에 대응하는 브랜치를 생성합니다.
+
    ```bash
    git checkout dev
    git pull origin dev
    git checkout -b feat/#15-로그인-기능
    ```
+
 3. **작업 및 커밋** - [커밋 컨벤션](commit-convention.md)에 맞춰 커밋합니다.
 4. **PR 생성** - GitHub에서 dev 브랜치로 PR을 생성합니다 (PR 템플릿 사용).
 5. **셀프 리뷰 및 머지** - 셀프 리뷰 후 dev에 머지합니다.
@@ -70,13 +71,16 @@ chore/#8-도커-설정
 운영 중 긴급 수정이 필요한 경우, main에서 직접 브랜치를 생성합니다.
 
 1. **main에서 분기** - `fix/#이슈번호-설명` 브랜치를 main에서 생성합니다.
+
    ```bash
    git checkout main
    git pull origin main
    git checkout -b fix/#99-긴급-수정
    ```
+
 2. **수정 및 PR** - main 대상 PR을 생성합니다. CI 통과 후 main에 머지합니다.
 3. **dev로 백포팅** - main의 수정 사항을 dev에 반영합니다.
+
    ```bash
    git checkout dev
    git merge main
