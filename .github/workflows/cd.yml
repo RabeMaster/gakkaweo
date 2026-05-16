@@ -2,7 +2,7 @@ name: CD
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
 
 concurrency:
   group: cd
