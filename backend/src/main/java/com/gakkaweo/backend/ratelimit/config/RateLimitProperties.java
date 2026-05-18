@@ -9,4 +9,12 @@ public record RateLimitProperties(
     int ssePerMinute,
     int authPerMinute,
     int adminPerMinute,
+    int guessWsCapacity,
+    int chatWsCapacity,
+    int roomActionCapacity,
+    int inviteWsCapacity,
+    int guessWsIntervalSeconds,
+    int chatWsIntervalSeconds,
+    int roomActionIntervalSeconds,
+    int inviteWsIntervalSeconds,
     int bucketExpiryMinutes) {}

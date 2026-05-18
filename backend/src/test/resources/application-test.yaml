@@ -80,12 +80,29 @@ app:
     hint-max-count: 5
   upload:
     profile-dir: ${java.io.tmpdir}/gakkaweo-test/profiles
+  multi:
+    timer:
+      pool-size: 2
+    web-socket:
+      message-size-limit: 8192
+      send-buffer-size-limit: 524288
+      send-time-limit: 20000
+      heartbeat-server: 25000
+      heartbeat-client: 25000
   rate-limit:
     guess-per-minute: 10000
     read-per-minute: 10000
     sse-per-minute: 10000
     auth-per-minute: 10000
     admin-per-minute: 10000
+    guess-ws-capacity: 10000
+    chat-ws-capacity: 10000
+    room-action-capacity: 10000
+    invite-ws-capacity: 10000
+    guess-ws-interval-seconds: 1
+    chat-ws-interval-seconds: 1
+    room-action-interval-seconds: 1
+    invite-ws-interval-seconds: 5
     bucket-expiry-minutes: 60
     cleanup-interval-ms: 300000
   seed:

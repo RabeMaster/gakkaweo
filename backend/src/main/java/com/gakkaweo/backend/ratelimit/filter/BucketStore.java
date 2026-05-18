@@ -60,12 +60,9 @@ public class BucketStore {
 
   private Bucket createBucket(EndpointGroup group) {
     int capacity = getCapacity(group);
+    Duration period = getRefillPeriod(group);
     return Bucket.builder()
-        .addLimit(
-            Bandwidth.builder()
-                .capacity(capacity)
-                .refillGreedy(capacity, Duration.ofMinutes(1))
-                .build())
+        .addLimit(Bandwidth.builder().capacity(capacity).refillGreedy(capacity, period).build())
         .build();
   }
 
@@ -76,7 +73,21 @@ public class BucketStore {
       case SSE -> properties.ssePerMinute();
       case AUTH -> properties.authPerMinute();
       case ADMIN -> properties.adminPerMinute();
+      case GUESS_WS -> properties.guessWsCapacity();
+      case CHAT_WS -> properties.chatWsCapacity();
+      case ROOM_ACTION -> properties.roomActionCapacity();
+      case INVITE_WS -> properties.inviteWsCapacity();
       case NONE -> throw new IllegalArgumentException("NONE 그룹은 버킷을 생성하지 않습니다");
+    };
+  }
+
+  private Duration getRefillPeriod(EndpointGroup group) {
+    return switch (group) {
+      case GUESS_WS -> Duration.ofSeconds(properties.guessWsIntervalSeconds());
+      case CHAT_WS -> Duration.ofSeconds(properties.chatWsIntervalSeconds());
+      case ROOM_ACTION -> Duration.ofSeconds(properties.roomActionIntervalSeconds());
+      case INVITE_WS -> Duration.ofSeconds(properties.inviteWsIntervalSeconds());
+      default -> Duration.ofMinutes(1);
     };
   }
 
