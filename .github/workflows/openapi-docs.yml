@@ -2,7 +2,7 @@ name: OpenAPI Docs
 
 on:
   push:
-    branches: [dev]
+    branches: [main]
     paths:
       - 'backend/**'
       - 'docs-site/**'
