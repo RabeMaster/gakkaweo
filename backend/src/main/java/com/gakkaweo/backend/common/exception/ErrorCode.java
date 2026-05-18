@@ -47,6 +47,10 @@ public enum ErrorCode {
   ROLE_ALREADY_ASSIGNED(HttpStatus.BAD_REQUEST, "이미 동일한 역할입니다"),
   INSUFFICIENT_ROLE(HttpStatus.FORBIDDEN, "이 작업을 수행할 권한이 부족합니다"),
 
+  WS_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "WebSocket 토큰이 만료되었습니다"),
+  WS_TOKEN_REVOKED(HttpStatus.UNAUTHORIZED, "WebSocket 토큰이 폐기되었습니다"),
+  WS_RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "WebSocket 요청이 너무 많습니다"),
+
   INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다");
 
   private final HttpStatus status;

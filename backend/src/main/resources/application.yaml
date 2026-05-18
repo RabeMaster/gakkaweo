@@ -94,12 +94,29 @@ app:
     profile-dir: ${UPLOAD_PROFILE_DIR:./uploads/profiles}
   sse:
     max-connections: ${SSE_MAX_CONNECTIONS:500}
+  multi:
+    timer:
+      pool-size: ${MULTI_TIMER_POOL_SIZE:4}
+    web-socket:
+      message-size-limit: ${MULTI_WS_MESSAGE_SIZE_LIMIT:8192}
+      send-buffer-size-limit: ${MULTI_WS_SEND_BUFFER_SIZE_LIMIT:524288}
+      send-time-limit: ${MULTI_WS_SEND_TIME_LIMIT:20000}
+      heartbeat-server: ${MULTI_WS_HEARTBEAT_SERVER:25000}
+      heartbeat-client: ${MULTI_WS_HEARTBEAT_CLIENT:25000}
   rate-limit:
     guess-per-minute: ${RATE_LIMIT_GUESS:40}
     read-per-minute: ${RATE_LIMIT_READ:120}
     sse-per-minute: ${RATE_LIMIT_SSE:10}
     auth-per-minute: ${RATE_LIMIT_AUTH:10}
     admin-per-minute: ${RATE_LIMIT_ADMIN:120}
+    guess-ws-capacity: ${RATE_LIMIT_GUESS_WS_CAPACITY:2}
+    chat-ws-capacity: ${RATE_LIMIT_CHAT_WS_CAPACITY:1}
+    room-action-capacity: ${RATE_LIMIT_ROOM_ACTION_CAPACITY:5}
+    invite-ws-capacity: ${RATE_LIMIT_INVITE_WS_CAPACITY:1}
+    guess-ws-interval-seconds: ${RATE_LIMIT_GUESS_WS_INTERVAL:1}
+    chat-ws-interval-seconds: ${RATE_LIMIT_CHAT_WS_INTERVAL:1}
+    room-action-interval-seconds: ${RATE_LIMIT_ROOM_ACTION_INTERVAL:1}
+    invite-ws-interval-seconds: ${RATE_LIMIT_INVITE_WS_INTERVAL:5}
     bucket-expiry-minutes: ${RATE_LIMIT_BUCKET_EXPIRY:10}
     cleanup-interval-ms: ${RATE_LIMIT_CLEANUP_INTERVAL_MS:300000}
   seed:

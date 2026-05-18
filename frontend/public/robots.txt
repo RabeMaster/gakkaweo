@@ -4,12 +4,16 @@ User-agent: *
 Allow: /
 Disallow: /admin
 Disallow: /mypage
+Disallow: /play
+Disallow: /shop
 
 # 검색 엔진 크롤러 명시 허용
 User-agent: Googlebot
 Allow: /
 Disallow: /admin
 Disallow: /mypage
+Disallow: /play
+Disallow: /shop
 
 User-agent: Googlebot-Image
 Allow: /
@@ -18,21 +22,29 @@ User-agent: Bingbot
 Allow: /
 Disallow: /admin
 Disallow: /mypage
+Disallow: /play
+Disallow: /shop
 
 User-agent: Yeti
 Allow: /
 Disallow: /admin
 Disallow: /mypage
+Disallow: /play
+Disallow: /shop
 
 User-agent: NaverBot
 Allow: /
 Disallow: /admin
 Disallow: /mypage
+Disallow: /play
+Disallow: /shop
 
 User-agent: Daum
 Allow: /
 Disallow: /admin
 Disallow: /mypage
+Disallow: /play
+Disallow: /shop
 
 # 소셜 언퍼링(Unfurl) 봇 명시 허용 — 미리보기 생성용
 User-agent: Twitterbot

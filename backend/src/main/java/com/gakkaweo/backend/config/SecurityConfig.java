@@ -106,6 +106,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/announcements/active")
                     .permitAll()
+                    .requestMatchers("/ws")
+                    .authenticated()
                     // SUPERADMIN 전용 (회복 불가/운영·보안 영향 큰 액션). /admin/** 매처보다 먼저 평가되어야 함
                     .requestMatchers(HttpMethod.DELETE, "/admin/users/*")
                     .hasRole("SUPERADMIN")

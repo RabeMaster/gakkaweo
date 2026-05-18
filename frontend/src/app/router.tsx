@@ -10,6 +10,11 @@ import { DashboardTab } from "@/features/admin/components/DashboardTab";
 import { SentenceTab } from "@/features/admin/components/SentenceTab";
 import { UserTab } from "@/features/admin/components/UserTab";
 import { SystemTab } from "@/features/admin/components/SystemTab";
+import { MultiAppShell } from "@/features/multiplayer/layout/MultiAppShell";
+import { LobbyPage } from "@/features/multiplayer/pages/LobbyPage";
+import { RoomPage } from "@/features/multiplayer/pages/RoomPage";
+import { ShopPage } from "@/features/multiplayer/pages/ShopPage";
+import { DesktopOnlyGate } from "@/shared/ui/DesktopOnlyGate";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { PrivacyPolicyPage } from "@/pages/PrivacyPolicyPage";
 import { TermsOfServicePage } from "@/pages/TermsOfServicePage";
@@ -50,6 +55,28 @@ export const router = createBrowserRouter([
           { path: "users", element: <UserTab /> },
           { path: "system", element: <SystemTab /> },
         ],
+      },
+      {
+        path: "play",
+        element: (
+          <RequireAuth>
+            <MultiAppShell />
+          </RequireAuth>
+        ),
+        children: [
+          { index: true, element: <LobbyPage /> },
+          { path: ":roomId", element: <RoomPage /> },
+        ],
+      },
+      {
+        path: "shop",
+        element: (
+          <RequireAuth>
+            <DesktopOnlyGate>
+              <ShopPage />
+            </DesktopOnlyGate>
+          </RequireAuth>
+        ),
       },
       { path: "privacy", element: <PrivacyPolicyPage /> },
       { path: "terms", element: <TermsOfServicePage /> },

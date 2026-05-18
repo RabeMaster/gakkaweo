@@ -6,6 +6,10 @@ import org.springframework.stereotype.Component;
 public class EndpointGroupResolver {
 
   public EndpointGroup resolve(String method, String uri) {
+    if (uri.equals("/ws") || uri.startsWith("/ws/")) {
+      return EndpointGroup.NONE;
+    }
+
     if (uri.equals("/health")
         || uri.startsWith("/uploads/")
         || uri.startsWith("/login/oauth2/")
