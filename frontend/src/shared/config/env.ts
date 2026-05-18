@@ -5,3 +5,5 @@ if (!value) {
 }
 
 export const API_BASE_URL: string = value;
+
+export const WS_URL: string = API_BASE_URL.replace(/^http/, "ws") + "/ws";
