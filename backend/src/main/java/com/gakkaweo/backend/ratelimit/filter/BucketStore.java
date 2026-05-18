@@ -83,11 +83,12 @@ public class BucketStore {
 
   private Duration getRefillPeriod(EndpointGroup group) {
     return switch (group) {
+      case GUESS, READ, SSE, AUTH, ADMIN -> Duration.ofMinutes(1);
       case GUESS_WS -> Duration.ofSeconds(properties.guessWsIntervalSeconds());
       case CHAT_WS -> Duration.ofSeconds(properties.chatWsIntervalSeconds());
       case ROOM_ACTION -> Duration.ofSeconds(properties.roomActionIntervalSeconds());
       case INVITE_WS -> Duration.ofSeconds(properties.inviteWsIntervalSeconds());
-      default -> Duration.ofMinutes(1);
+      case NONE -> throw new IllegalArgumentException("NONE 그룹은 버킷을 생성하지 않습니다");
     };
   }
 

@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.auth.websocket;
 
+import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.ratelimit.filter.BucketStore;
 import com.gakkaweo.backend.ratelimit.filter.EndpointGroup;
@@ -52,12 +53,12 @@ public class StompChannelInterceptor implements ChannelInterceptor {
     if (command == StompCommand.SEND || command == StompCommand.SUBSCRIBE) {
       Long expiresAt = (Long) sessionAttributes.get(WebSocketHandshakeInterceptor.ATTR_EXPIRES_AT);
       if (expiresAt != null && clock.millis() > expiresAt) {
-        throw new MessageDeliveryException("TOKEN_EXPIRED");
+        throw new MessageDeliveryException(ErrorCode.WS_TOKEN_EXPIRED.name());
       }
 
       String jti = (String) sessionAttributes.get(WebSocketHandshakeInterceptor.ATTR_JTI);
       if (jti != null && redisTemplate.hasKey(RedisKeyConstants.blacklistKey(jti))) {
-        throw new MessageDeliveryException("TOKEN_REVOKED");
+        throw new MessageDeliveryException(ErrorCode.WS_TOKEN_REVOKED.name());
       }
 
       if (command == StompCommand.SEND) {
@@ -68,7 +69,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
           String key = principal != null ? principal.publicId().toString() : "anonymous";
           Bucket bucket = bucketStore.resolveBucket(group, key);
           if (!bucket.tryConsume(1)) {
-            throw new MessageDeliveryException("RATE_LIMIT_EXCEEDED");
+            throw new MessageDeliveryException(ErrorCode.WS_RATE_LIMIT_EXCEEDED.name());
           }
         }
       }

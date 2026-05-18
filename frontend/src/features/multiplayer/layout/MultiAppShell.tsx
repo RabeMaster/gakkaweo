@@ -2,12 +2,15 @@ import { Outlet } from "react-router-dom";
 import { DesktopOnlyGate } from "@/shared/ui/DesktopOnlyGate";
 import { useStompClient } from "@/shared/hooks/useStompClient";
 
-export function MultiAppShell() {
+function MultiContent() {
   useStompClient();
+  return <Outlet />;
+}
 
+export function MultiAppShell() {
   return (
     <DesktopOnlyGate>
-      <Outlet />
+      <MultiContent />
     </DesktopOnlyGate>
   );
 }

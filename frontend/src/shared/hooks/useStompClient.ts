@@ -30,7 +30,6 @@ export function useStompClient() {
       },
       onStompError: () => {
         setWsConnected(false);
-        reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, MAX_RECONNECT_DELAY);
       },
       onWebSocketClose: () => {
         setWsConnected(false);

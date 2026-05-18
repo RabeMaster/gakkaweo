@@ -3,6 +3,7 @@ package com.gakkaweo.backend.auth.websocket;
 import com.gakkaweo.backend.auth.jwt.JwtProvider;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,15 +46,19 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
       return false;
     }
 
-    Claims claims = jwtProvider.parseAccessToken(token);
-    String jti = claims.getId();
-    long expiresAt = claims.getExpiration().getTime();
+    try {
+      Claims claims = jwtProvider.parseAccessToken(token);
+      String jti = claims.getId();
+      long expiresAt = claims.getExpiration().getTime();
 
-    attributes.put(ATTR_PRINCIPAL, new StompPrincipal(publicId, role));
-    attributes.put(ATTR_JTI, jti);
-    attributes.put(ATTR_EXPIRES_AT, expiresAt);
+      attributes.put(ATTR_PRINCIPAL, new StompPrincipal(publicId, role));
+      attributes.put(ATTR_JTI, jti);
+      attributes.put(ATTR_EXPIRES_AT, expiresAt);
 
-    return true;
+      return true;
+    } catch (JwtException e) {
+      return false;
+    }
   }
 
   @Override
