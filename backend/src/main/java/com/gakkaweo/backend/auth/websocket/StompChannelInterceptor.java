@@ -4,6 +4,7 @@ import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.ratelimit.filter.BucketStore;
 import com.gakkaweo.backend.ratelimit.filter.EndpointGroup;
+import com.gakkaweo.backend.ratelimit.filter.WsEndpointGroupResolver;
 import io.github.bucket4j.Bucket;
 import java.time.Clock;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class StompChannelInterceptor implements ChannelInterceptor {
 
   private final StringRedisTemplate redisTemplate;
   private final BucketStore bucketStore;
+  private final WsEndpointGroupResolver wsEndpointGroupResolver;
   private final Clock clock;
 
   @Override
@@ -63,10 +65,10 @@ public class StompChannelInterceptor implements ChannelInterceptor {
 
       if (command == StompCommand.SEND) {
         String destination = accessor.getDestination();
-        EndpointGroup group = resolveWsGroup(destination);
+        EndpointGroup group = wsEndpointGroupResolver.resolve(destination);
         if (group != null) {
-          StompPrincipal principal = (StompPrincipal) accessor.getUser();
-          String key = principal != null ? principal.publicId().toString() : "anonymous";
+          java.security.Principal user = accessor.getUser();
+          String key = user != null ? user.getName() : "anonymous";
           Bucket bucket = bucketStore.resolveBucket(group, key);
           if (!bucket.tryConsume(1)) {
             throw new MessageDeliveryException(ErrorCode.WS_RATE_LIMIT_EXCEEDED.name());
@@ -76,24 +78,5 @@ public class StompChannelInterceptor implements ChannelInterceptor {
     }
 
     return message;
-  }
-
-  private EndpointGroup resolveWsGroup(String destination) {
-    if (destination == null) {
-      return null;
-    }
-    if (destination.matches("/app/room/[^/]+/guess")) {
-      return EndpointGroup.GUESS_WS;
-    }
-    if (destination.matches("/app/room/[^/]+/chat")) {
-      return EndpointGroup.CHAT_WS;
-    }
-    if (destination.startsWith("/app/friend/invite")) {
-      return EndpointGroup.INVITE_WS;
-    }
-    if (destination.matches("/app/room/.*")) {
-      return EndpointGroup.ROOM_ACTION;
-    }
-    return null;
   }
 }
