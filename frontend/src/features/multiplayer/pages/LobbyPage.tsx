@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/shared/ui/Button";
 import { useToastStore } from "@/shared/stores/useToastStore";
@@ -22,16 +22,21 @@ export function LobbyPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [passwordTarget, setPasswordTarget] = useState<LobbyRoomInfo | null>(null);
 
-  useNotifications((notification: WsNotification) => {
-    if (notification.type === "ROOM_CREATED" || notification.type === "ROOM_STATE") {
-      const snapshot = notification.payload as RoomSnapshot;
-      navigate(`/play/${snapshot.roomId}`);
-    }
-    if (notification.type === "ERROR") {
-      const err = notification.payload as { message: string };
-      addToast(err.message, "error");
-    }
-  });
+  const handleNotification = useCallback(
+    (notification: WsNotification) => {
+      if (notification.type === "ROOM_CREATED" || notification.type === "ROOM_STATE") {
+        const snapshot = notification.payload as RoomSnapshot;
+        navigate(`/play/${snapshot.roomId}`);
+      }
+      if (notification.type === "ERROR") {
+        const err = notification.payload as { message: string };
+        addToast(err.message, "error");
+      }
+    },
+    [navigate, addToast],
+  );
+
+  useNotifications(handleNotification);
 
   const filteredRooms = useMemo(() => {
     let result = rooms;

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Client } from "@stomp/stompjs";
 import type { IMessage, StompSubscription } from "@stomp/stompjs";
 import { WS_URL } from "@/shared/config/env";
@@ -8,9 +8,9 @@ const INITIAL_RECONNECT_DELAY = 2_000;
 const MAX_RECONNECT_DELAY = 30_000;
 
 let sharedClient: Client | null = null;
+let reconnectDelay = INITIAL_RECONNECT_DELAY;
 
 export function useStompClient() {
-  const reconnectDelayRef = useRef(INITIAL_RECONNECT_DELAY);
   const setWsConnected = useConnectionStore((s) => s.setWsConnected);
 
   useEffect(() => {
@@ -18,27 +18,41 @@ export function useStompClient() {
       return;
     }
 
+    let active = true;
+
     const client = new Client({
       brokerURL: WS_URL,
       heartbeatIncoming: 25_000,
       heartbeatOutgoing: 25_000,
       reconnectDelay: INITIAL_RECONNECT_DELAY,
       beforeConnect: () => {
-        client.reconnectDelay = reconnectDelayRef.current;
+        client.reconnectDelay = reconnectDelay;
       },
       onConnect: () => {
-        reconnectDelayRef.current = INITIAL_RECONNECT_DELAY;
+        if (!active) {
+          return;
+        }
+        reconnectDelay = INITIAL_RECONNECT_DELAY;
         setWsConnected(true);
       },
       onDisconnect: () => {
+        if (!active) {
+          return;
+        }
         setWsConnected(false);
       },
       onStompError: () => {
+        if (!active) {
+          return;
+        }
         setWsConnected(false);
       },
       onWebSocketClose: () => {
+        if (!active) {
+          return;
+        }
         setWsConnected(false);
-        reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, MAX_RECONNECT_DELAY);
+        reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
       },
     });
 
@@ -46,9 +60,9 @@ export function useStompClient() {
     client.activate();
 
     return () => {
+      active = false;
       client.deactivate();
       sharedClient = null;
-      setWsConnected(false);
     };
   }, [setWsConnected]);
 
