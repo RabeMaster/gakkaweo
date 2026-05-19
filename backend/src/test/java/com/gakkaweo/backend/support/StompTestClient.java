@@ -1,7 +1,12 @@
 package com.gakkaweo.backend.support;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.springframework.messaging.converter.ByteArrayMessageConverter;
+import org.springframework.messaging.converter.CompositeMessageConverter;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
@@ -16,6 +21,12 @@ public class StompTestClient implements AutoCloseable {
 
   public StompTestClient() {
     this.stompClient = new WebSocketStompClient(new StandardWebSocketClient());
+    this.stompClient.setMessageConverter(
+        new CompositeMessageConverter(
+            List.of(
+                new MappingJackson2MessageConverter(),
+                new StringMessageConverter(),
+                new ByteArrayMessageConverter())));
   }
 
   public StompSession connect(String url, String cookieHeader) throws Exception {

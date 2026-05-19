@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.support;
 
+import com.gakkaweo.backend.multiplayer.room.RoomManager;
 import java.time.Clock;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,9 @@ public abstract class IntegrationTestBase {
   @Autowired(required = false)
   protected TestEventCollector testEventCollector;
 
+  @Autowired(required = false)
+  protected RoomManager roomManager;
+
   @Autowired protected Clock clock;
 
   @BeforeEach
@@ -41,6 +45,9 @@ public abstract class IntegrationTestBase {
     }
     if (testEventCollector != null) {
       testEventCollector.reset();
+    }
+    if (roomManager != null) {
+      roomManager.clearAll();
     }
   }
 
