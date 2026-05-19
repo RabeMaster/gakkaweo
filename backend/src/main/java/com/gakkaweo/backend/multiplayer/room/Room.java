@@ -114,6 +114,10 @@ public class Room {
           RoomException.Reason.ROOM_NOT_WAITING, "대기 중일 때만 설정을 변경할 수 있습니다");
     }
     newSettings.validate();
+    if (newSettings.maxPlayers() < players.size()) {
+      throw RoomException.settingsFailed(
+          RoomException.Reason.INVALID_SETTINGS, "현재 인원보다 적은 최대 인원으로 변경할 수 없습니다");
+    }
     this.settings = newSettings;
   }
 

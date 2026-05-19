@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import com.gakkaweo.backend.multiplayer.room.dto.LobbyRoomInfo;
+import com.gakkaweo.backend.multiplayer.room.dto.RoomCreateRequest;
 import com.gakkaweo.backend.support.IntegrationTestBase;
 import java.time.Duration;
 import java.util.List;
@@ -21,18 +22,8 @@ class LobbyReadModelIntegrationTest extends IntegrationTestBase {
   @Autowired private LobbyReadModel lobbyReadModel;
 
   @Test
-  @DisplayName("CompletableFuture 6명 동시 입퇴장 후 스냅샷 일관성 (마일스톤 2)")
-  void 동시_입퇴장_스냅샷_일관성() {
-    RoomSettings settings = new RoomSettings("동시성 테스트", GameMode.SENTENCE, 5, 120, 6, null, false);
-    UUID hostId = UUID.randomUUID();
-
-    roomManager.registerMembership(hostId, "prep");
-    roomManager.unregisterMembership(hostId);
-
-    var createRequest =
-        new com.gakkaweo.backend.multiplayer.room.dto.RoomCreateRequest(
-            "동시성 테스트", GameMode.SENTENCE, 5, 120, 6, null, false);
-
+  @DisplayName("CompletableFuture 6명 동시 멤버십 등록/해제 후 최종 상태 일관성 (마일스톤 2)")
+  void 동시_멤버십_등록해제_일관성() {
     List<UUID> playerIds = IntStream.range(0, 6).mapToObj(i -> UUID.randomUUID()).toList();
 
     CompletableFuture<?>[] futures =
@@ -58,16 +49,10 @@ class LobbyReadModelIntegrationTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("방 생성/삭제 이벤트 후 스냅샷이 갱신된다")
-  void 이벤트_기반_스냅샷_갱신() throws Exception {
-    UUID hostId = UUID.randomUUID();
-    var request =
-        new com.gakkaweo.backend.multiplayer.room.dto.RoomCreateRequest(
-            "스냅샷 테스트", GameMode.SENTENCE, 5, 120, 6, null, false);
-
-    testAuthHelper.createMember();
+  void 이벤트_기반_스냅샷_갱신() {
     var host = testAuthHelper.createMember();
-    String nickname = host.getNickname();
-    var snapshot = roomService.createRoom(request, host.getPublicId(), nickname);
+    var request = new RoomCreateRequest("스냅샷 테스트", GameMode.SENTENCE, 5, 120, 6, null, false);
+    var snapshot = roomService.createRoom(request, host.getPublicId(), host.getNickname());
     String roomId = snapshot.roomId();
 
     await()

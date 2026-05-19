@@ -22,6 +22,9 @@ public record RoomSettings(
   private static final int PASSWORD_MAX_LENGTH = 16;
 
   public void validate() {
+    if (mode == null) {
+      throw RoomException.settingsFailed(RoomException.Reason.INVALID_SETTINGS, "게임 모드를 선택해야 합니다");
+    }
     if (title == null || title.isBlank() || title.length() > TITLE_MAX_LENGTH) {
       throw RoomException.settingsFailed(
           RoomException.Reason.INVALID_SETTINGS, "방 제목은 1~30자여야 합니다");

@@ -178,6 +178,19 @@ class RoomTest {
   }
 
   @Test
+  @DisplayName("현재 인원보다 적은 maxPlayers로 설정 변경이 거부된다")
+  void 설정변경_인원초과_거부() {
+    Room room = createDefaultRoom();
+    UUID hostId = room.getHostPublicId();
+    room.addPlayer(UUID.randomUUID(), "참가자1", NOW);
+    room.addPlayer(UUID.randomUUID(), "참가자2", NOW);
+    RoomSettings newSettings = new RoomSettings("축소", GameMode.SENTENCE, 5, 120, 2, null, false);
+
+    assertThatThrownBy(() -> room.updateSettings(hostId, newSettings))
+        .isInstanceOf(RoomException.class);
+  }
+
+  @Test
   @DisplayName("방장이 다른 플레이어를 강퇴할 수 있다")
   void 강퇴_성공() {
     Room room = createDefaultRoom();

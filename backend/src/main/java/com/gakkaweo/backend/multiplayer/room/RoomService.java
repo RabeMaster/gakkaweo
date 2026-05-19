@@ -47,7 +47,7 @@ public class RoomService {
             request.guessPublic());
 
     Room room = roomManager.createRoom(settings, publicId, nickname, clock);
-    RoomSnapshot snapshot = RoomSnapshot.from(room);
+    RoomSnapshot snapshot = snapshotUnderLock(room);
 
     eventPublisher.publishEvent(new RoomStateChangedEvent(room.getId(), RoomChangeType.CREATED));
     return snapshot;
@@ -61,6 +61,7 @@ public class RoomService {
       throw RoomException.joinFailed(RoomException.Reason.ALREADY_IN_ROOM, "이미 다른 방에 참가 중입니다");
     }
 
+    RoomSnapshot snapshot;
     ReentrantLock lock = room.getLock();
     lock.lock();
     try {
@@ -69,6 +70,7 @@ public class RoomService {
         throw RoomException.joinFailed(RoomException.Reason.WRONG_PASSWORD, "비밀번호가 올바르지 않습니다");
       }
       room.addPlayer(publicId, nickname, clock.instant());
+      snapshot = RoomSnapshot.from(room);
     } catch (RoomException e) {
       roomManager.unregisterMembership(publicId);
       throw e;
@@ -76,7 +78,6 @@ public class RoomService {
       lock.unlock();
     }
 
-    RoomSnapshot snapshot = RoomSnapshot.from(room);
     messagingTemplate.convertAndSend(
         "/topic/room/" + roomId, new WsNotification("PLAYER_JOINED", snapshot));
     eventPublisher.publishEvent(new RoomStateChangedEvent(roomId, RoomChangeType.PLAYER_JOINED));
@@ -87,6 +88,7 @@ public class RoomService {
     Room room = getOrThrow(roomId);
 
     Room.RemoveResult result;
+    RoomSnapshot snapshot = null;
     boolean revertedToWaiting = false;
     ReentrantLock lock = room.getLock();
     lock.lock();
@@ -96,6 +98,9 @@ public class RoomService {
         revertedToWaiting = true;
       }
       result = room.removePlayer(publicId);
+      if (result.removed() && !result.isEmpty()) {
+        snapshot = RoomSnapshot.from(room);
+      }
     } finally {
       lock.unlock();
     }
@@ -111,7 +116,6 @@ public class RoomService {
       return;
     }
 
-    RoomSnapshot snapshot = RoomSnapshot.from(room);
     messagingTemplate.convertAndSend(
         "/topic/room/" + roomId, new WsNotification("PLAYER_LEFT", snapshot));
     if (revertedToWaiting) {
@@ -125,15 +129,16 @@ public class RoomService {
     Room room = getOrThrow(roomId);
 
     boolean ready;
+    RoomSnapshot snapshot;
     ReentrantLock lock = room.getLock();
     lock.lock();
     try {
       ready = room.toggleReady(publicId);
+      snapshot = RoomSnapshot.from(room);
     } finally {
       lock.unlock();
     }
 
-    RoomSnapshot snapshot = RoomSnapshot.from(room);
     messagingTemplate.convertAndSend(
         "/topic/room/" + roomId, new WsNotification("PLAYER_READY", snapshot));
     return ready;
@@ -142,26 +147,27 @@ public class RoomService {
   public void startGame(String roomId, UUID publicId) {
     Room room = getOrThrow(roomId);
 
+    Instant endsAt;
     ReentrantLock lock = room.getLock();
     lock.lock();
     try {
       room.validateAndPrepareStart(publicId);
       room.transitionToCountdown();
+      endsAt = clock.instant().plusSeconds(COUNTDOWN_SECONDS);
+
+      ScheduledFuture<?> future =
+          multiplayerTimerExecutor.schedule(
+              () -> transitionToPlaying(roomId), COUNTDOWN_SECONDS, TimeUnit.SECONDS);
+      room.setCountdownFuture(future);
     } finally {
       lock.unlock();
     }
 
-    Instant endsAt = clock.instant().plusSeconds(COUNTDOWN_SECONDS);
     messagingTemplate.convertAndSend(
         "/topic/room/" + roomId + "/game",
         new WsNotification(
             "COUNTDOWN", Map.of("endsAt", endsAt.toEpochMilli(), "serverNow", clock.millis())));
     eventPublisher.publishEvent(new RoomStateChangedEvent(roomId, RoomChangeType.STATUS_CHANGED));
-
-    ScheduledFuture<?> future =
-        multiplayerTimerExecutor.schedule(
-            () -> transitionToPlaying(roomId), COUNTDOWN_SECONDS, TimeUnit.SECONDS);
-    room.setCountdownFuture(future);
   }
 
   public void updateSettings(String roomId, RoomSettingsRequest request, UUID publicId) {
@@ -177,15 +183,16 @@ public class RoomService {
             request.password(),
             request.guessPublic());
 
+    RoomSnapshot snapshot;
     ReentrantLock lock = room.getLock();
     lock.lock();
     try {
       room.updateSettings(publicId, newSettings);
+      snapshot = RoomSnapshot.from(room);
     } finally {
       lock.unlock();
     }
 
-    RoomSnapshot snapshot = RoomSnapshot.from(room);
     messagingTemplate.convertAndSend(
         "/topic/room/" + roomId, new WsNotification("ROOM_SETTINGS_UPDATED", snapshot));
     eventPublisher.publishEvent(new RoomStateChangedEvent(roomId, RoomChangeType.SETTINGS_UPDATED));
@@ -194,17 +201,18 @@ public class RoomService {
   public void kickPlayer(String roomId, RoomKickRequest request, UUID publicId) {
     Room room = getOrThrow(roomId);
 
+    RoomSnapshot snapshot;
     ReentrantLock lock = room.getLock();
     lock.lock();
     try {
       room.kick(publicId, request.targetPublicId());
+      snapshot = RoomSnapshot.from(room);
     } finally {
       lock.unlock();
     }
 
     roomManager.unregisterMembership(request.targetPublicId());
 
-    RoomSnapshot snapshot = RoomSnapshot.from(room);
     messagingTemplate.convertAndSend(
         "/topic/room/" + roomId, new WsNotification("PLAYER_KICKED", snapshot));
     messagingTemplate.convertAndSendToUser(
@@ -217,15 +225,16 @@ public class RoomService {
   public void delegateHost(String roomId, RoomDelegateRequest request, UUID publicId) {
     Room room = getOrThrow(roomId);
 
+    RoomSnapshot snapshot;
     ReentrantLock lock = room.getLock();
     lock.lock();
     try {
       room.delegateHost(publicId, request.targetPublicId());
+      snapshot = RoomSnapshot.from(room);
     } finally {
       lock.unlock();
     }
 
-    RoomSnapshot snapshot = RoomSnapshot.from(room);
     messagingTemplate.convertAndSend(
         "/topic/room/" + roomId, new WsNotification("HOST_DELEGATED", snapshot));
     eventPublisher.publishEvent(new RoomStateChangedEvent(roomId, RoomChangeType.HOST_DELEGATED));
@@ -260,6 +269,7 @@ public class RoomService {
       return;
     }
 
+    RoomSnapshot snapshot;
     ReentrantLock lock = room.getLock();
     lock.lock();
     try {
@@ -267,14 +277,24 @@ public class RoomService {
         return;
       }
       room.transitionToPlaying();
+      snapshot = RoomSnapshot.from(room);
     } finally {
       lock.unlock();
     }
 
-    RoomSnapshot snapshot = RoomSnapshot.from(room);
     messagingTemplate.convertAndSend(
         "/topic/room/" + roomId + "/game", new WsNotification("GAME_STARTED", snapshot));
     eventPublisher.publishEvent(new RoomStateChangedEvent(roomId, RoomChangeType.STATUS_CHANGED));
+  }
+
+  private RoomSnapshot snapshotUnderLock(Room room) {
+    ReentrantLock lock = room.getLock();
+    lock.lock();
+    try {
+      return RoomSnapshot.from(room);
+    } finally {
+      lock.unlock();
+    }
   }
 
   private Room getOrThrow(String roomId) {
