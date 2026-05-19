@@ -1,15 +1,17 @@
 import { useEffect } from "react";
-import { useStompClient } from "@/shared/hooks/useStompClient";
+import { useStompSubscribe } from "@/shared/hooks/useStompClient";
+import { useConnectionStore } from "@/shared/stores/useConnectionStore";
 import type { RoomSnapshot, WsNotification } from "../types";
 import { useRoomStore } from "../stores/useRoomStore";
 
 export function useRoomSubscription(roomId: string | undefined) {
-  const { subscribe } = useStompClient();
+  const subscribe = useStompSubscribe();
+  const wsConnected = useConnectionStore((s) => s.wsConnected);
   const setRoom = useRoomStore((s) => s.setRoom);
   const updateStatus = useRoomStore((s) => s.updateStatus);
 
   useEffect(() => {
-    if (!roomId) {
+    if (!roomId || !wsConnected) {
       return;
     }
 
@@ -44,5 +46,5 @@ export function useRoomSubscription(roomId: string | undefined) {
       roomSub?.unsubscribe();
       gameSub?.unsubscribe();
     };
-  }, [roomId, subscribe, setRoom, updateStatus]);
+  }, [roomId, subscribe, wsConnected, setRoom, updateStatus]);
 }

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useStompClient } from "@/shared/hooks/useStompClient";
+import { useStompPublish } from "@/shared/hooks/useStompClient";
 import type { GameMode } from "../types";
 
 interface CreateRoomParams {
@@ -13,7 +13,7 @@ interface CreateRoomParams {
 }
 
 export function useRoomActions() {
-  const { publish } = useStompClient();
+  const publish = useStompPublish();
 
   const createRoom = useCallback(
     (params: CreateRoomParams) => {

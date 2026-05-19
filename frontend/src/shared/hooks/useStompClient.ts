@@ -7,12 +7,17 @@ import { useConnectionStore } from "@/shared/stores/useConnectionStore";
 const INITIAL_RECONNECT_DELAY = 2_000;
 const MAX_RECONNECT_DELAY = 30_000;
 
+let sharedClient: Client | null = null;
+
 export function useStompClient() {
-  const clientRef = useRef<Client | null>(null);
   const reconnectDelayRef = useRef(INITIAL_RECONNECT_DELAY);
   const setWsConnected = useConnectionStore((s) => s.setWsConnected);
 
   useEffect(() => {
+    if (sharedClient) {
+      return;
+    }
+
     const client = new Client({
       brokerURL: WS_URL,
       heartbeatIncoming: 25_000,
@@ -37,22 +42,31 @@ export function useStompClient() {
       },
     });
 
-    clientRef.current = client;
+    sharedClient = client;
     client.activate();
 
     return () => {
       client.deactivate();
+      sharedClient = null;
       setWsConnected(false);
     };
   }, [setWsConnected]);
 
-  function subscribe(destination: string, callback: (message: IMessage) => void): StompSubscription | undefined {
-    return clientRef.current?.subscribe(destination, callback);
-  }
+  return { subscribe: stompSubscribe, publish: stompPublish };
+}
 
-  function publish(destination: string, body: string) {
-    clientRef.current?.publish({ destination, body });
-  }
+export function useStompSubscribe() {
+  return stompSubscribe;
+}
 
-  return { subscribe, publish, clientRef };
+export function useStompPublish() {
+  return stompPublish;
+}
+
+function stompSubscribe(destination: string, callback: (message: IMessage) => void): StompSubscription | undefined {
+  return sharedClient?.subscribe(destination, callback);
+}
+
+function stompPublish(destination: string, body: string) {
+  sharedClient?.publish({ destination, body });
 }
