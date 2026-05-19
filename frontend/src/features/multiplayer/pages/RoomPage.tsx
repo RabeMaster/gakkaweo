@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useToastStore } from "@/shared/stores/useToastStore";
+import { apiFetch } from "@/shared/api/client";
 import type { RoomSnapshot, WsNotification } from "../types";
 import { useRoomStore } from "../stores/useRoomStore";
 import { useRoomSubscription } from "../hooks/useRoomSubscription";
@@ -19,6 +20,21 @@ export function RoomPage() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
 
   useRoomSubscription(roomId);
+
+  useEffect(() => {
+    if (!roomId) {
+      return;
+    }
+    apiFetch<RoomSnapshot>(`/multi/rooms/${roomId}`)
+      .then((snapshot) => {
+        if (snapshot) {
+          setRoom(snapshot);
+        }
+      })
+      .catch(() => {
+        navigate("/play", { replace: true });
+      });
+  }, [roomId, setRoom, navigate]);
 
   const handleNotification = useCallback(
     (notification: WsNotification) => {
