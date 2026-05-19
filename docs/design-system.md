@@ -365,6 +365,23 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **공지 유형 라벨**: 안내(blue-300), 점검(orange-300), 경고(red-500). select에서도 한글 라벨 사용. SoT는 `shared/config/announcement.ts`
 - **공지 배너**: `shared/ui/AnnouncementBanner.tsx`. 유형별 색상 배경 + `shadow-brutal-sm`. content `break-words` (긴 단어 wrap). 닫기 버튼 `-m-3 p-3` 터치 타겟 확보. 닫기 시 localStorage `id_startsAt` 복합 키 저장
 
+### 멀티플레이 로비 (`/play`)
+
+- **데스크톱 전용**: `DesktopOnlyGate` 래핑 (반응형 미적용)
+- **방 목록 테이블**: `border-4 shadow-brutal` 래퍼. 헤더 `border-b-4 bg-gray-100 dark:bg-gray-800`. 행 `border-b-2 border-black/20` + hover `bg-yellow-50`. 입장 가능 행만 `cursor-pointer`
+- **상태 배지**: 대기중=green-400, 시작중=yellow-300, 게임중=red-400. `px-2 py-0.5 text-xs font-black border-2`
+- **모드 필터**: 토글 버튼 그룹 `border-4`. 활성=`bg-yellow-300 text-black`
+- **방 만들기 다이얼로그**: 공용 `Dialog` (`max-w-md`). 모드/최대인원은 토글 버튼, 라운드/시간은 native select + `dark:[color-scheme:dark]` + `shadow-brutal-sm`
+- **비밀번호 다이얼로그**: 공용 `Dialog` (`max-w-sm`)
+
+### 멀티플레이 대기실 (`/play/:roomId`)
+
+- **참가자 카드**: `border-4 shadow-brutal-sm p-4`. 준비 시 `bg-green-100 dark:bg-green-900/30`. 빈 슬롯은 `border-dashed border-gray-300`
+- **방장 왕관**: 카드 좌상단 `absolute -top-3 -left-1` 왕관 이모지
+- **방장 컨트롤**: hover 시 `opacity-0 group-hover:opacity-100` 위임/강퇴 텍스트 링크
+- **방 설정 패널**: `border-4 shadow-brutal-sm p-4`. 방장만 편집 가능
+- **카운트다운 오버레이**: `fixed inset-0 z-40 bg-black/60`. 숫자 `text-[8rem] font-black text-yellow-300` + pop 애니메이션
+
 ## 11. 반응형 (Responsive)
 
 ### Breakpoint
