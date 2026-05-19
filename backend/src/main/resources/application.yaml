@@ -97,6 +97,9 @@ app:
   multi:
     timer:
       pool-size: ${MULTI_TIMER_POOL_SIZE:4}
+    room:
+      max-concurrent: ${MULTI_ROOM_MAX_CONCURRENT:10}
+      id-retry-count: ${MULTI_ROOM_ID_RETRY_COUNT:5}
     web-socket:
       message-size-limit: ${MULTI_WS_MESSAGE_SIZE_LIMIT:8192}
       send-buffer-size-limit: ${MULTI_WS_SEND_BUFFER_SIZE_LIMIT:524288}

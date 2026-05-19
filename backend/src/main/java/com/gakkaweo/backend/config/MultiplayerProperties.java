@@ -6,7 +6,7 @@ import org.springframework.validation.annotation.Validated;
 
 @Validated
 @ConfigurationProperties(prefix = "app.multi")
-public record MultiplayerProperties(Timer timer, WebSocket webSocket) {
+public record MultiplayerProperties(Timer timer, WebSocket webSocket, Room room) {
 
   public record Timer(@Min(1) int poolSize) {}
 
@@ -16,4 +16,6 @@ public record MultiplayerProperties(Timer timer, WebSocket webSocket) {
       int sendTimeLimit,
       int heartbeatServer,
       int heartbeatClient) {}
+
+  public record Room(@Min(1) int maxConcurrent, @Min(1) int idRetryCount) {}
 }

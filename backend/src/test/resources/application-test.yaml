@@ -83,6 +83,9 @@ app:
   multi:
     timer:
       pool-size: 2
+    room:
+      max-concurrent: 10
+      id-retry-count: 5
     web-socket:
       message-size-limit: 8192
       send-buffer-size-limit: 524288
