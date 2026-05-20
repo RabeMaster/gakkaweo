@@ -2,11 +2,11 @@ package com.gakkaweo.backend.upload;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.gakkaweo.backend.auth.config.ProfileImageProperties;
 import com.gakkaweo.backend.auth.dto.AuthResponse;
 import com.gakkaweo.backend.auth.dto.TokenPair;
 import com.gakkaweo.backend.common.exception.ErrorBody;
 import com.gakkaweo.backend.domain.member.entity.Member;
+import com.gakkaweo.backend.member.config.ProfileImageProperties;
 import com.gakkaweo.backend.support.IntegrationTestBase;
 import java.io.IOException;
 import java.nio.file.Files;

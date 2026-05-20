@@ -1,4 +1,4 @@
-package com.gakkaweo.backend.auth.service;
+package com.gakkaweo.backend.member.service;
 
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;

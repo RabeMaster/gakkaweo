@@ -1,8 +1,6 @@
-package com.gakkaweo.backend.controller;
+package com.gakkaweo.backend.announcement;
 
 import com.gakkaweo.backend.config.openapi.StandardErrorResponses;
-import com.gakkaweo.backend.dto.ActiveAnnouncementResponse;
-import com.gakkaweo.backend.service.AnnouncementService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
