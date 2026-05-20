@@ -2,6 +2,7 @@ package com.gakkaweo.backend.domain.game.repository;
 
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,6 +21,9 @@ public interface DailySentenceRepository
           "SELECT * FROM daily_sentences WHERE used_at IS NULL AND status = 'ACTIVE' ORDER BY RANDOM() LIMIT 1",
       nativeQuery = true)
   Optional<DailySentence> findRandomUnusedSentence();
+
+  @Query("SELECT d.sentence FROM DailySentence d")
+  List<String> findAllSentences();
 
   boolean existsBySentence(String sentence);
 

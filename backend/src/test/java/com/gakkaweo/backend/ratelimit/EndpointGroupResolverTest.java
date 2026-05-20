@@ -14,13 +14,13 @@ class EndpointGroupResolverTest {
 
   @Test
   @DisplayName("NONE - /health")
-  void none_health() {
+  void NONE_헬스체크() {
     assertThat(resolver.resolve("GET", "/health")).isEqualTo(EndpointGroup.NONE);
   }
 
   @Test
   @DisplayName("NONE - /uploads/*, /login/oauth2/*, /oauth2/authorization/*")
-  void none_upload_oauth() {
+  void NONE_업로드_OAuth() {
     assertThat(resolver.resolve("GET", "/uploads/abc.webp")).isEqualTo(EndpointGroup.NONE);
     assertThat(resolver.resolve("GET", "/login/oauth2/code/kakao")).isEqualTo(EndpointGroup.NONE);
     assertThat(resolver.resolve("GET", "/oauth2/authorization/google"))
@@ -29,7 +29,7 @@ class EndpointGroupResolverTest {
 
   @Test
   @DisplayName("NONE - swagger / api-docs / webjars")
-  void none_swagger() {
+  void NONE_스웨거_문서() {
     assertThat(resolver.resolve("GET", "/swagger-ui/index.html")).isEqualTo(EndpointGroup.NONE);
     assertThat(resolver.resolve("GET", "/v3/api-docs")).isEqualTo(EndpointGroup.NONE);
     assertThat(resolver.resolve("GET", "/swagger-resources/config")).isEqualTo(EndpointGroup.NONE);
@@ -45,26 +45,26 @@ class EndpointGroupResolverTest {
 
   @Test
   @DisplayName("READ - GET /auth/me")
-  void read_authMe() {
+  void READ_인증정보_조회() {
     assertThat(resolver.resolve("GET", "/auth/me")).isEqualTo(EndpointGroup.READ);
   }
 
   @Test
   @DisplayName("AUTH - 다른 /auth 경로")
-  void auth_login() {
+  void AUTH_다른_auth_경로() {
     assertThat(resolver.resolve("POST", "/auth/login")).isEqualTo(EndpointGroup.AUTH);
     assertThat(resolver.resolve("POST", "/auth/refresh")).isEqualTo(EndpointGroup.AUTH);
   }
 
   @Test
   @DisplayName("GUESS - POST /daily/guess")
-  void guess() {
+  void GUESS_추측() {
     assertThat(resolver.resolve("POST", "/daily/guess")).isEqualTo(EndpointGroup.GUESS);
   }
 
   @Test
   @DisplayName("SSE - GET /ranking/stream")
-  void sse() {
+  void SSE_스트림() {
     assertThat(resolver.resolve("GET", "/ranking/stream")).isEqualTo(EndpointGroup.SSE);
   }
 

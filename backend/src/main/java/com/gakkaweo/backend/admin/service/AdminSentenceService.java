@@ -205,8 +205,7 @@ public class AdminSentenceService {
   }
 
   public DuplicateCheckResponse checkDuplicate(DuplicateCheckRequest request) {
-    List<String> existingSentences =
-        dailySentenceRepository.findAll().stream().map(DailySentence::getSentence).toList();
+    List<String> existingSentences = dailySentenceRepository.findAllSentences();
 
     List<DuplicateCheckResponse.SimilarEntry> similarEntries = new ArrayList<>();
 

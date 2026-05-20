@@ -1,5 +1,6 @@
 package com.gakkaweo.backend.game.dto;
 
+import com.gakkaweo.backend.domain.game.entity.GameSession;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -15,4 +16,16 @@ public record GuessResponse(
             allowableValues = {"IN_PROGRESS", "CLEARED", "EXPIRED"},
             example = "IN_PROGRESS")
         String gameStatus,
-    @Schema(description = "서버 처리 시각", example = "2026-04-17T12:00:00Z") Instant timestamp) {}
+    @Schema(description = "서버 처리 시각", example = "2026-04-17T12:00:00Z") Instant timestamp) {
+
+  public static GuessResponse from(
+      BigDecimal similarity, GameSession session, boolean isCorrect, Instant timestamp) {
+    return new GuessResponse(
+        similarity, session.getAttemptCount(), isCorrect, session.getStatus().name(), timestamp);
+  }
+
+  public static GuessResponse fromAnonymous(
+      BigDecimal similarity, boolean isCorrect, Instant timestamp) {
+    return new GuessResponse(similarity, null, isCorrect, null, timestamp);
+  }
+}

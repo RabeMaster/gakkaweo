@@ -28,7 +28,7 @@ class CustomUserDetailsTest {
 
   @Test
   @DisplayName("getPassword - null 반환")
-  void password_null() {
+  void getPassword_null_반환() {
     CustomUserDetails details = new CustomUserDetails(UUID.randomUUID(), "USER");
 
     assertThat(details.getPassword()).isNull();
@@ -36,7 +36,7 @@ class CustomUserDetailsTest {
 
   @Test
   @DisplayName("getUsername - publicId 문자열 반환")
-  void username_publicId() {
+  void getUsername_publicId_문자열() {
     UUID id = UUID.randomUUID();
     CustomUserDetails details = new CustomUserDetails(id, "USER");
 

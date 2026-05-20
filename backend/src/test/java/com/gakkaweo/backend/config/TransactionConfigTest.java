@@ -16,14 +16,14 @@ class TransactionConfigTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("기본 transactionTemplate Bean은 REQUIRED 전파 설정")
-  void defaultTransactionTemplateHasRequiredPropagation() {
+  void 기본_transactionTemplate_REQUIRED_전파() {
     TransactionTemplate t = ctx.getBean("transactionTemplate", TransactionTemplate.class);
     assertThat(t.getPropagationBehavior()).isEqualTo(TransactionDefinition.PROPAGATION_REQUIRED);
   }
 
   @Test
   @DisplayName("newTxTemplate Bean은 REQUIRES_NEW 전파 설정")
-  void newTxTemplateHasRequiresNewPropagation() {
+  void newTxTemplate_REQUIRES_NEW_전파() {
     TransactionTemplate t = ctx.getBean("newTxTemplate", TransactionTemplate.class);
     assertThat(t.getPropagationBehavior())
         .isEqualTo(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -31,7 +31,7 @@ class TransactionConfigTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("TransactionTemplate 타입 후보는 정확히 2개")
-  void twoTransactionTemplateBeansExist() {
+  void TransactionTemplate_빈_2개() {
     assertThat(ctx.getBeansOfType(TransactionTemplate.class)).hasSize(2);
   }
 }

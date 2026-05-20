@@ -18,7 +18,7 @@ class GlobalExceptionHandlerTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("MethodArgumentNotValidException - 400 VALIDATION_FAILED + 필드 메시지")
-  void valid_400() {
+  void 유효성검증_400() {
     String invalidJson = "{\"username\":\"\",\"password\":\"\"}";
 
     HttpHeaders headers = new HttpHeaders();
@@ -38,7 +38,7 @@ class GlobalExceptionHandlerTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("HttpMessageNotReadable - 잘못된 JSON 400 VALIDATION_FAILED")
-  void json_400() {
+  void 잘못된_JSON_400() {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -55,7 +55,7 @@ class GlobalExceptionHandlerTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("METHOD_NOT_ALLOWED - 405")
-  void method_405() {
+  void 허용되지않은_메서드_405() {
     ResponseEntity<ErrorBody> response =
         restTemplate.exchange(
             url("/auth/login"),

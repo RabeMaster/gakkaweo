@@ -32,7 +32,7 @@ class CookieUtilsTest {
 
   @Test
   @DisplayName("createRefreshTokenCookie - Path=/auth/refresh")
-  void refresh_path() {
+  void refreshToken_쿠키_경로() {
     CookieUtils utils = new CookieUtils(jwtProperties, new CookieProperties(false, ""));
     ResponseCookie cookie = utils.createRefreshTokenCookie("rt-value");
 
@@ -42,7 +42,7 @@ class CookieUtilsTest {
 
   @Test
   @DisplayName("createSessionIndicatorCookie - HttpOnly=false, Path=/")
-  void session_indicator() {
+  void 세션_인디케이터_쿠키() {
     CookieUtils utils = new CookieUtils(jwtProperties, new CookieProperties(false, ""));
     ResponseCookie cookie = utils.createSessionIndicatorCookie();
 
@@ -53,7 +53,7 @@ class CookieUtilsTest {
 
   @Test
   @DisplayName("deleteXxxCookie - MaxAge=0")
-  void delete_max_age_0() {
+  void 삭제_쿠키_MaxAge_0() {
     CookieUtils utils = new CookieUtils(jwtProperties, new CookieProperties(false, ""));
 
     assertThat(utils.deleteAccessTokenCookie().getMaxAge().getSeconds()).isEqualTo(0);

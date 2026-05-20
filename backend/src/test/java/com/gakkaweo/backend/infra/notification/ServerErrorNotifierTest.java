@@ -143,7 +143,7 @@ class ServerErrorNotifierTest {
 
   @Test
   @DisplayName("Stack - 빈 스택트레이스면 \"(no stack)\"")
-  void stack_empty() {
+  void 빈_스택트레이스_no_stack() {
     Exception ex = new RuntimeException("boom");
     ex.setStackTrace(new StackTraceElement[0]);
 
