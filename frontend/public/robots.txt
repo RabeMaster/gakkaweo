@@ -1,4 +1,4 @@
-# 가까워 robots.txt — AI 임베딩 유사도 판별 기반 데일리 웹 게임
+# 가까워 robots.txt - AI 임베딩 유사도 판별 기반 데일리 웹 게임
 
 User-agent: *
 Allow: /
@@ -34,7 +34,7 @@ Allow: /
 Disallow: /admin
 Disallow: /mypage
 
-# 소셜 언퍼링(Unfurl) 봇 명시 허용 — 미리보기 생성용
+# 소셜 언퍼링(Unfurl) 봇 명시 허용 - 미리보기 생성용
 User-agent: Twitterbot
 Allow: /
 

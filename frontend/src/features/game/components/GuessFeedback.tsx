@@ -15,7 +15,7 @@ function FeedbackRow({ label, guess }: { label: string; guess: GuessInfo | null 
   if (!guess) {
     return (
       <div className="h-6 flex items-center">
-        <span className="text-sm font-bold text-gray-400 dark:text-gray-500">{label}: —</span>
+        <span className="text-sm font-bold text-gray-400 dark:text-gray-500">{label}: -</span>
       </div>
     );
   }

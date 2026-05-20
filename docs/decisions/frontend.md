@@ -10,14 +10,14 @@
 
 ```
 frontend/src/
-├── app/               # 앱 셸 — 라우터, 레이아웃, 가드
-├── features/          # 기능 모듈 — 각 도메인별 자체 완결
+├── app/               # 앱 셸 - 라우터, 레이아웃, 가드
+├── features/          # 기능 모듈 - 각 도메인별 자체 완결
 │   ├── game/          #   게임 (추측, 피드백, 힌트)
 │   ├── ranking/       #   실시간 랭킹
 │   ├── auth/          #   인증 (로그인, 회원가입, 마이페이지)
 │   └── admin/         #   어드민 패널
 ├── pages/             # 라우트 진입점 페이지
-└── shared/            # 공용 리소스 — UI, API, 스토어, 유틸
+└── shared/            # 공용 리소스 - UI, API, 스토어, 유틸
 ```
 
 ### Import 규칙
@@ -58,14 +58,14 @@ frontend/src/
 
 ### TanStack Query 컨벤션
 
-- **쿼리 키**: `["도메인", "리소스", params]` — 예: `["game", "today"]`, `["game", "status", sentenceId]`
-- **staleTime**: 데이터 특성에 따라 차등 — 오늘 문제 `Infinity`(자정까지 불변), 힌트 `60_000`(1분), 게임 상태 `30_000`
+- **쿼리 키**: `["도메인", "리소스", params]` - 예: `["game", "today"]`, `["game", "status", sentenceId]`
+- **staleTime**: 데이터 특성에 따라 차등 - 오늘 문제 `Infinity`(자정까지 불변), 힌트 `60_000`(1분), 게임 상태 `30_000`
 - **글로벌 설정**: `retry: 1`, `refetchOnWindowFocus: false`
 - **인증 전환 시**: `["ranking"]` invalidate. 로그아웃/탈퇴는 `queryClient.clear()` 전체 초기화
 
 ### SSE와 쿼리 캐시 연동
 
-SSE `RANKING_UPDATE` 이벤트 수신 시 `["ranking"]` 쿼리를 invalidate한다. `DAY_CHANGE` 이벤트 시에는 `removeQueries(["game"])`으로 게임 데이터를 완전 초기화한다 (invalidate가 아닌 remove — stale 데이터가 잠깐이라도 보이면 안 되므로).
+SSE `RANKING_UPDATE` 이벤트 수신 시 `["ranking"]` 쿼리를 invalidate한다. `DAY_CHANGE` 이벤트 시에는 `removeQueries(["game"])`으로 게임 데이터를 완전 초기화한다 (invalidate가 아닌 remove - stale 데이터가 잠깐이라도 보이면 안 되므로).
 
 ## Neo-Brutalism 디자인 시스템
 
@@ -111,7 +111,7 @@ hue = (similarity / 100) × 120
 // BAD
 useEffect(() => { setSomething(prop); }, [prop]);
 
-// GOOD — key로 리마운트
+// GOOD - key로 리마운트
 <Component key={item.id} data={item} />
 ```
 

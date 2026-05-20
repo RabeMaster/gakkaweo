@@ -1,4 +1,4 @@
-# Stage 1 — Builder
+# Stage 1 - Builder
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
 WORKDIR /build
@@ -10,7 +10,7 @@ RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
 COPY src/ src/
 RUN ./gradlew bootJar --no-daemon -x test
 
-# Stage 2 — Runtime
+# Stage 2 - Runtime
 FROM eclipse-temurin:21-jre-alpine
 
 RUN apk add --no-cache tzdata \
