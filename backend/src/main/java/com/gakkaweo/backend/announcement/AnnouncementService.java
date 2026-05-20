@@ -1,4 +1,4 @@
-package com.gakkaweo.backend.service;
+package com.gakkaweo.backend.announcement;
 
 import com.gakkaweo.backend.domain.admin.entity.Announcement;
 import com.gakkaweo.backend.domain.admin.repository.AnnouncementRepository;

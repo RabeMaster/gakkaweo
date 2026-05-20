@@ -1,4 +1,4 @@
-package com.gakkaweo.backend.auth.config;
+package com.gakkaweo.backend.member.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
