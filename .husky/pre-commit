@@ -1,5 +1,21 @@
 set -e
 
+# en-dash(U+2013), em-dash(U+2014) 사용 금지 - hyphen(-) 사용
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR || true)
+if [ -n "$STAGED_FILES" ]; then
+  EN_DASH=$(printf '\xe2\x80\x93')
+  EM_DASH=$(printf '\xe2\x80\x94')
+  VIOLATIONS=$(git diff --cached --name-only -z --diff-filter=ACMR | xargs -0 git grep --cached -I -n -H -e "$EN_DASH" -e "$EM_DASH" -- 2>/dev/null || true)
+  if [ -n "$VIOLATIONS" ]; then
+    echo ""
+    echo "ERROR: en-dash(U+2013) or em-dash(U+2014) detected. Use hyphen(-) instead."
+    echo ""
+    echo "$VIOLATIONS"
+    echo ""
+    exit 1
+  fi
+fi
+
 # GitHub Desktop의 MinGW에는 gradlew가 필요시하는 cygpath가 없으므로, cygpath 명령어를 대체하게끔 설정
 if ! command -v cygpath &>/dev/null; then
   cygpath() { echo "${@: -1}"; }
