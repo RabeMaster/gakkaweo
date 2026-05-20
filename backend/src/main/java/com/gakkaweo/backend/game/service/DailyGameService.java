@@ -102,14 +102,8 @@ public class DailyGameService {
             .map(DailySentence::getSentence)
             .orElse(null);
 
-    return new TodayResponse(
-        sentence.getPublicId(),
-        hint.mask(),
-        hint.charCounts().size(),
-        hint.charCounts(),
-        expiresAt,
-        yesterdaySentence,
-        yesterdaySentence != null ? yesterday : null);
+    return TodayResponse.from(
+        sentence, hint, expiresAt, yesterdaySentence, yesterdaySentence != null ? yesterday : null);
   }
 
   public GuessResponse guessAuthenticated(GuessRequest request, UUID memberPublicId) {
@@ -175,8 +169,7 @@ public class DailyGameService {
         similarity,
         isCorrect);
 
-    return new GuessResponse(
-        similarity, updated.getAttemptCount(), isCorrect, updated.getStatus().name(), now);
+    return GuessResponse.from(similarity, updated, isCorrect, now);
   }
 
   public GuessResponse guessAnonymous(GuessRequest request) {
@@ -189,7 +182,7 @@ public class DailyGameService {
     boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
     (isCorrect ? guessCorrectCounter : guessIncorrectCounter).increment();
 
-    return new GuessResponse(similarity, null, isCorrect, null, clock.instant());
+    return GuessResponse.fromAnonymous(similarity, isCorrect, clock.instant());
   }
 
   @Transactional(readOnly = true)
@@ -204,15 +197,7 @@ public class DailyGameService {
               List<GuessHistory> guesses =
                   guessHistoryRepository.findBySessionOrderByAttemptNumberAsc(session);
               List<GuessHistoryResponse.GuessEntry> entries =
-                  guesses.stream()
-                      .map(
-                          g ->
-                              new GuessHistoryResponse.GuessEntry(
-                                  g.getGuessText(),
-                                  g.getSimilarity(),
-                                  g.getAttemptNumber(),
-                                  g.getCreatedAt()))
-                      .toList();
+                  guesses.stream().map(GuessHistoryResponse.GuessEntry::from).toList();
               return new GuessHistoryResponse(entries);
             })
         .orElse(new GuessHistoryResponse(List.of()));
@@ -239,9 +224,7 @@ public class DailyGameService {
             sentence.getId(), member.getId(), maxSimilarity, gameProperties.hintMaxCount());
 
     List<HintResponse.HintEntry> entries =
-        projections.stream()
-            .map(p -> new HintResponse.HintEntry(p.getGuessText(), p.getSimilarity()))
-            .toList();
+        projections.stream().map(HintResponse.HintEntry::from).toList();
 
     return new HintResponse(entries);
   }
@@ -253,15 +236,8 @@ public class DailyGameService {
 
     return gameSessionRepository
         .findByMemberAndSentence(member, sentence)
-        .map(
-            session ->
-                new GameStatusResponse(
-                    sentence.getPublicId(),
-                    session.getStatus().name(),
-                    session.getBestSimilarity(),
-                    session.getAttemptCount(),
-                    session.getClearedAt()))
-        .orElse(new GameStatusResponse(sentence.getPublicId(), null, BigDecimal.ZERO, 0, null));
+        .map(session -> GameStatusResponse.from(sentence, session))
+        .orElse(GameStatusResponse.empty(sentence.getPublicId()));
   }
 
   private GameSession findOrCreateSession(Member member, DailySentence sentence) {

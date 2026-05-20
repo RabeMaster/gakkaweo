@@ -133,7 +133,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
 
     @Test
     @DisplayName("쿠키 인증 me - 200")
-    void me_200() {
+    void 쿠키인증_me_200() {
       Member member = testAuthHelper.createMember();
       HttpHeaders headers = testAuthHelper.cookieHeaderFor(member);
 
@@ -147,7 +147,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
 
     @Test
     @DisplayName("미인증 me - 401")
-    void me_401() {
+    void 미인증_me_401() {
       ResponseEntity<ErrorBody> response =
           restTemplate.getForEntity(url("/auth/me"), ErrorBody.class);
 

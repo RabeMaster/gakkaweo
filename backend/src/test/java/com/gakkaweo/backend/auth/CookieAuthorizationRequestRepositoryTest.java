@@ -156,7 +156,7 @@ class CookieAuthorizationRequestRepositoryTest {
 
   @Test
   @DisplayName("secure=false 설정 - 쿠키 secure 플래그 미설정")
-  void secure_false() {
+  void secure_false_설정_쿠키_미설정() {
     CookieAuthorizationRequestRepository insecureRepository =
         new CookieAuthorizationRequestRepository(
             new CookieProperties(false, "example.com"), objectMapper);
