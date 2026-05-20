@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -26,13 +27,13 @@ public class AdminAuditService {
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
 
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void log(
       Member admin, AuditAction action, String targetId, String detail, String ipAddress) {
     doLog(admin, action, targetId, detail, ipAddress);
   }
 
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void log(
       UUID adminPublicId, AuditAction action, String targetId, String detail, String ipAddress) {
     Member admin =
