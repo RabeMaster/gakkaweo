@@ -194,3 +194,6 @@ dumps/
 .playwright-mcp/
 .claude/
 CLAUDE.md
+
+# Local scratch workspace
+_workspace/
