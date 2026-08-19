@@ -141,7 +141,8 @@ gakkaweo/
 │
 ├── docs-site/                   # Swagger UI 정적 사이트 (GitHub Pages)
 │
-├── infra/                       # Prometheus, Grafana 설정
+├── infra/                       # Prometheus, Grafana, 백업
+│   └── backup/                  # DB 백업 자동화 (스크립트 + 운영/복구 문서)
 │
 ├── docs/                        # 프로젝트 문서
 │   ├── design-system.md         # UI/UX 디자인 시스템
@@ -234,12 +235,12 @@ pnpm dev
 
 ### 기술 의사결정
 
-| 문서                                      | 설명                                                  |
-| ----------------------------------------- | ----------------------------------------------------- |
-| [인프라](docs/decisions/infra.md)         | 홈서버, Cloudflare, 도메인, Docker Compose, CI/CD     |
-| [백엔드](docs/decisions/backend.md)       | 패키지 구조, 트랜잭션 전략, 인증, 랭킹, Rate Limiting |
-| [프론트엔드](docs/decisions/frontend.md)  | Feature-based 구조, 상태 관리, 디자인 시스템          |
-| [AI 서비스](docs/decisions/ai-service.md) | 모델 선택, 유사도 계산, 캐싱, 정규화                  |
+| 문서                                      | 설명                                                    |
+| ----------------------------------------- | ------------------------------------------------------- |
+| [인프라](docs/decisions/infra.md)         | 홈서버, Cloudflare, 도메인, Docker Compose, 백업, CI/CD |
+| [백엔드](docs/decisions/backend.md)       | 패키지 구조, 트랜잭션 전략, 인증, 랭킹, Rate Limiting   |
+| [프론트엔드](docs/decisions/frontend.md)  | Feature-based 구조, 상태 관리, 디자인 시스템            |
+| [AI 서비스](docs/decisions/ai-service.md) | 모델 선택, 유사도 계산, 캐싱, 정규화                    |
 
 ---
 
@@ -249,4 +250,4 @@ pnpm dev
 
 ---
 
-_마지막 업데이트: 2026-05-12_
+_마지막 업데이트: 2026-08-19_
