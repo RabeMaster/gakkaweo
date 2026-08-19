@@ -19,7 +19,7 @@ LOCK_FILE="$BACKUP_DIR/.backup.lock"
 RCLONE_CONFIG_FILE="${RCLONE_CONFIG_FILE:-$HOME/.config/rclone/rclone.conf}"
 RETENTION_MTIME="${BACKUP_RETENTION_MTIME:-6}"            # find -mtime +6 = 로컬 7일 보관
 MIN_DUMP_BYTES="${BACKUP_MIN_DUMP_BYTES:-102400}"         # 덤프 크기 하한 100KB
-MIN_FREE_KB="${BACKUP_MIN_FREE_KB:-1048576}"              # 디스크 여유 공간 하한 1GB
+MIN_FREE_KB="${BACKUP_MIN_FREE_KB:-1000000}"              # 디스크 여유 공간 하한 약 1GB (df -Pk 블록 수)
 QUOTA_WARN_BYTES="${BACKUP_QUOTA_WARN_BYTES:-8000000000}" # R2 사용량 경고 기준 8GB (무료 10GB의 80%)
 SKIP_UPLOAD="${BACKUP_SKIP_UPLOAD:-0}"                    # 1이면 R2 업로드 생략 (최초 설치 확인용)
 
@@ -32,6 +32,8 @@ source "$SCRIPT_DIR/lib.sh"
 DISCORD_WEBHOOK_URL="$(read_env DISCORD_WEBHOOK_URL)"
 DISCORD_MENTION_ROLE_ID="$(read_env DISCORD_MENTION_ROLE_ID)"
 HC_URL="$(read_env BACKUP_HEALTHCHECK_URL)"
+# 예행 실행이 dead-man switch를 충족시키지 않도록 healthchecks 신호를 통째로 끈다
+if [ "$SKIP_UPLOAD" = "1" ]; then HC_URL=""; fi
 R2_REMOTE="$(read_env BACKUP_R2_REMOTE r2)"
 R2_BUCKET="$(read_env BACKUP_R2_BUCKET gakkaweo-backup)"
 
@@ -118,15 +120,18 @@ main() {
         fi
     done
 
-    # tar 종료코드 1(읽는 중 파일 변경)은 경고로 넘기고, 그 외 실패는 중단
+    # 읽는 도중 파일이 바뀌면(tar 비0 종료) 0으로 채워진 손상 아카이브가 될 수 있다
+    # 잠깐의 변경이면 재시도로 해소되고, 3회 연속 실패면 손상본을 올리지 않도록 중단한다
     STEP="uploads 아카이브"
-    local tar_rc=0
-    tar -cf "$WORK/uploads.tar" -C "$GAKKAWEO_HOME" uploads || tar_rc=$?
-    if [ "$tar_rc" -eq 1 ]; then
-        log "WARN: uploads tar 중 파일 변경 감지 (exit 1)"
-        WARNINGS+=("uploads tar 중 파일 변경 감지")
-    elif [ "$tar_rc" -ne 0 ]; then
-        die "uploads tar 실패 (exit $tar_rc)"
+    local tar_rc attempt
+    for attempt in 1 2 3; do
+        tar_rc=0
+        tar -cf "$WORK/uploads.tar" -C "$GAKKAWEO_HOME" uploads || tar_rc=$?
+        if [ "$tar_rc" -eq 0 ]; then break; fi
+        log "WARN: uploads tar 실패 (exit $tar_rc, 시도 $attempt/3)"
+    done
+    if [ "$tar_rc" -ne 0 ]; then
+        die "uploads tar 3회 연속 실패 (exit $tar_rc) - 손상 아카이브 방지를 위해 중단"
     fi
 
     # 이미지 개수는 tar 목록에서 센다 (manifest는 실제로 묶인 내용을 설명해야 하므로)

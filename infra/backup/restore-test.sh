@@ -20,6 +20,7 @@ LOCK_FILE="$BACKUP_DIR/.backup.lock"
 RCLONE_CONFIG_FILE="${RCLONE_CONFIG_FILE:-$HOME/.config/rclone/rclone.conf}"
 LOCK_WAIT_SECONDS="${RESTORE_LOCK_WAIT_SECONDS:-1800}" # 백업이 늦어지면 최대 30분 대기
 PG_READY_TIMEOUT="${RESTORE_PG_READY_TIMEOUT:-60}"     # 임시 PostgreSQL 준비 대기 상한(초)
+MIN_FREE_KB="${RESTORE_MIN_FREE_KB:-1000000}"          # 디스크 여유 공간 하한 약 1GB (df -Pk 블록 수)
 RESTORE_CONTAINER="gakkaweo-restore-test"
 
 # 공통 함수 로드 (같은 폴더의 lib.sh - 로그, 알림, 잠금, .env 파서)
@@ -56,6 +57,11 @@ main() {
 
     STEP="사전 점검"
     require_cmd docker rclone curl jq tar sha256sum flock openssl
+    local free_kb
+    free_kb="$(df -Pk "$BACKUP_DIR" | awk 'NR==2 {print $4}')"
+    if [ "$free_kb" -lt "$MIN_FREE_KB" ]; then
+        die "디스크 여유 공간 부족: ${free_kb}KB (하한 ${MIN_FREE_KB}KB)"
+    fi
     STEP="healthchecks start"
     hc_ping start
 
@@ -116,8 +122,9 @@ main() {
     # --single-transaction: pg_restore는 에러가 나도 종료코드 0으로 끝날 수 있어, 전체 롤백으로 실패를 드러낸다
     # --no-owner --no-privileges: 덤프에 기록된 소유자 계정이 임시 컨테이너에는 없어서
     STEP="복원"
-    chmod a+r "$WORK/db.dump" # 컨테이너의 postgres 유저가 읽을 수 있게 (umask 077 때문에 기본은 못 읽는다)
     docker cp "$WORK/db.dump" "$RESTORE_CONTAINER:/tmp/db.dump"
+    # umask 077로 만들어진 파일이라, 호스트 권한은 그대로 두고 컨테이너 안에서만 소유권을 넘긴다
+    docker exec "$RESTORE_CONTAINER" chown postgres:postgres /tmp/db.dump
     docker exec -u postgres "$RESTORE_CONTAINER" \
         pg_restore --single-transaction --no-owner --no-privileges -d gakkaweo /tmp/db.dump
 
@@ -150,9 +157,12 @@ main() {
         esac
     done <<<"$raw_urls"
 
-    local db_sorted tar_sorted missing orphan_count
+    local db_sorted tar_listing tar_sorted missing orphan_count
     db_sorted="$(printf '%s' "$db_names" | LC_ALL=C sort -u)"
-    tar_sorted="$(tar -tf "$WORK/uploads.tar" | grep '^uploads/profiles/' | grep -v '/$' | sed 's|.*/||' | LC_ALL=C sort -u || true)"
+    # 목록 조회 실패(아카이브 손상)와 "프로필 이미지가 하나도 없음"(정상)을 구분한다
+    tar_listing="$(tar -tf "$WORK/uploads.tar")" || die "uploads.tar 목록을 읽지 못함 - 아카이브 손상 의심"
+    tar_sorted="$(printf '%s
+' "$tar_listing" | grep '^uploads/profiles/' | grep -v '/$' | sed 's|.*/||' | LC_ALL=C sort -u || true)"
     missing="$(LC_ALL=C comm -23 <(printf '%s\n' "$db_sorted") <(printf '%s\n' "$tar_sorted") | sed '/^$/d')"
     orphan_count="$(LC_ALL=C comm -13 <(printf '%s\n' "$db_sorted") <(printf '%s\n' "$tar_sorted") | sed '/^$/d' | wc -l)"
     if [ -n "$missing" ]; then

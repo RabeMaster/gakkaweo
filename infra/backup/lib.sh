@@ -22,8 +22,8 @@ log() {
 # 사용법: read_env KEY [기본값] / 우선순위: 프로세스 env > .env.prod > 기본값
 read_env() {
     local key="$1" default="${2-}" from_env line value
-    from_env="$(printenv "$key" || true)"
-    if [ -n "$from_env" ]; then printf '%s' "$from_env"; return 0; fi
+    # 빈 값으로라도 프로세스 env에 설정돼 있으면 그 값이 우선한다
+    if from_env="$(printenv "$key")"; then printf '%s' "$from_env"; return 0; fi
     if [ -f "$ENV_FILE" ]; then
         while IFS= read -r line || [ -n "$line" ]; do
             line="${line%$'\r'}" # CRLF 방어
