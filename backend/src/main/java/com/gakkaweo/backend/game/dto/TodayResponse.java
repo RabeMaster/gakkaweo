@@ -1,5 +1,7 @@
 package com.gakkaweo.backend.game.dto;
 
+import com.gakkaweo.backend.domain.game.entity.DailySentence;
+import com.gakkaweo.backend.game.util.HintMaskGenerator.HintMask;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -16,4 +18,21 @@ public record TodayResponse(
     @Schema(description = "문제 만료 시각 (자정 KST)", example = "2026-04-17T15:00:00Z") Instant expiresAt,
     @Schema(description = "어제 정답 문장", nullable = true, example = "하늘이 맑다") String yesterdaySentence,
     @Schema(description = "어제 날짜", nullable = true, example = "2026-04-16")
-        LocalDate yesterdayDate) {}
+        LocalDate yesterdayDate) {
+
+  public static TodayResponse from(
+      DailySentence sentence,
+      HintMask hint,
+      Instant expiresAt,
+      String yesterdaySentence,
+      LocalDate yesterdayDate) {
+    return new TodayResponse(
+        sentence.getPublicId(),
+        hint.mask(),
+        hint.charCounts().size(),
+        hint.charCounts(),
+        expiresAt,
+        yesterdaySentence,
+        yesterdayDate);
+  }
+}

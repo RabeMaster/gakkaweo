@@ -6,18 +6,18 @@
 
 ```
 backend/src/main/java/.../backend/
-├── domain/          # 순수 도메인 — 엔티티, 리포지토리, 비즈니스 규칙
+├── domain/          # 순수 도메인 - 엔티티, 리포지토리, 비즈니스 규칙
 │   ├── member/      #   Member, SocialAccount, LocalAccount
 │   ├── game/        #   DailySentence, GameSession, GuessHistory
 │   ├── auth/        #   RefreshToken
 │   └── admin/       #   Announcement, AuditLog, SentenceUpload
-├── auth/            # 기능: 인증 — 서비스, 컨트롤러, JWT, OAuth2
-├── game/            # 기능: 게임 — 서비스, 컨트롤러, DTO
-├── ranking/         # 기능: 랭킹 — Redis 기반 서비스, SSE 이벤트
-├── admin/           # 기능: 어드민 — 관리 서비스, 컨트롤러
-├── ratelimit/       # 기능: Rate Limiting — 필터, 버킷 관리
-├── infra/           # 외부 의존성 — AI Service 클라이언트, Circuit Breaker
-└── config/          # 글로벌 설정 — SecurityConfig 등
+├── auth/            # 기능: 인증 - 서비스, 컨트롤러, JWT, OAuth2
+├── game/            # 기능: 게임 - 서비스, 컨트롤러, DTO
+├── ranking/         # 기능: 랭킹 - Redis 기반 서비스, SSE 이벤트
+├── admin/           # 기능: 어드민 - 관리 서비스, 컨트롤러
+├── ratelimit/       # 기능: Rate Limiting - 필터, 버킷 관리
+├── infra/           # 외부 의존성 - AI Service 클라이언트, Circuit Breaker
+└── config/          # 글로벌 설정 - SecurityConfig 등
 ```
 
 ### 왜 이 구조인가
@@ -119,9 +119,9 @@ Family 기반 Refresh Token Rotation을 구현했다.
 | 액션                                         | Path         | 대상 보호 | 부여 정책           |
 | -------------------------------------------- | ------------ | --------- | ------------------- |
 | 역할 변경                                    | `ADMIN`      | ✓         | ✓ (SUPERADMIN-only) |
-| 차단/해제, 닉네임 강제, 프로필 강제 삭제     | `ADMIN`      | ✓         | —                   |
-| 강제 탈퇴                                    | `SUPERADMIN` | ✓         | —                   |
-| 긴급 교체, 랭킹 캐시 리셋, Rate Limit 초기화 | `SUPERADMIN` | —         | —                   |
+| 차단/해제, 닉네임 강제, 프로필 강제 삭제     | `ADMIN`      | ✓         | -                   |
+| 강제 탈퇴                                    | `SUPERADMIN` | ✓         | -                   |
+| 긴급 교체, 랭킹 캐시 리셋, Rate Limit 초기화 | `SUPERADMIN` | -         | -                   |
 
 `ADMIN`은 가역적이고 단일 사용자에 한정된 액션, `SUPERADMIN`은 비가역(강제 탈퇴, 긴급 교체, 캐시 리셋), 시스템 광역(Rate Limit), 권한 부여 메타-액션(역할 변경)을 수행한다.
 
@@ -198,7 +198,7 @@ HALF_OPEN → 일정 시간 후 재시도
 
 ## 알림 (Discord 웹훅)
 
-운영시 중요 이벤트를 Discord 웹훅을 통해 알리게끔 설계했다.
+운영 중 중요 이벤트를 Discord 웹훅으로 알리도록 설계했다.
 
 | 출처                         | 레벨          | 호출 방식                               | 멘션       |
 | ---------------------------- | ------------- | --------------------------------------- | ---------- |
@@ -215,7 +215,7 @@ HALF_OPEN → 일정 시간 후 재시도
 | HIGH | `#E67E22` (주황) | `<@&{roleId}>` 또는 빈 문자열 | `roles: [roleId]` 또는 none |
 | INFO | `#3498DB` (파랑) | 빈 문자열                     | none                        |
 
-`mentionRoleId` 미설정 시 HIGH도 멘션 없이 전송을 하게 해두었다.
+`mentionRoleId` 미설정 시 HIGH도 멘션 없이 전송하게 해두었다.
 
 `CRITICAL` (`@everyone`) 레벨은 설계 초기에 검토했으나 **현재 @everyone 멘션을 날릴만한 적절한 이벤트가 없어서 YAGNI원칙에 의거하여 보류.** 실사용 시나리오 (DB 연결 불가, Circuit breaker OPEN 등) 확정 시 enum 값 추가 + switch 분기 작업으로 도입 가능하다.
 

@@ -3,6 +3,7 @@ package com.gakkaweo.backend.infra.ai.service;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
+import com.gakkaweo.backend.common.util.TextNormalizer;
 import com.gakkaweo.backend.infra.ai.client.AiServiceClient;
 import com.gakkaweo.backend.infra.ai.client.dto.SimilarityResponse;
 import com.gakkaweo.backend.infra.ai.exception.AiServiceException;

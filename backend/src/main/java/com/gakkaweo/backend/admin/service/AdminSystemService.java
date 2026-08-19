@@ -212,18 +212,17 @@ public class AdminSystemService {
       redisHealthy = false;
     }
 
-    long totalMembers = memberRepository.count();
-    long totalSentences = dailySentenceRepository.count();
-    long unusedSentences = dailySentenceRepository.countUnusedActive();
+    long[] dbCounts =
+        transactionTemplate.execute(
+            status ->
+                new long[] {
+                  memberRepository.count(),
+                  dailySentenceRepository.count(),
+                  dailySentenceRepository.countUnusedActive()
+                });
 
     return new SystemStatusResponse(
-        sseCount,
-        aiHealthy,
-        aiResponseMs,
-        redisHealthy,
-        totalMembers,
-        totalSentences,
-        unusedSentences);
+        sseCount, aiHealthy, aiResponseMs, redisHealthy, dbCounts[0], dbCounts[1], dbCounts[2]);
   }
 
   public void resetRankingCache(UUID adminPublicId, String ipAddress) {

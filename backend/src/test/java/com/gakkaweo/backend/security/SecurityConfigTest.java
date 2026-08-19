@@ -48,7 +48,7 @@ class SecurityConfigTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("/admin/** - USER 403")
-  void admin_USER_403() {
+  void admin_USER_권한_403() {
     Member user = testAuthHelper.createMember();
     HttpHeaders headers = testAuthHelper.cookieHeaderFor(user);
 
@@ -64,7 +64,7 @@ class SecurityConfigTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("/admin/** - ADMIN 200")
-  void admin_ADMIN_200() {
+  void admin_ADMIN_권한_200() {
     Member admin = testAuthHelper.createAdmin();
     HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
 
@@ -80,7 +80,7 @@ class SecurityConfigTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("/daily/today - 미인증 200 (public)")
-  void today_public_200() {
+  void daily_today_미인증_200() {
     testAuthHelper.createTodaySentence("안녕하세요");
     ResponseEntity<String> response = restTemplate.getForEntity(url("/daily/today"), String.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -88,7 +88,7 @@ class SecurityConfigTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("/ranking/today - 미인증 200")
-  void ranking_public_200() {
+  void ranking_today_미인증_200() {
     ResponseEntity<String> response =
         restTemplate.getForEntity(url("/ranking/today"), String.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);

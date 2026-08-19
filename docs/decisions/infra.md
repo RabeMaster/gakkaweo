@@ -5,11 +5,11 @@
 클라우드 비용을 쓸 여유가 없었고, (백수 이슈) 마침 남는 데스크탑(`Intel(R) Celeron(R) G4930 CPU @ 3.20GHz`, 4GB RAM, 128GB SSD)이 있었다.
 `Ubuntu 24.04 LTS Server`로 밀어버리고 서버로 활용했다.
 
-이미 여러 번 홈서버를 구성해본 경험이 있었고, 리눅스 명령어를 직접 치며 서버를 관리하는 과정 자체가 재밌고 유익한 경험이 될 거라고 판단했다.
+홈서버는 이미 여러 번 구성해봤고, 리눅스 명령어를 직접 치며 서버를 관리하는 과정 자체가 재밌고 유익할 것 같았다.
 
 네트워크 환경도 이미 준비가 되어 있었다. 벽에서 나오는 KT 회선을 스위치에 물려 각 PC에 공인 IP를 직접 할당받는 구조라, 공유기 포트포워딩 없이 방화벽 설정만으로 외부 접속이 가능했다.
 
-또한 한국에 서버를 둠으로써 리전 차이로 인한 지연을 줄이고 싶었다. 다만 Cloudflare를 Full (strict) 모드로 걸면서 경유지가 늘어나 약간의 지연이 추가되긴 한다.
+서버를 한국에 두면 리전이 멀어서 생기는 지연도 줄일 수 있겠다 싶었다. 다만 Cloudflare를 Full (strict) 모드로 걸면서 경유지가 늘어나 약간의 지연이 추가되긴 한다.
 
 - OS: `Ubuntu 24.04.4 LTS (Server)`
 - 스펙: `Intel(R) Celeron(R) G4930 CPU @ 3.20GHz`, `4GB RAM`, `128GB SSD`
@@ -27,14 +27,14 @@
 
 Cloudflare를 리버스 프록시로 사용한다. 선택한 이유는 크게 세 가지다.
 
-1. **홈서버 IP 보호**: 프록시 모드로 실제 서버 IP를 숨겨, IP 노출을 통한 공격이나 위치 탐색을 방어한다.
+1. **홈서버 IP 보호**: 프록시 모드로 실제 서버 IP를 숨겨, IP가 노출돼 공격받거나 위치가 탐색되는 것을 막는다.
 2. **무료 SSL**: Let's Encrypt를 직접 설정하고 갱신 스크립트를 관리하는 대신, Cloudflare Origin Certificate로 편하게 HTTPS를 구성했다. 신뢰할 수 있는 인증 기관이 알아서 해주니 관리 부담이 없다.
 3. **DDoS 방어**: 홈서버는 인프라 수준의 방어가 없으므로, Cloudflare의 기본 DDoS 보호를 무료로 활용한다.
 
 ### SSL 구성
 
 - **Origin Certificate**: Cloudflare가 발급하는 인증서를 Nginx에 설치. 브라우저 ↔ Cloudflare는 Cloudflare 인증서, Cloudflare ↔ Origin은 Origin Certificate로 E2E 암호화
-- **SSL Mode**: Full (strict) — Origin Certificate 검증 활성화
+- **SSL Mode**: Full (strict) - Origin Certificate 검증 활성화
 - **캐싱**: 정적 자산(JS/CSS/이미지)은 Cloudflare 엣지에서 캐시. HTML/API는 캐시하지 않음
 
 ## 보안
@@ -68,13 +68,13 @@ Cloudflare를 리버스 프록시로 사용한다. 선택한 이유는 크게 �
 
 Docker 안에 넣지 않은 이유는 아래와 같다.
 
-- Frontend는 Vite 빌드 결과물(`dist/`)을 Nginx가 직접 서빙 — Docker 볼륨 마운트 없이 단순
+- Frontend는 Vite 빌드 결과물(`dist/`)을 Nginx가 직접 서빙 - Docker 볼륨 마운트 없이 단순
 - 설정 파일 3개로 역할이 명확히 분리됨
 
 ```
 nginx/
-├── gakkaweo.conf   # Frontend SPA — try_files로 정적 파일 서빙, fallback to index.html
-├── api.conf        # Backend API — 리버스 프록시 + SSE 버퍼링 비활성화
+├── gakkaweo.conf   # Frontend SPA - try_files로 정적 파일 서빙, fallback to index.html
+├── api.conf        # Backend API - 리버스 프록시 + SSE 버퍼링 비활성화
 └── default.conf    # IP 직접 접근 및 미등록 도메인 차단 (444 응답)
 ```
 
@@ -82,7 +82,7 @@ nginx/
 
 `/ranking/stream` 엔드포인트는 SSE(Server-Sent Events)를 사용한다. Nginx 기본 설정은 응답을 버퍼링하므로, SSE 전용 location 블록에서 버퍼링을 비활성화했다.
 
-> 버퍼링을 켜놓는다면, 랭킹 업데이트가 발생해도 Nginx가 데이터를 버퍼링하여 클라이언트에 즉시 전달되지 않을 수 있다. 이로 인해 랭킹이 실시간으로 반영되지 않는 문제가 발생할 수 있다.
+> 버퍼링을 켜놓으면 랭킹 업데이트가 일어나도 Nginx가 데이터를 들고 있다가 클라이언트에 늦게 전달한다. 그러면 랭킹이 실시간으로 반영되지 않는다.
 
 ```nginx
 location /ranking/stream {
@@ -199,9 +199,56 @@ Prometheus와 Grafana 모두 외부에 직접 노출하지 않는다.
 
 대시보드를 볼 때는 SSH 터널(`ssh -L 3001:localhost:3001`)로 접근한다. Cloudflare 프록시를 통하지 않으므로 인증 우회나 외부 노출 걱정이 없다.
 
+## 백업 (R2 + 복원 리허설)
+
+운영 DB 백업을 수동으로 뜨던 것을 자동화했다. 사람이 잊으면 백업이 끊기고, 백업 파일이 실제로 복원되는지도 확인하지 않는 구조였다. 그래서 매일 자동으로 백업하고, 서버 밖에 보관하고, 매주 실제로 복원해 보고, 백업이 조용히 멈춘 상황까지 감시하도록 만들었다. 전부 무료 범위 안에서 동작한다.
+
+스크립트와 상세 운영 절차는 `infra/backup/README.md`에 있다.
+
+### 백업 방식: pg_dump 논리 백업
+
+`docker compose exec` 안에서 `pg_dump -Fc`(custom format)로 덤프한다. WAL 아카이빙 기반 물리 백업(PITR)은 현재 DB 규모(덤프 1MB 미만)에서는 운영 복잡도만 늘리고 얻는 게 없어서 채택하지 않았다. 복구 기준 시점(RPO)은 24시간으로 잡았다. 최악의 경우 하루치 추측 기록이 날아가는 정도는 감수할 수 있다고 판단했다.
+
+백업 단위는 `db.dump + uploads.tar + manifest.json`을 묶은 tar.gz 하나다. manifest에는 생성 시각, 테이블별 행 개수, 이미지 개수, 파일별 SHA-256이 들어간다. 복원 리허설 때 무엇과 맞춰 봐야 하는지가 아카이브 안에 같이 담겨 있는 셈이다.
+
+Redis는 백업하지 않는다. 랭킹 등 캐시 데이터는 DB만 있으면 다시 만들 수 있는 유실 허용 데이터다 (복구 시에는 어드민의 '랭킹 캐시 리셋'으로 재구축한다). Prometheus/Grafana 관측 데이터도 제외했다. 대시보드는 코드로 관리되어 언제든 다시 만들 수 있다.
+
+### 오프사이트 보관: Cloudflare R2
+
+서버와 같은 디스크에만 백업이 있으면 디스크가 죽는 순간 백업도 같이 죽는다. 오프사이트 저장소는 Cloudflare R2를 선택했다.
+
+- 이미 Cloudflare를 프록시로 쓰고 있어서 계정이나 결제 수단을 새로 만들 필요가 없다
+- 무료 구간(저장 10GB, 전송 무료) 안에서 운영되어 추가 비용이 없다
+- rclone으로 업로드하고, 보관 기간 관리(daily 60일 / weekly 182일 / monthly 730일)는 R2 lifecycle rule에 맡긴다. 스크립트가 원격 삭제 권한을 가질 필요가 없다
+
+### 침해 대비: 버킷 잠금(WORM)
+
+백업의 진짜 위협 모델은 "서버가 침해당한 공격자가 백업까지 지우는 것"이다. R2는 진짜 쓰기 전용(write-only) 토큰을 지원하지 않아서, 토큰 권한 대신 저장소 정책으로 해결했다.
+
+- 경로별 bucket lock(WORM): 잠금 기간을 보관 기간(60/182/730일)과 같게 걸어, 보관하는 동안에는 서버 토큰이 탈취돼도 백업을 지우거나 덮어쓸 수 없다. 잠금 규칙 해제는 계정 관리자만 가능해서 서버 침해와 계정 침해가 분리된다
+- 서버에는 해당 버킷 한정 Object Read & Write 토큰만 배치
+- Admin 토큰은 서버에 두지 않고 개인 비밀번호 관리자에 보관 (복구 시에만 사용)
+
+덤프 자체는 암호화하지 않는다. 키 관리 부담 대비 이득이 작다고 판단해 보류했고, 그 결과 서버의 R2 읽기 토큰이 유출되면 보관 중인 백업의 열람까지는 막지 못한다. 이 부분은 지금은 감수하기로 한 리스크이고, 기밀성 요구가 커지면 서버에는 암호화 공개키만 두는 클라이언트 사이드 암호화(age 등)를 추가한다.
+
+### 검증: 복원까지가 백업
+
+백업 파일이 존재한다는 것과 복원된다는 것은 다른 문제다. 두 단계로 검증한다.
+
+1. **매 백업 직후**: 덤프 크기 확인과 `pg_restore -l` 목록 조회로 잘렸거나 깨진 덤프를 바로 잡아낸다
+2. **매주 일요일**: R2에서 실물을 내려받아 임시 postgres 컨테이너(`--network none`)에 실제 복원하고, 테이블 행 개수가 manifest와 정확히 일치(오차 0)하는지, DB에 기록된 프로필 이미지 파일명이 아카이브 목록과 맞는지 대조한다
+
+### 감시: dead-man switch
+
+실패 알림(Discord)만으로는 "cron 자체가 죽어서 아무 일도 안 일어나는" 상황을 못 잡는다. 그래서 방향을 뒤집어, 매일 성공 신호를 healthchecks.io에 보내고 정시에 신호가 안 오면 healthchecks.io가 알려주는 구조를 추가했다. 감시 채널은 한쪽이 죽어도 다른 쪽이 살아 있도록 healthchecks.io와 Cloudflare 결제 알림 두 곳으로 나눴다.
+
+- 성공: Discord 알림(파일명, 크기, SHA-256, R2 사용량) + healthchecks ping
+- 실패: healthchecks `/fail`을 먼저 보내고, 이어서 Discord로 실패한 단계, 종료코드, 로그 끝부분을 보낸다
+- R2 사용량이 8GB(무료 한도의 80%)를 넘으면 별도 경고
+
 ## CI/CD (GitHub Actions)
 
-### CI — PR to dev
+### CI - PR to dev
 
 변경된 서비스만 검증한다 (`dorny/paths-filter`).
 
@@ -213,7 +260,7 @@ Prometheus와 Grafana 모두 외부에 직접 노출하지 않는다.
 
 Branch Protection: 3개 job 모두 통과해야 dev 머지 가능.
 
-### CD — Push to dev
+### CD - Push to dev
 
 변경 감지 → 병렬 빌드 → 조건부 배포.
 
@@ -227,7 +274,7 @@ Branch Protection: 3개 job 모두 통과해야 dev 머지 가능.
 
 Docker 이미지는 GHCR(GitHub Container Registry)에 push하고, 서버에서 pull하는 방식이다. 서버에서 빌드하지 않음.
 
-> 서버에서 빌드를 하면, 빌드 과정에서 CPU와 메모리를 많이 사용하게 되어, 서비스가 불안정해질 수 있다. 또한, 빌드 시간이 길어지면 배포가 지연되고, 문제가 발생했을 때 원인 파악이 어려워질 수 있다. 따라서, CI에서 미리 빌드된 이미지를 GHCR에 저장하고, 서버에서는 이를 pull하여 실행하는 방식을 선택했다.
+> 서버에서 빌드를 돌리면 CPU와 메모리를 많이 잡아먹어서 서비스가 불안정해질 수 있다. 빌드가 길어지면 배포도 지연되고, 문제가 터졌을 때 원인 찾기도 어려워진다. 그래서 CI에서 미리 빌드한 이미지를 GHCR에 저장해 두고, 서버는 이걸 pull해서 실행만 하도록 했다.
 
 ## 환경 변수 관리
 
@@ -245,4 +292,4 @@ backend/.env       # 루트 .env의 심볼릭 링크
 
 ---
 
-_마지막 업데이트: 2026-05-12_
+_마지막 업데이트: 2026-08-19_

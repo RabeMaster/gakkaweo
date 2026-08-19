@@ -1,8 +1,8 @@
-package com.gakkaweo.backend.auth.service;
+package com.gakkaweo.backend.member.service;
 
-import com.gakkaweo.backend.auth.config.ProfileImageProperties;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.member.config.ProfileImageProperties;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;

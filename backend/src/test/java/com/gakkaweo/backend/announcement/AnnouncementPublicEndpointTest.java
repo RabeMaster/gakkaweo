@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.gakkaweo.backend.domain.admin.entity.Announcement;
 import com.gakkaweo.backend.domain.admin.entity.AnnouncementType;
 import com.gakkaweo.backend.domain.admin.repository.AnnouncementRepository;
-import com.gakkaweo.backend.dto.ActiveAnnouncementResponse;
 import com.gakkaweo.backend.support.IntegrationTestBase;
 import com.gakkaweo.backend.support.TestClock;
 import java.time.Duration;

@@ -28,6 +28,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @DisplayName("Admin 감사 로그 원자성 회귀 가드")
 class AdminAuditAtomicityTest extends IntegrationTestBase {
@@ -36,6 +37,7 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
   @Autowired DailySentenceRepository dailySentenceRepository;
   @Autowired MemberRepository memberRepository;
   @Autowired AuditLogRepository auditLogRepository;
+  @Autowired TransactionTemplate transactionTemplate;
 
   @Test
   @DisplayName("문장 등록 중 audit 실패 시 DailySentence 쓰기가 롤백된다")
@@ -86,6 +88,24 @@ class AdminAuditAtomicityTest extends IntegrationTestBase {
     Member reloaded = memberRepository.findByPublicId(target.getPublicId()).orElseThrow();
     assertThat(reloaded.getRole()).isEqualTo(MemberRole.USER);
     assertThat(auditRowsByAction(AuditAction.ROLE_CHANGE)).isZero();
+  }
+
+  @Test
+  @DisplayName("외부 트랜잭션 롤백 시 감사 로그는 REQUIRES_NEW로 독립 커밋되어 유지된다")
+  void 외부TX_롤백_감사로그_REQUIRES_NEW_유지() {
+    Member admin = testAuthHelper.createAdmin();
+
+    try {
+      transactionTemplate.execute(
+          status -> {
+            adminAuditService.log(
+                admin, AuditAction.SENTENCE_CREATE, "t-1", "REQUIRES_NEW 검증", "127.0.0.1");
+            throw new RuntimeException("outer TX rollback");
+          });
+    } catch (RuntimeException ignored) {
+    }
+
+    assertThat(auditRowsByAction(AuditAction.SENTENCE_CREATE)).isOne();
   }
 
   private long auditRowsByAction(AuditAction action) {

@@ -15,14 +15,14 @@ class NoOpSimilarityServiceTest {
 
   @Test
   @DisplayName("testSimilarity - 항상 0")
-  void test_zero() {
+  void testSimilarity_항상_0() {
     assertThat(service.testSimilarity("anything", "anything"))
         .isEqualByComparingTo(BigDecimal.ZERO);
   }
 
   @Test
   @DisplayName("calculateSimilarity - 항상 0")
-  void calc_zero() {
+  void calculateSimilarity_항상_0() {
     assertThat(service.calculateSimilarity(1L, "guess", "sentence", Duration.ofMinutes(1)))
         .isEqualByComparingTo(BigDecimal.ZERO);
   }

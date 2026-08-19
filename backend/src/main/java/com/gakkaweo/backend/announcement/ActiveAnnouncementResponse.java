@@ -1,4 +1,4 @@
-package com.gakkaweo.backend.dto;
+package com.gakkaweo.backend.announcement;
 
 import com.gakkaweo.backend.domain.admin.entity.Announcement;
 import io.swagger.v3.oas.annotations.media.Schema;

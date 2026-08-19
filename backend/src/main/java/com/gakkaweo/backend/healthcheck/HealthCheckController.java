@@ -1,4 +1,4 @@
-package com.gakkaweo.backend.controller;
+package com.gakkaweo.backend.healthcheck;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

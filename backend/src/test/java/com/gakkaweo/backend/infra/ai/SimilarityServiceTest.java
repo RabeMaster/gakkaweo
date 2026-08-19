@@ -10,11 +10,11 @@ import static org.mockito.Mockito.when;
 
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.util.TextNormalizer;
 import com.gakkaweo.backend.infra.ai.client.AiServiceClient;
 import com.gakkaweo.backend.infra.ai.client.dto.SimilarityResponse;
 import com.gakkaweo.backend.infra.ai.exception.AiServiceException;
 import com.gakkaweo.backend.infra.ai.service.SimilarityService;
-import com.gakkaweo.backend.infra.ai.service.TextNormalizer;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.math.BigDecimal;

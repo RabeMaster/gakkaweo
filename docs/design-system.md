@@ -1,4 +1,4 @@
-# UI/UX Design System — Neo-Brutalism Style Guide
+# UI/UX Design System - Neo-Brutalism Style Guide
 
 본 프로젝트의 프론트엔드는 아래의 네오 브루탈리즘(Neo-Brutalism) 디자인 원칙을 엄격하게 준수한다.
 
@@ -13,7 +13,7 @@
 7. [레이아웃](#7-layout-레이아웃)
 8. [페이지 구성](#8-페이지-구성)
 9. [로그인 프로바이더 색상](#9-로그인-프로바이더-색상)
-10. [컴포넌트 규칙](#10-컴포넌트-규칙) — 버튼, 입력창, 카드, 다이얼로그, 푸터, 랭킹, 모달, 프로필, 추측 피드백, 추측 기록, 힌트, 어드민
+10. [컴포넌트 규칙](#10-컴포넌트-규칙) - 버튼, 입력창, 카드, 다이얼로그, 푸터, 랭킹, 모달, 프로필, 추측 피드백, 추측 기록, 힌트, 어드민
 11. [반응형](#11-반응형-responsive)
 
 ---
@@ -25,7 +25,7 @@
 - Tailwind CSS (스타일링)
 - Vite (빌드)
 - Pretendard (폰트)
-- shadcn/ui 사용하지 않음 — Tailwind 직접 스타일링
+- shadcn/ui 사용하지 않음 - Tailwind 직접 스타일링
 
 ## 1. Core Principles (핵심 원칙)
 
@@ -124,7 +124,7 @@ hue = (similarity / 100) × 120
 텍스트: 항상 #ffffff
 ```
 
-**예외 — 프로그래스 바**: 텍스트가 채워진 영역(색상)과 빈 영역(gray)에 걸치므로 `#ffffff` 고정 시 라이트 모드 빈 영역에서 시인성 저하. `text-black dark:text-white` Tailwind 클래스 사용.
+**예외 - 프로그래스 바**: 텍스트가 채워진 영역(색상)과 빈 영역(gray)에 걸치므로 `#ffffff` 고정 시 라이트 모드 빈 영역에서 시인성 저하. `text-black dark:text-white` Tailwind 클래스 사용.
 
 | 유사도 | hue  | 시각적 색상 |
 | ------ | ---- | ----------- |
@@ -195,7 +195,7 @@ hue = (similarity / 100) × 120
 | 가까워     | `gray-200`  | `gray-700` | `black`         | `white`       |
 
 - 카카오/네이버는 라이트/다크 공통 배경 (브랜드 색상이 양쪽 모드에서 충분한 대비 제공)
-- Google만 다크모드 전용 배경 (`#131314`) 사용 — 공식 Sign-In 다크 테마 기준
+- Google만 다크모드 전용 배경 (`#131314`) 사용 - 공식 Sign-In 다크 테마 기준
 - 가까워(로컬 계정)는 중립 gray + 가까워 로고 SVG 아이콘 (ㄱ/ㄲ 눈 + 원형 입)
 - hover 시 배경색 변화 없음 (neo-brutalism 그림자 + translate 상호작용으로 통일)
 
@@ -308,7 +308,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **프로필 이미지 클릭** → 팝오버(변경/삭제) 표시
 - **변경**: hidden `<input type="file" accept="image/*">` → 크롭 모달 → 256×256 WebP 리사이징 → 서버 업로드
 - **삭제**: ConfirmDialog 확인 후 서버 삭제 → 기본 아바타 복원
-- **크롭 모달**: `react-easy-crop` — `aspect={1}`, `cropShape="rect"` (직각, 네오브루탈리즘). 줌 슬라이더 1.0~10.0
+- **크롭 모달**: `react-easy-crop` - `aspect={1}`, `cropShape="rect"` (직각, 네오브루탈리즘). 줌 슬라이더 1.0~10.0
 - **팝오버**: `border-4 shadow-brutal-sm`, click-outside/Escape 닫기
 - **hover 오버레이**: `bg-black/40` + 편집 아이콘 (프로필 이미지 위)
 
@@ -316,11 +316,11 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 
 - **위치**: 게임 페이지 중앙 칼럼, GuessInput 위
 - **구조**: 고정 높이 2행 (`h-6` × 2, `space-y-1`). 레이아웃 시프트 방지
-- **Row 1**: 최고 유사도 — `displayGuesses`에서 `useMemo` 파생. HSL 색상 퍼센트
+- **Row 1**: 최고 유사도 - `displayGuesses`에서 `useMemo` 파생. HSL 색상 퍼센트
 - **Row 2**: 에러 시 에러 메시지 (`text-red-500`) / 정상 시 마지막 추측 (guessText + HSL 퍼센트)
-- **빈 상태**: 라벨 + `—` (대시)로 공간 유지
+- **빈 상태**: 라벨 + `-` (하이픈)로 공간 유지
 - **데이터 원천**: `displayGuesses` 파생 (추가 API 없음). 새로고침 시 history API → 자동 복원
-- **FE 정규화**: `normalizeGuessText()` — BE `TextNormalizer`와 동일 로직 (`[^가-힣a-zA-Z0-9\s]` 제거). 서버 호출 전 선검증
+- **FE 정규화**: `normalizeGuessText()` - BE `TextNormalizer`와 동일 로직 (`[^가-힣a-zA-Z0-9\s]` 제거). 서버 호출 전 선검증
 
 ### 추측 기록 (GuessHistory)
 

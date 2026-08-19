@@ -1,6 +1,6 @@
 package com.gakkaweo.backend.config;
 
-import com.gakkaweo.backend.auth.config.ProfileImageProperties;
+import com.gakkaweo.backend.member.config.ProfileImageProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;

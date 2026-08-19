@@ -2,7 +2,7 @@ package com.gakkaweo.backend.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.gakkaweo.backend.infra.ai.service.TextNormalizer;
+import com.gakkaweo.backend.common.util.TextNormalizer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

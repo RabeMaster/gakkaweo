@@ -81,7 +81,7 @@ class AiServiceClientTest {
 
   @Test
   @DisplayName("isHealthy - 200 응답 시 true")
-  void isHealthy_true() {
+  void isHealthy_200_정상() {
     wireMock.stubFor(get(urlEqualTo("/health")).willReturn(aResponse().withStatus(200)));
 
     assertThat(client.isHealthy()).isTrue();

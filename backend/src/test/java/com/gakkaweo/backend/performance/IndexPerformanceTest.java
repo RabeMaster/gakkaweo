@@ -23,7 +23,7 @@ class IndexPerformanceTest extends IntegrationTestBase {
 
   @Test
   @DisplayName("V15 대상 7개 쿼리가 모두 Index Scan으로 전환되는지 측정")
-  void allTargetQueriesShouldUseIndexScan() {
+  void V15_대상_7개_쿼리_IndexScan_전환() {
     BulkDataFixture.PopulatedIds data =
         bulkDataFixture.populateLargeDataset(5_000, 1_500, 500, 20_000, 10, 10_000, 500);
 

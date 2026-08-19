@@ -255,7 +255,7 @@ public class DailySentenceScheduler {
         dailySentenceRepository
             .findByScheduledAt(today)
             .or(dailySentenceRepository::findRandomUnusedSentence)
-            .orElseThrow(() -> new IllegalStateException("사용 가능한 문장이 없음 — 문장 추가 필요"));
+            .orElseThrow(() -> new IllegalStateException("사용 가능한 문장이 없음 - 문장 추가 필요"));
 
     boolean wasScheduled = sentence.getScheduledAt() != null;
     sentence.setUsedAt(today);

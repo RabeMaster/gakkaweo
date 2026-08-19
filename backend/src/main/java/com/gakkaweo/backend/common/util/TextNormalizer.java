@@ -1,6 +1,5 @@
-package com.gakkaweo.backend.infra.ai.service;
+package com.gakkaweo.backend.common.util;
 
-import com.gakkaweo.backend.common.util.HashUtils;
 import java.text.Normalizer;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
