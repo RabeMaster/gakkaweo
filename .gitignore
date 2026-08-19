@@ -190,6 +190,7 @@ package-lock.json
 # Runtime directories (prod compose volumes)
 uploads/
 dumps/
+backups/
 
 .playwright-mcp/
 .claude/
