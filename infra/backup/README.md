@@ -20,7 +20,7 @@
 
 | 대상 | 제외 이유 |
 |---|---|
-| Redis | 유실을 허용하는 캐시 데이터입니다. 랭킹 등의 데이터는 자정 스케줄러를 통해 DB 기준으로 다시 생성할 수 있습니다. |
+| Redis | 유실을 허용하는 캐시 데이터입니다. 랭킹 등의 데이터는 복구 후 관리자 페이지의 '랭킹 캐시 리셋'으로 DB 기준 재생성합니다 (7장 복구 절차 참고). |
 | Prometheus / Grafana 데이터 | 관측용 데이터이므로 유실되어도 서비스 운영에는 직접적인 영향이 없습니다. 대시보드와 설정은 `infra/`에 코드로 관리되어 재구성할 수 있습니다. |
 | GHCR 이미지 | GitHub Container Registry가 원본이므로 필요할 경우 다시 pull하거나 빌드할 수 있습니다. |
 | `.env.prod` | 시크릿 정보가 포함되어 있으므로 백업 아카이브에는 포함하지 않습니다. 별도로 안전하게 보관합니다. |
@@ -100,17 +100,24 @@ R2 버킷 잠금이 같은 이름으로 덮어쓰는 것을 거부하기 때문�
 ### 3-1. 서버 패키지 설치
 
 ```bash
-sudo apt-get update && sudo apt-get install -y jq curl tar coreutils util-linux
-curl https://rclone.org/install.sh | sudo bash   # rclone 공식 설치 스크립트
-rclone version
+sudo apt-get update && sudo apt-get install -y jq curl tar coreutils util-linux openssl rclone
+rclone version   # apt 버전으로 충분. 더 최신이 필요할 때만 rclone.org의 공식 설치 방법 사용
 ```
 
 ### 3-2. R2 버킷 생성 + bucket lock
 
 Cloudflare 대시보드 -> R2 -> Create bucket -> 이름 `gakkaweo-backup` (location 자동).
 
-**bucket lock 30일 설정 (필수)**: 버킷 Settings -> Bucket lock -> 규칙 추가, 전체 객체 대상 30일 보존. 올린 지 30일이 지나기 전에는 누구도(Admin 토큰으로도) 파일을 지우거나 덮어쓸 수 없게 된다.  
-만약 서버가 해킹당해도 이미 올라간 백업만은 살아남게 하기 위함.
+**bucket lock 설정 (필수)**: 버킷 Settings -> Bucket lock에 경로별 규칙 3개를 등록한다. 잠금 기간을 보관 기간과 같게 걸어서, 보관하는 동안에는 누구도 지우거나 덮어쓸 수 없게 한다.
+
+| 경로 | 잠금 기간 |
+| --- | --- |
+| `daily/` | 60일 |
+| `weekly/` | 182일 |
+| `monthly/` | 730일 |
+
+서버가 해킹당해 토큰이 탈취돼도 보관 중인 백업만은 살아남게 하기 위함이다.  
+단, Cloudflare 계정 관리자는 대시보드에서 잠금 규칙 자체를 해제할 수 있다. 이 방어는 계정 로그인이 안전하다는 전제 위에 있다.
 
 ### 3-3. lifecycle 규칙
 
@@ -122,9 +129,9 @@ Cloudflare 대시보드 -> R2 -> Create bucket -> 이름 `gakkaweo-backup` (loca
 | `weekly/` | 182일 후 삭제 |
 | `monthly/` | 730일 후 삭제 |
 
-세 기간 모두 bucket lock의 30일보다 길어서 충돌하지 않는다.  
-**`daily/` 만료를 30일보다 짧게 줄이면 안 된다.**  
-잠금이 삭제를 거부해서 lifecycle 규칙이 계속 실패하게 된다.
+경로별 만료 기간이 잠금 기간과 같으므로, 잠금이 풀리는 시점에 lifecycle이 지운다.  
+**만료 기간을 잠금 기간보다 짧게 줄이면 안 된다.**  
+잠금이 삭제를 거부해서, 실제 삭제가 잠금이 풀릴 때까지 미뤄지기만 한다.
 
 ### 3-4. API 토큰 2개 발급
 
@@ -136,7 +143,7 @@ R2 -> Manage R2 API Tokens:
 | 복구용 | Admin Read & Write | 개인 비밀번호 관리자. **서버에 두지 않는다** |
 
 서버용 토큰은 이 버킷에만 접근할 수 있어서, 서버가 해킹당해도 계정의 다른 리소스에는 손댈 수 없다.  
-s기존 백업을 지우는 것도 bucket lock이 막는다.
+보관 기간 중인 백업을 지우는 것도 bucket lock이 막는다.
 
 ### 3-5. rclone 설정
 
@@ -219,7 +226,7 @@ Cloudflare 대시보드 -> Notifications에서 R2 사용량/과금 알림을 켠
 # 1) rclone 연결 확인
 rclone lsd r2:gakkaweo-backup
 
-# 2) R2 업로드만 빼고 전 과정 확인 (덤프, 검증, 묶기, 알림)
+# 2) R2 업로드만 빼고 전 과정 확인 (덤프, 검증, 묶기, Discord 알림. healthchecks 신호는 안 보냄)
 BACKUP_SKIP_UPLOAD=1 /bin/bash ~/gakkaweo/infra/backup/backup.sh
 
 # 3) 전체 실행
@@ -310,12 +317,16 @@ logrotate (`/etc/logrotate.d/gakkaweo-backup`):
 | --- | --- | --- |
 | `GAKKAWEO_HOME` | `$HOME/gakkaweo` | 서비스 루트 |
 | `BACKUP_DIR` | `$GAKKAWEO_HOME/backups` | 로컬 보관/작업 디렉토리 |
-| `BACKUP_SKIP_UPLOAD` | `0` | `1`이면 R2 업로드 생략 (설치 검증용) |
+| `BACKUP_SKIP_UPLOAD` | `0` | `1`이면 R2 업로드와 healthchecks 신호 생략 (설치 검증용) |
 | `BACKUP_RETENTION_MTIME` | `6` | 로컬 보관 기간 (find -mtime 값, 6 = 7일) |
 | `BACKUP_MIN_DUMP_BYTES` | `102400` | 덤프 최소 크기 (이보다 작으면 실패 처리) |
 | `BACKUP_QUOTA_WARN_BYTES` | `8000000000` | R2 사용량 경고 기준 (8GB, 무료 10GB의 80%) |
 | `RESTORE_LOCK_WAIT_SECONDS` | `1800` | 리허설이 잠금을 기다리는 최대 시간 |
 | `RESTORE_PG_READY_TIMEOUT` | `60` | 임시 PostgreSQL 컨테이너를 기다리는 최대 시간 |
+| `BACKUP_MIN_FREE_KB` | `1000000` | 백업 전 디스크 여유 하한 (약 1GB, df 블록 수) |
+| `RESTORE_MIN_FREE_KB` | `1000000` | 리허설 전 디스크 여유 하한 (약 1GB, df 블록 수) |
+| `ENV_FILE` | `$GAKKAWEO_HOME/.env.prod` | 변수 파일 위치 |
+| `RCLONE_CONFIG_FILE` | `~/.config/rclone/rclone.conf` | rclone 설정 파일 위치 |
 
 ### 용량 관리
 
@@ -365,14 +376,20 @@ docker compose -f docker-compose.prod.yml --env-file .env.prod exec -T postgresq
 tar -tf ~/recovery/uploads.tar | grep -v '^uploads/' || echo "파일 목록 정상 (uploads/ 뿐)"
 tar -xf ~/recovery/uploads.tar -C ~/gakkaweo    # uploads/ 폴더로 풀린다
 
-# 5) 가동 + 확인
+# 5) Redis 초기화 (복구 시점과 어긋난 랭킹/캐시 제거. 비밀번호는 .env.prod의 REDIS_PASSWORD 값)
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec redis redis-cli -a '<REDIS_PASSWORD>' FLUSHALL
+
+# 6) 가동
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 
-# 6) 복구 작업물 정리 (암호화되지 않은 덤프를 서버에 남기지 않는다)
+# 7) 랭킹 재구축: 어드민(/admin) 시스템 탭에서 "랭킹 캐시 리셋" 실행
+#    재가동만으로는 당일 랭킹이 다시 만들어지지 않는다 (시작 시점 스케줄러는 문장 선정만 확인)
+
+# 8) 복구 작업물 정리 (암호화되지 않은 덤프를 서버에 남기지 않는다)
 rm -rf ~/recovery
 ```
 
-서버 자체를 잃었다면: 새 서버에 Docker/compose 구성 -> `.env.prod`를 비밀번호 관리자에서 복원 -> GHCR 이미지 pull -> 위 절차의 1), 3), 4), 5).
+서버 자체를 잃었다면: 새 서버에 Docker/compose 구성 -> `.env.prod`를 비밀번호 관리자에서 복원 -> GHCR 이미지 pull -> 위 절차의 1), 3), 4), 6), 7), 8). (새 서버는 Redis가 애초에 비어 있어 5는 생략)
 
 ### 부분 복구
 
