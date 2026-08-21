@@ -324,9 +324,13 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
         restTemplate.getForEntity(url("/ranking/today"), RankingResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().totalPlayers()).isEqualTo(3L);
     assertThat(response.getBody().rankings())
         .extracting(RankingResponse.RankingEntry::nickname)
         .containsExactly("정상1", "정상2");
+    assertThat(response.getBody().rankings())
+        .extracting(RankingResponse.RankingEntry::rank)
+        .containsExactly(1L, 2L);
   }
 
   @Test
@@ -351,9 +355,11 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody().myRank()).isNull();
+    assertThat(response.getBody().totalPlayers()).isEqualTo(2L);
     assertThat(response.getBody().rankings())
         .extracting(RankingResponse.RankingEntry::nickname)
         .containsExactly("1등");
+    assertThat(response.getBody().rankings().get(0).rank()).isEqualTo(1L);
   }
 
   private Member seedRanking(

@@ -1,7 +1,9 @@
 package com.gakkaweo.backend.ranking;
 
+import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
@@ -13,10 +15,12 @@ import com.gakkaweo.backend.support.TestClock;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -27,6 +31,7 @@ class RankingScoreEncodingTest extends IntegrationTestBase {
   @Autowired GameSessionRepository gameSessionRepository;
   @Autowired TransactionTemplate transactionTemplate;
   @Autowired Clock clock;
+  @Autowired StringRedisTemplate redisTemplate;
 
   @Test
   @DisplayName("100% 달성자가 99%보다 항상 상위")
@@ -123,9 +128,10 @@ class RankingScoreEncodingTest extends IntegrationTestBase {
   @Test
   @DisplayName("100% 간 선착순 - 같은 초 내 밀리초 차이도 먼저 clear한 사용자가 상위")
   void 선착순_밀리초() {
+    TestClock testClock = (TestClock) clock;
+    testClock.setInstant(LocalDate.now(testClock).atTime(12, 0).atZone(KST).toInstant());
     DailySentence sentence = testAuthHelper.createTodaySentence("안녕하세요");
 
-    TestClock testClock = (TestClock) clock;
     Member first = testAuthHelper.createMember();
     GameSession firstSession = prepareSession(first, sentence, new BigDecimal("100.0"), 5, true);
     rankingService.updateRanking(firstSession, first);
@@ -141,6 +147,17 @@ class RankingScoreEncodingTest extends IntegrationTestBase {
     List<RankingResponse.RankingEntry> rankings = response.getBody().rankings();
     assertThat(rankings.get(0).publicId()).isEqualTo(first.getPublicId());
     assertThat(rankings.get(1).publicId()).isEqualTo(second.getPublicId());
+
+    String rankingKey = RedisKeyConstants.rankingKey(LocalDate.now(clock));
+    Double firstScore =
+        redisTemplate
+            .opsForZSet()
+            .score(rankingKey, RedisKeyConstants.memberKey(first.getPublicId()));
+    Double secondScore =
+        redisTemplate
+            .opsForZSet()
+            .score(rankingKey, RedisKeyConstants.memberKey(second.getPublicId()));
+    assertThat(firstScore - secondScore).isEqualTo(500.0);
   }
 
   @Test
