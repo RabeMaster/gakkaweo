@@ -207,6 +207,10 @@ public class RankingService {
       if (detail.isEmpty()) {
         continue;
       }
+      if (isDetailIncomplete(detail)) {
+        log.warn("랭킹 detail 필수 필드 누락으로 멤버 스킵: detailKey={}", detailKey);
+        continue;
+      }
 
       String profileUrl = (String) detail.get("profileUrl");
 
@@ -223,6 +227,13 @@ public class RankingService {
     return entries;
   }
 
+  private static boolean isDetailIncomplete(Map<Object, Object> detail) {
+    return detail.get("publicId") == null
+        || detail.get("nickname") == null
+        || detail.get("similarity") == null
+        || detail.get("attemptCount") == null;
+  }
+
   private MyRank lookupMyRank(LocalDate date, UUID memberPublicId) {
     String rankingKey = RedisKeyConstants.rankingKey(date);
     String memberKey = RedisKeyConstants.memberKey(memberPublicId);
@@ -235,6 +246,10 @@ public class RankingService {
     String detailKey = RedisKeyConstants.rankingDetailKey(date, memberPublicId);
     Map<Object, Object> detail = redisTemplate.opsForHash().entries(detailKey);
     if (detail.isEmpty()) {
+      return null;
+    }
+    if (isDetailIncomplete(detail)) {
+      log.warn("랭킹 detail 필수 필드 누락: memberPublicId={}", memberPublicId);
       return null;
     }
 
