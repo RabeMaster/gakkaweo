@@ -47,6 +47,9 @@ public class RankingService {
   private static final Duration EXPIRE_TTL = Duration.ofHours(1);
   private static final Duration LIVE_TTL = Duration.ofHours(30);
 
+  // 시도 횟수 감산(상한값 * 100,000 + 하루 경과 초 86,400)이 유사도 밴드 간격(10억)을 침범하지 않는 상한값
+  private static final int ATTEMPT_COUNT_SCORE_CAP = 999;
+
   private final StringRedisTemplate redisTemplate;
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
@@ -73,13 +76,13 @@ public class RankingService {
 
       ZonedDateTime startOfDay = today.atStartOfDay(KST);
       long elapsedSeconds = Duration.between(startOfDay, ZonedDateTime.now(clock)).getSeconds();
-      Long clearedAtSeconds = calculateClearedAtSeconds(session, startOfDay);
+      Long clearedAtMillis = calculateClearedAtMillis(session, startOfDay);
       double score =
           encodeScore(
               session.getBestSimilarity(),
               session.getAttemptCount(),
               elapsedSeconds,
-              clearedAtSeconds);
+              clearedAtMillis);
 
       redisTemplate.opsForZSet().add(rankingKey, memberKey, score);
 
@@ -293,13 +296,13 @@ public class RankingService {
         elapsedSeconds = 0;
       }
 
-      Long clearedAtSeconds = calculateClearedAtSeconds(session, startOfDay);
+      Long clearedAtMillis = calculateClearedAtMillis(session, startOfDay);
       double score =
           encodeScore(
               session.getBestSimilarity(),
               session.getAttemptCount(),
               elapsedSeconds,
-              clearedAtSeconds);
+              clearedAtMillis);
 
       String memberKey = RedisKeyConstants.memberKey(member.getPublicId());
       redisTemplate.opsForZSet().add(rankingKey, memberKey, score);
@@ -365,22 +368,22 @@ public class RankingService {
   }
 
   private double encodeScore(
-      BigDecimal similarity, int attemptCount, long elapsedSeconds, Long clearedAtSeconds) {
+      BigDecimal similarity, int attemptCount, long elapsedSeconds, Long clearedAtMillis) {
     long similarityComponent = similarity.multiply(BigDecimal.TEN).longValue() * 1_000_000_000L;
 
-    if (clearedAtSeconds != null && similarity.compareTo(GameConstants.PERFECT_SIMILARITY) >= 0) {
-      return similarityComponent - clearedAtSeconds;
+    if (clearedAtMillis != null && similarity.compareTo(GameConstants.PERFECT_SIMILARITY) >= 0) {
+      return similarityComponent - clearedAtMillis;
     }
 
-    long attemptComponent = (long) attemptCount * 100_000L;
+    long attemptComponent = (long) Math.min(attemptCount, ATTEMPT_COUNT_SCORE_CAP) * 100_000L;
     return similarityComponent - attemptComponent - elapsedSeconds;
   }
 
-  private Long calculateClearedAtSeconds(GameSession session, ZonedDateTime startOfDay) {
+  private Long calculateClearedAtMillis(GameSession session, ZonedDateTime startOfDay) {
     if (session.getClearedAt() == null) {
       return null;
     }
-    long seconds = Duration.between(startOfDay, session.getClearedAt().atZone(KST)).getSeconds();
-    return Math.max(seconds, 0);
+    long millis = Duration.between(startOfDay, session.getClearedAt().atZone(KST)).toMillis();
+    return Math.max(millis, 0);
   }
 }
