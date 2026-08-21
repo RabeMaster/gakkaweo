@@ -307,6 +307,61 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
     assertThat(detailTtl).isBetween(LIVE_TTL_SECONDS - TTL_TOLERANCE_SECONDS, LIVE_TTL_SECONDS);
   }
 
+  @Test
+  @DisplayName("GET /ranking/today - 필수 필드가 빠진 detail 멤버는 스킵하고 나머지는 정상 반환")
+  void 랭킹_조회_부분detail_스킵() {
+    DailySentence sentence = testAuthHelper.createTodaySentence("오늘 문장");
+    seedRanking(sentence, "정상1", null, new BigDecimal("95.0"), false);
+    Member broken = seedRanking(sentence, "깨진유저", null, new BigDecimal("90.0"), false);
+    seedRanking(sentence, "정상2", null, new BigDecimal("85.0"), false);
+
+    LocalDate today = LocalDate.now(rankingClock);
+    String detailKey = RedisKeyConstants.rankingDetailKey(today, broken.getPublicId());
+    redisTemplate.delete(detailKey);
+    redisTemplate.opsForHash().put(detailKey, "nickname", "깨진유저");
+
+    ResponseEntity<RankingResponse> response =
+        restTemplate.getForEntity(url("/ranking/today"), RankingResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().totalPlayers()).isEqualTo(3L);
+    assertThat(response.getBody().rankings())
+        .extracting(RankingResponse.RankingEntry::nickname)
+        .containsExactly("정상1", "정상2");
+    assertThat(response.getBody().rankings())
+        .extracting(RankingResponse.RankingEntry::rank)
+        .containsExactly(1L, 2L);
+  }
+
+  @Test
+  @DisplayName("GET /ranking/today 인증 - 내 detail 필수 필드가 빠지면 myRank null, 목록은 정상")
+  void 랭킹_조회_인증_부분detail_myRank_null() {
+    DailySentence sentence = testAuthHelper.createTodaySentence("오늘 문장");
+    seedRanking(sentence, "1등", null, new BigDecimal("100.0"), true);
+    Member me = seedRanking(sentence, "나", null, new BigDecimal("80.0"), false);
+
+    LocalDate today = LocalDate.now(rankingClock);
+    String detailKey = RedisKeyConstants.rankingDetailKey(today, me.getPublicId());
+    redisTemplate.delete(detailKey);
+    redisTemplate.opsForHash().put(detailKey, "profileUrl", "/uploads/me.webp");
+
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(me);
+    ResponseEntity<RankingResponse> response =
+        restTemplate.exchange(
+            url("/ranking/today"),
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            RankingResponse.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody().myRank()).isNull();
+    assertThat(response.getBody().totalPlayers()).isEqualTo(2L);
+    assertThat(response.getBody().rankings())
+        .extracting(RankingResponse.RankingEntry::nickname)
+        .containsExactly("1등");
+    assertThat(response.getBody().rankings().get(0).rank()).isEqualTo(1L);
+  }
+
   private Member seedRanking(
       DailySentence sentence,
       String nickname,

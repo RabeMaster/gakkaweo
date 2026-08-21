@@ -10,13 +10,18 @@ backend/src/main/java/.../backend/
 │   ├── member/      #   Member, SocialAccount, LocalAccount
 │   ├── game/        #   DailySentence, GameSession, GuessHistory
 │   ├── auth/        #   RefreshToken
-│   └── admin/       #   Announcement, AuditLog, SentenceUpload
+│   ├── admin/       #   Announcement, AuditLog, SentenceUpload
+│   └── common/      #   BaseTimeEntity, BaseAuditableEntity
 ├── auth/            # 기능: 인증 - 서비스, 컨트롤러, JWT, OAuth2
 ├── game/            # 기능: 게임 - 서비스, 컨트롤러, DTO
 ├── ranking/         # 기능: 랭킹 - Redis 기반 서비스, SSE 이벤트
+├── member/          # 기능: 회원 - 프로필 이미지, Redis 동기화
 ├── admin/           # 기능: 어드민 - 관리 서비스, 컨트롤러
+├── announcement/    # 기능: 공지 - 활성 공지 조회
 ├── ratelimit/       # 기능: Rate Limiting - 필터, 버킷 관리
+├── healthcheck/     # 헬스체크 엔드포인트
 ├── infra/           # 외부 의존성 - AI Service 클라이언트, Circuit Breaker
+├── common/          # 공통 - 예외, Redis 키 상수, 시간, 유틸
 └── config/          # 글로벌 설정 - SecurityConfig 등
 ```
 
@@ -140,16 +145,17 @@ Family 기반 Refresh Token Rotation을 구현했다.
 단일 `double` 값에 유사도, 시도 횟수, 시간을 인코딩한다.
 
 ```java
-// 100% 달성자: 선착순
-score = (similarity * 10 * 1_000_000_000) - clearedAtSeconds
+// 100% 달성자: 선착순 (자정 KST 기준 경과 밀리초)
+score = (similarity * 10 * 1_000_000_000) - clearedAtMillis
 
 // 95~99.9%: 유사도 > 시도 횟수 > 경과 시간
-score = (similarity * 10 * 1_000_000_000) - (attemptCount * 100_000) - elapsedSeconds
+score = (similarity * 10 * 1_000_000_000) - (min(attemptCount, 999) * 100_000) - elapsedSeconds
 ```
 
 - `reverseRank`로 점수가 높을수록 상위 랭크
-- 100% 달성자는 `clearedAt`이 빠를수록 점수가 높음 (빼기이므로)
+- 100% 달성자는 `clearedAt`이 빠를수록 점수가 높음 (빼기이므로). 차감값은 에포크 초가 아니라 자정(KST) 기준 경과 밀리초를 쓴다. 에포크 값은 자릿수가 커서 double 가수부 정밀도 한계에 걸릴 수 있는데, 자정 기준으로 바꾸면 값의 크기가 작아져 밀리초 단위 선착순까지 정확하게 구분된다
 - 95~99.9%에서는 유사도가 1차, 시도 횟수가 2차, 경과 시간이 3차 정렬 기준
+- 시도 횟수는 스코어 계산 시 999 상한(`ATTEMPT_COUNT_SCORE_CAP`)을 둔다. 상한이 없으면 비정상적으로 큰 시도 횟수가 유사도 성분까지 침범할 수 있기 때문이다. 상한은 스코어 계산에만 적용하고, 표시되는 시도 횟수는 원본 값을 유지한다
 
 > 단순하게 사용자 측면에서 바라봤을 때, 유사도가 높을수록 좋은 랭킹이 되는 것이 직관적이라고 생각했다. 그리고 100% 달성자 중에서는 선착순이 공정하다고 판단했다. 또한, 95~99.9% 달성자들 사이에서는 유사도가 가장 중요하지만, 동점자가 많을 수 있기 때문에 시도 횟수와 경과 시간으로 추가적으로 순위를 매기는 방식으로 결정했다.
 
@@ -365,4 +371,4 @@ Spring Security role 기반으로 admin 그룹 접근을 제어한다.
 
 ---
 
-_마지막 업데이트: 2026-05-12_
+_마지막 업데이트: 2026-08-21_

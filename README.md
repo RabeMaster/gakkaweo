@@ -84,6 +84,7 @@ AI 임베딩 유사도 판별 기반 데일리 웹 게임입니다. 세멘틀(Se
 | **Deployment**   | Self-hosted Ubuntu server (Docker-based), GitHub Container Registry, SSH/SCP deployment scripts               |
 | **CI/CD**        | GitHub Actions                                                                                                |
 | **Code Quality** | ESLint + Prettier (FE), Spotless + Google Java Format (BE), Ruff (AI), Husky + lint-staged                    |
+| **Testing**      | JUnit 5 + Spring Boot Test, 실제 PostgreSQL/Redis 기반 통합 테스트 (백엔드 테스트 369개)                      |
 | **Tools**        | IntelliJ IDEA, VS Code, Postman, pgAdmin, RedisInsight, ChatGPT, Gemini, Copilot, Claude                      |
 
 ---
@@ -118,14 +119,20 @@ gakkaweo/
 ├── backend/                     # Spring Boot 3.5 + Java 21
 │   └── src/main/java/.../backend/
 │       ├── admin/               # 어드민 API
+│       ├── announcement/        # 공지 조회 API
 │       ├── auth/                # 인증 (JWT, OAuth2)
+│       ├── common/              # 공통 (예외, Redis 키, 시간, 유틸)
+│       ├── config/              # 설정 (Security, Clock, OpenAPI 등)
 │       ├── domain/              # 엔티티 + 리포지토리
-│       │   ├── admin/           #   Announcement, AuditLog
+│       │   ├── admin/           #   Announcement, AuditLog, SentenceUpload
 │       │   ├── auth/            #   RefreshToken
+│       │   ├── common/          #   BaseTimeEntity, BaseAuditableEntity
 │       │   ├── game/            #   GameSession, DailySentence, GuessHistory
 │       │   └── member/          #   Member, SocialAccount, LocalAccount
 │       ├── game/                # 게임 로직
+│       ├── healthcheck/         # 헬스체크 엔드포인트
 │       ├── infra/               # 외부 의존성 - AI 클라이언트, 알림, 모니터링
+│       ├── member/              # 회원 (프로필 이미지, Redis 동기화)
 │       ├── ranking/             # 랭킹 (Redis Sorted Set)
 │       └── ratelimit/           # Rate Limiting (Bucket4j)
 │
@@ -133,11 +140,14 @@ gakkaweo/
 │   └── app/
 │       ├── main.py              # API 엔드포인트
 │       ├── model.py             # 모델 로딩 + 유사도 계산
-│       └── normalize.py         # 텍스트 정규화
+│       ├── normalize.py         # 텍스트 정규화
+│       └── schemas.py           # 요청/응답 스키마
 │
 ├── nginx/                       # Nginx 설정
 │   ├── gakkaweo.conf            # 프론트엔드 (SPA 서빙)
-│   └── api.conf                 # 백엔드 (리버스 프록시)
+│   ├── api.conf                 # 백엔드 (리버스 프록시)
+│   ├── default.conf             # IP 직접 접근 차단 (444 응답)
+│   └── cloudflare-ips.conf      # Cloudflare real_ip 복원
 │
 ├── docs-site/                   # Swagger UI 정적 사이트 (GitHub Pages)
 │
@@ -148,6 +158,7 @@ gakkaweo/
 │   ├── design-system.md         # UI/UX 디자인 시스템
 │   ├── branch-strategy.md       # 브랜치 전략
 │   ├── commit-convention.md     # 커밋 컨벤션
+│   ├── sentence-authoring-guide.md  # 정답 문장 출제 가이드
 │   ├── performance/             # DB 성능 분석
 │   └── decisions/               # 기술 의사결정
 │       ├── infra.md             #   인프라
@@ -187,7 +198,7 @@ ln -s ../.env backend/.env
 mklink backend\.env ..\.env
 ```
 
-### 2. 인프라 실행 (PostgreSQL, Redis, AI Service)
+### 2. 인프라 실행 (PostgreSQL, Redis, AI Service, Prometheus, Grafana)
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d
@@ -232,6 +243,7 @@ pnpm dev
 | [디자인 시스템](docs/design-system.md)                     | Neo-Brutalism UI 규칙, 컴포넌트 스타일 가이드 |
 | [브랜치 전략](docs/branch-strategy.md)                     | main/dev 기반 브랜치 워크플로우               |
 | [커밋 컨벤션](docs/commit-convention.md)                   | Conventional Commits 규칙                     |
+| [문장 출제 가이드](docs/sentence-authoring-guide.md)       | 정답 문장 출제 기준과 검수 프로세스           |
 
 ### 기술 의사결정
 
@@ -250,4 +262,4 @@ pnpm dev
 
 ---
 
-_마지막 업데이트: 2026-08-19_
+_마지막 업데이트: 2026-08-21_
