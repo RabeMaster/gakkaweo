@@ -3,6 +3,32 @@ name: CD
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      backend:
+        description: "Backend 이미지 빌드 + 배포"
+        type: boolean
+        default: false
+      ai_service:
+        description: "AI Service 이미지 빌드 + 배포"
+        type: boolean
+        default: false
+      frontend:
+        description: "Frontend 빌드 + 배포"
+        type: boolean
+        default: false
+      nginx:
+        description: "Nginx 설정 배포 + reload"
+        type: boolean
+        default: false
+      compose:
+        description: "docker-compose.prod.yml 업로드 + up"
+        type: boolean
+        default: false
+      infra:
+        description: "infra 설정(Prometheus/Grafana) 업로드 + up"
+        type: boolean
+        default: false
 
 concurrency:
   group: cd
@@ -14,18 +40,22 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    # 수동 실행(workflow_dispatch)이면 입력값을, main push면 paths-filter 결과를 사용
     outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      ai_service: ${{ steps.filter.outputs.ai_service }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      nginx: ${{ steps.filter.outputs.nginx }}
-      compose: ${{ steps.filter.outputs.compose }}
-      infra: ${{ steps.filter.outputs.infra }}
+      backend: ${{ github.event_name == 'workflow_dispatch' && inputs.backend || steps.filter.outputs.backend }}
+      ai_service: ${{ github.event_name == 'workflow_dispatch' && inputs.ai_service || steps.filter.outputs.ai_service }}
+      frontend: ${{ github.event_name == 'workflow_dispatch' && inputs.frontend || steps.filter.outputs.frontend }}
+      nginx: ${{ github.event_name == 'workflow_dispatch' && inputs.nginx || steps.filter.outputs.nginx }}
+      compose: ${{ github.event_name == 'workflow_dispatch' && inputs.compose || steps.filter.outputs.compose }}
+      infra: ${{ github.event_name == 'workflow_dispatch' && inputs.infra || steps.filter.outputs.infra }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
+        if: github.event_name == 'push'
         id: filter
         with:
+          # base를 트리거 브랜치와 같게 지정해야 push 이벤트의 before..after로 비교한다 (미지정 시 default 브랜치인 dev 기준)
+          base: main
           filters: |
             backend:
               - 'backend/**'
