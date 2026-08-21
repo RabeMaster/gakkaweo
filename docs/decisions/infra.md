@@ -3,7 +3,7 @@
 ## 자체 홈서버
 
 클라우드 비용을 쓸 여유가 없었고, (백수 이슈) 마침 남는 데스크탑(`Intel(R) Celeron(R) G4930 CPU @ 3.20GHz`, 4GB RAM, 128GB SSD)이 있었다.
-`Ubuntu 24.04 LTS Server`로 밀어버리고 서버로 활용했다.
+`Ubuntu 24.04 LTS Server`로 밀어버리고 서버로 활용했다. RAM은 운영하면서 부족함을 느껴 이후 8GB로 증설했다.
 
 홈서버는 이미 여러 번 구성해봤고, 리눅스 명령어를 직접 치며 서버를 관리하는 과정 자체가 재밌고 유익할 것 같았다.
 
@@ -12,7 +12,7 @@
 서버를 한국에 두면 리전이 멀어서 생기는 지연도 줄일 수 있겠다 싶었다. 다만 Cloudflare를 Full (strict) 모드로 걸면서 경유지가 늘어나 약간의 지연이 추가되긴 한다.
 
 - OS: `Ubuntu 24.04.4 LTS (Server)`
-- 스펙: `Intel(R) Celeron(R) G4930 CPU @ 3.20GHz`, `4GB RAM`, `128GB SSD`
+- 스펙: `Intel(R) Celeron(R) G4930 CPU @ 3.20GHz`, `8GB RAM`(4GB에서 증설), `128GB SSD`
 - 네트워크: `KT 회선 → 스위치 → 공인 IP 직접 할당`
 - 단일 서버에 모든 서비스 배포 (Frontend 정적 파일 + Docker Compose)
 
@@ -50,9 +50,9 @@ Cloudflare를 리버스 프록시로 사용한다. 선택한 이유는 크게 �
 
 ### 시스템 안정성
 
-4GB RAM으로 PostgreSQL, Redis, AI Service, Backend를 모두 돌리기 때문에, 메모리 부족에 대비한 설정이 필수였다.
+당시 4GB RAM으로 PostgreSQL, Redis, AI Service, Backend를 모두 돌리기 때문에, 메모리 부족에 대비한 설정이 필수였다. 이후 8GB로 증설했지만 대비 설정은 그대로 유지한다.
 
-- **Swap**: 12GB 스왑 영역 확보. RAM이 부족해도 서비스가 즉시 죽지 않도록 버퍼 역할
+- **Swap**: 16GB 스왑 영역 확보. RAM이 부족해도 서비스가 즉시 죽지 않도록 버퍼 역할
 - **Swappiness**: 60 → 10으로 낮춤. 가능한 한 물리 RAM을 우선 사용하고, 정말 부족할 때만 스왑을 사용
 - **OOM 방어**: SSH 프로세스는 OOM Killer가 죽이지 못하도록 보호했다. 만약 SSH마저 죽으면 서버에 원격 접근 자체가 불가능해지기 때문
   > (키보드와 모니터 꼽기 귀찮기에...)
@@ -69,13 +69,14 @@ Cloudflare를 리버스 프록시로 사용한다. 선택한 이유는 크게 �
 Docker 안에 넣지 않은 이유는 아래와 같다.
 
 - Frontend는 Vite 빌드 결과물(`dist/`)을 Nginx가 직접 서빙 - Docker 볼륨 마운트 없이 단순
-- 설정 파일 3개로 역할이 명확히 분리됨
+- 설정 파일 4개로 역할이 명확히 분리됨
 
 ```
 nginx/
-├── gakkaweo.conf   # Frontend SPA - try_files로 정적 파일 서빙, fallback to index.html
-├── api.conf        # Backend API - 리버스 프록시 + SSE 버퍼링 비활성화
-└── default.conf    # IP 직접 접근 및 미등록 도메인 차단 (444 응답)
+├── gakkaweo.conf        # Frontend SPA - try_files로 정적 파일 서빙, fallback to index.html
+├── api.conf             # Backend API - 리버스 프록시 + SSE 버퍼링 비활성화
+├── default.conf         # IP 직접 접근 및 미등록 도메인 차단 (444 응답)
+└── cloudflare-ips.conf  # Cloudflare 프록시 뒤에서 real_ip 복원 (실제 클라이언트 IP 로깅)
 ```
 
 ### SSE 프록시 설정
@@ -98,7 +99,7 @@ location /ranking/stream {
 
 ### 개발 환경 (`docker-compose.dev.yml`)
 
-- PostgreSQL 16, Redis 7, AI Service만 컨테이너로 실행
+- PostgreSQL 16, Redis 7, AI Service, Prometheus, Grafana를 컨테이너로 실행
 - Backend는 IDE에서 직접 실행 (디버깅/핫리로드)
 - Frontend는 Vite dev server
 
@@ -106,7 +107,7 @@ location /ranking/stream {
 
 ### 프로덕션 환경 (`docker-compose.prod.yml`)
 
-- 4개 서비스 전부 컨테이너: PostgreSQL, Redis, AI Service, Backend
+- 6개 서비스 전부 컨테이너: PostgreSQL, Redis, AI Service, Backend, Prometheus, Grafana
 - Frontend는 CD에서 빌드 후 `dist/`를 SCP로 전송, Nginx가 직접 서빙
 - Backend 포트는 `127.0.0.1:${SERVER_PORT}:8080`으로 localhost만 노출 (Nginx 프록시 경유)
 - Redis: `maxmemory 256mb`, `volatile-lru` eviction, AOF 영속화
@@ -248,7 +249,7 @@ Redis는 백업하지 않는다. 랭킹 등 캐시 데이터는 DB만 있으면 
 
 ## CI/CD (GitHub Actions)
 
-### CI - PR to dev
+### CI - PR to dev/main
 
 변경된 서비스만 검증한다 (`dorny/paths-filter`).
 
@@ -258,9 +259,9 @@ Redis는 백업하지 않는다. 랭킹 등 캐시 데이터는 DB만 있으면 
 | Backend    | Spotless check (Google Java Format) → Gradle build (-x test) |
 | AI Service | Ruff check → Ruff format --check                             |
 
-Branch Protection: 3개 job 모두 통과해야 dev 머지 가능.
+Branch Protection: 3개 job의 결과를 집계하는 `CI Result` job이 필수 상태 체크로 걸려 있어, 하나라도 실패하면 머지가 차단된다.
 
-### CD - Push to dev
+### CD - Push to main
 
 변경 감지 → 병렬 빌드 → 조건부 배포.
 
@@ -292,4 +293,4 @@ backend/.env       # 루트 .env의 심볼릭 링크
 
 ---
 
-_마지막 업데이트: 2026-08-19_
+_마지막 업데이트: 2026-08-21_
