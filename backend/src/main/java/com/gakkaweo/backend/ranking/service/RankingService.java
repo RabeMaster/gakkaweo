@@ -59,6 +59,13 @@ public class RankingService {
 
   private Counter rankingUpdateCounter;
 
+  private static boolean isDetailIncomplete(Map<Object, Object> detail) {
+    return detail.get("publicId") == null
+        || detail.get("nickname") == null
+        || detail.get("similarity") == null
+        || detail.get("attemptCount") == null;
+  }
+
   @PostConstruct
   void initCounters() {
     rankingUpdateCounter =
@@ -225,13 +232,6 @@ public class RankingService {
       rank++;
     }
     return entries;
-  }
-
-  private static boolean isDetailIncomplete(Map<Object, Object> detail) {
-    return detail.get("publicId") == null
-        || detail.get("nickname") == null
-        || detail.get("similarity") == null
-        || detail.get("attemptCount") == null;
   }
 
   private MyRank lookupMyRank(LocalDate date, UUID memberPublicId) {
