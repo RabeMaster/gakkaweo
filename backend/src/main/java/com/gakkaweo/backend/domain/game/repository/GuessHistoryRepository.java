@@ -5,6 +5,7 @@ import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.entity.GuessHistory;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +17,9 @@ import org.springframework.data.repository.query.Param;
 public interface GuessHistoryRepository extends JpaRepository<GuessHistory, Long> {
 
   List<GuessHistory> findBySessionOrderByAttemptNumberAsc(GameSession session);
+
+  Optional<GuessHistory> findFirstBySessionOrderBySimilarityDescAttemptNumberAsc(
+      GameSession session);
 
   @Modifying(clearAutomatically = true)
   @Query("DELETE FROM GuessHistory h WHERE h.session.sentence = :sentence")

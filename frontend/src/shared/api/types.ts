@@ -60,6 +60,17 @@ export interface HintResponse {
   hints: HintEntry[];
 }
 
+export interface YesterdayMeResponse {
+  yesterdayDate: string | null;
+  participated: boolean;
+  rank: number | null;
+  totalPlayers: number | null;
+  bestGuessText: string | null;
+  bestSimilarity: number | null;
+  attemptCount: number | null;
+  cleared: boolean | null;
+}
+
 // --- Ranking ---
 
 export interface RankingEntry {
@@ -81,8 +92,6 @@ export interface RankingResponse {
   rankings: RankingEntry[];
   totalPlayers: number;
   myRank: MyRank | null;
-  yesterdayRank: number | null;
-  yesterdayTotalPlayers: number | null;
 }
 
 // --- Announcement (Public) ---

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { getHints, getHistory, getStatus, getToday, submitGuess } from "@/features/game/api";
+import { getHints, getHistory, getStatus, getToday, getYesterdayMe, submitGuess } from "@/features/game/api";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { HINT_UNLOCK_THRESHOLD } from "@/shared/config/game";
 import { STALE_TIME } from "@/shared/config/query";
@@ -43,6 +43,17 @@ export function useHints(sentenceId: string | undefined, bestSimilarity: number)
     queryFn: () => getHints(sentenceId!),
     staleTime: STALE_TIME.LONG,
     enabled: isAuthenticated && !!sentenceId && bestSimilarity >= HINT_UNLOCK_THRESHOLD,
+  });
+}
+
+export function useYesterdayMe() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: ["game", "yesterday", "me"],
+    queryFn: getYesterdayMe,
+    staleTime: STALE_TIME.IMMUTABLE,
+    enabled: isAuthenticated,
   });
 }
 

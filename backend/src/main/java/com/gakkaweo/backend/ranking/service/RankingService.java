@@ -11,7 +11,6 @@ import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
-import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.ranking.dto.RankingResponse;
 import com.gakkaweo.backend.ranking.dto.RankingResponse.MyRank;
 import com.gakkaweo.backend.ranking.dto.RankingResponse.RankingEntry;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +51,6 @@ public class RankingService {
   private final StringRedisTemplate redisTemplate;
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
-  private final MemberRepository memberRepository;
   private final MeterRegistry meterRegistry;
   private final Clock clock;
 
@@ -136,27 +133,7 @@ public class RankingService {
 
       MyRank myRank = lookupMyRank(today, memberPublicId);
 
-      LocalDate yesterday = today.minusDays(1);
-      Integer yesterdayRank = null;
-      Integer yesterdayTotalPlayers = null;
-
-      Optional<DailySentence> yesterdaySentence = dailySentenceRepository.findByUsedAt(yesterday);
-      if (yesterdaySentence.isPresent()) {
-        DailySentence ys = yesterdaySentence.get();
-        yesterdayTotalPlayers = ys.getTotalPlayers();
-
-        Optional<Member> member = memberRepository.findByPublicId(memberPublicId);
-        if (member.isPresent()) {
-          yesterdayRank =
-              gameSessionRepository
-                  .findByMemberAndSentence(member.get(), ys)
-                  .map(GameSession::getFinalRank)
-                  .orElse(null);
-        }
-      }
-
-      return new RankingResponse(
-          base.rankings(), base.totalPlayers(), myRank, yesterdayRank, yesterdayTotalPlayers);
+      return new RankingResponse(base.rankings(), base.totalPlayers(), myRank);
     } catch (Exception e) {
       log.warn("사용자 랭킹 조회 실패: memberPublicId={}", memberPublicId, e);
       return new RankingResponse(List.of(), 0);

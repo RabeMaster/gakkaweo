@@ -329,6 +329,20 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **placeholder**: 실제 아이템과 동일한 DOM 구조 (`border-4`, `p-2 md:p-3`, `SimilarityBadge` 크기 매칭). `invisible aria-hidden`
 - **페이지네이션**: `Button size="sm" variant="secondary"` (어드민 Pagination과 통일)
 
+### 어제의 결과 카드 (YesterdayResultCard)
+
+- **위치**: 게임 페이지, HintMask 카드 위. `today.yesterdaySentence && today.yesterdayDate`일 때만 렌더링
+- **카드**: `border-4 shadow-brutal bg-indigo-50 dark:bg-gray-800 p-4` (기존 어제의 정답 카드 배경 유지)
+- **공통**: 제목 "어제의 결과 (YYYY-MM-DD)" + 정답 문장 (`text-lg font-extrabold break-words`)
+- **상태 분기 4종**:
+  1. 비로그인: "로그인하면 어제의 내 기록을 볼 수 있어요" 안내 한 줄 (`text-sm text-gray-600 dark:text-gray-400`)
+  2. 로그인 + 미참여(`participated=false`): 정답만
+  3. 참여자: 나의 최고 추측 문장 + `SimilarityBadge` 재사용 + "N명 중 M등, K번 시도" (`tabular-nums`). `rank` null이면 등수 생략하고 시도 횟수만
+  4. 클리어(`cleared=true`): 최고 추측 줄 대신 "🎉 정답을 맞혔어요!"
+- **개인 기록 구분선**: `border-t-2 border-black/20 dark:border-white/20` (힌트 패널 행 구분선과 동일)
+- **데이터**: `useYesterdayMe()` 쿼리 (`staleTime: Infinity`, 어제 데이터는 하루 종일 불변). 쿼리 로딩 중에는 개인 기록 줄만 비워두고 정답은 즉시 표시
+- 어제 등수는 이 카드에서만 표시 (랭킹 패널의 어제 블록은 제거됨)
+
 ### 힌트 패널
 
 - **위치**: 좌측 칼럼, RankingPanel 아래. 부모 `div.w-72.shrink-0.space-y-6`이 RankingPanel + HintPanel 래핑

@@ -174,26 +174,6 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
             </span>
           )}
         </div>
-
-        {ranking?.yesterdayTotalPlayers != null && (
-          <>
-            <div className="border-t border-gray-300 dark:border-gray-700" />
-            <p className="text-xs font-bold text-gray-600 dark:text-gray-400">
-              <span className="text-black dark:text-white">어제</span>{" "}
-              {isAuthenticated && ranking.yesterdayRank != null ? (
-                <>
-                  <span className="text-black dark:text-white tabular-nums">{ranking.yesterdayTotalPlayers}</span>명 중{" "}
-                  <span className="text-indigo-600 dark:text-indigo-400 tabular-nums">{ranking.yesterdayRank}</span>등
-                </>
-              ) : (
-                <>
-                  <span className="text-black dark:text-white tabular-nums">{ranking.yesterdayTotalPlayers}</span>명
-                  도전
-                </>
-              )}
-            </p>
-          </>
-        )}
       </div>
     </Card>
   );

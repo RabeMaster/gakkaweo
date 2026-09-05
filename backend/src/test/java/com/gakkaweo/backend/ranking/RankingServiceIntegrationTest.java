@@ -5,9 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.gakkaweo.backend.admin.dto.FullRankingResponse;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
-import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
-import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
@@ -39,7 +37,6 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
 
   @Autowired RankingService rankingService;
   @Autowired MemberRepository memberRepository;
-  @Autowired DailySentenceRepository dailySentenceRepository;
   @Autowired GameSessionRepository gameSessionRepository;
   @Autowired TransactionTemplate transactionTemplate;
   @Autowired Clock rankingClock;
@@ -118,69 +115,6 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     assertThat(response.getBody().myRank()).isNull();
-  }
-
-  @Test
-  @DisplayName(
-      "GET /ranking/today 인증 - 어제 세션 + finalRank 세팅 시 yesterdayRank/yesterdayTotalPlayers 반환")
-  void 랭킹_조회_어제기록() {
-    DailySentence todaySentence = testAuthHelper.createTodaySentence("오늘 문장");
-    Member me = seedRanking(todaySentence, "나", null, new BigDecimal("80.0"), false);
-
-    LocalDate yesterday = LocalDate.now(rankingClock).minusDays(1);
-    transactionTemplate.executeWithoutResult(
-        status -> {
-          DailySentence yesterdaySentence = new DailySentence("어제 문장");
-          yesterdaySentence.setUsedAt(yesterday);
-          yesterdaySentence.setStatus(DailySentenceStatus.USED);
-          yesterdaySentence.recordTotalPlayers(5);
-          dailySentenceRepository.save(yesterdaySentence);
-
-          GameSession yesterdaySession = new GameSession(me, yesterdaySentence);
-          yesterdaySession.updateBestSimilarity(new BigDecimal("90.0"));
-          yesterdaySession.recordFinalRank(3);
-          gameSessionRepository.save(yesterdaySession);
-        });
-
-    HttpHeaders headers = testAuthHelper.cookieHeaderFor(me);
-    ResponseEntity<RankingResponse> response =
-        restTemplate.exchange(
-            url("/ranking/today"),
-            HttpMethod.GET,
-            new HttpEntity<>(headers),
-            RankingResponse.class);
-
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().yesterdayRank()).isEqualTo(3);
-    assertThat(response.getBody().yesterdayTotalPlayers()).isEqualTo(5);
-  }
-
-  @Test
-  @DisplayName("GET /ranking/today 인증 - 어제 문장은 있지만 내 세션이 없으면 yesterdayRank null / totalPlayers만 반환")
-  void 랭킹_조회_어제문장만() {
-    DailySentence todaySentence = testAuthHelper.createTodaySentence("오늘 문장");
-    Member me = seedRanking(todaySentence, "나", null, new BigDecimal("80.0"), false);
-
-    LocalDate yesterday = LocalDate.now(rankingClock).minusDays(1);
-    transactionTemplate.executeWithoutResult(
-        status -> {
-          DailySentence yesterdaySentence = new DailySentence("어제 문장");
-          yesterdaySentence.setUsedAt(yesterday);
-          yesterdaySentence.setStatus(DailySentenceStatus.USED);
-          yesterdaySentence.recordTotalPlayers(10);
-          dailySentenceRepository.save(yesterdaySentence);
-        });
-
-    HttpHeaders headers = testAuthHelper.cookieHeaderFor(me);
-    ResponseEntity<RankingResponse> response =
-        restTemplate.exchange(
-            url("/ranking/today"),
-            HttpMethod.GET,
-            new HttpEntity<>(headers),
-            RankingResponse.class);
-
-    assertThat(response.getBody().yesterdayTotalPlayers()).isEqualTo(10);
-    assertThat(response.getBody().yesterdayRank()).isNull();
   }
 
   @Test

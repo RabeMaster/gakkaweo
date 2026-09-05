@@ -21,6 +21,7 @@ import com.gakkaweo.backend.game.dto.GuessRequest;
 import com.gakkaweo.backend.game.dto.GuessResponse;
 import com.gakkaweo.backend.game.dto.HintResponse;
 import com.gakkaweo.backend.game.dto.TodayResponse;
+import com.gakkaweo.backend.game.dto.YesterdayMeResponse;
 import com.gakkaweo.backend.game.util.HintMaskGenerator;
 import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
@@ -238,6 +239,32 @@ public class DailyGameService {
         .findByMemberAndSentence(member, sentence)
         .map(session -> GameStatusResponse.from(sentence, session))
         .orElse(GameStatusResponse.empty(sentence.getPublicId()));
+  }
+
+  @Transactional(readOnly = true)
+  public YesterdayMeResponse getYesterdayMe(UUID memberPublicId) {
+    LocalDate yesterday = LocalDate.now(clock).minusDays(1);
+
+    return dailySentenceRepository
+        .findByUsedAt(yesterday)
+        .map(
+            sentence -> {
+              Member member = findMember(memberPublicId);
+              return gameSessionRepository
+                  .findByMemberAndSentence(member, sentence)
+                  .map(
+                      session -> {
+                        String bestGuessText =
+                            guessHistoryRepository
+                                .findFirstBySessionOrderBySimilarityDescAttemptNumberAsc(session)
+                                .map(GuessHistory::getGuessText)
+                                .orElse(null);
+                        return YesterdayMeResponse.from(
+                            yesterday, sentence, session, bestGuessText);
+                      })
+                  .orElse(YesterdayMeResponse.notParticipated(yesterday));
+            })
+        .orElse(YesterdayMeResponse.notParticipated(null));
   }
 
   private GameSession findOrCreateSession(Member member, DailySentence sentence) {
