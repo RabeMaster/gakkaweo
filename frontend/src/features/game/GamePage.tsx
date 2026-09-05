@@ -14,7 +14,7 @@ import { GuessInput } from "@/features/game/components/GuessInput";
 import { GuessFeedback } from "@/features/game/components/GuessFeedback";
 import { GuessHistory } from "@/features/game/components/GuessHistory";
 import { GameClearedCard } from "@/features/game/components/GameClearedCard";
-import { YesterdayAnswer } from "@/features/game/components/YesterdayAnswer";
+import { YesterdayResultCard } from "@/features/game/components/YesterdayResultCard";
 import { HelpModal, HELP_SHOWN_KEY } from "@/features/game/components/HelpModal";
 import { playSound } from "@/shared/config/sound";
 import { normalizeGuessText } from "@/shared/utils/normalize";
@@ -278,7 +278,7 @@ export function GamePage() {
       </div>
 
       {today.yesterdaySentence && today.yesterdayDate && (
-        <YesterdayAnswer sentence={today.yesterdaySentence} date={today.yesterdayDate} />
+        <YesterdayResultCard sentence={today.yesterdaySentence} date={today.yesterdayDate} />
       )}
 
       <Card>

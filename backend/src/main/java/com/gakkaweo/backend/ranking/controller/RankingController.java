@@ -25,7 +25,7 @@ public class RankingController {
   private final RankingService rankingService;
   private final SseConnectionManager sseConnectionManager;
 
-  @Operation(summary = "오늘 랭킹 조회", description = "인증 시 myRank, yesterdayRank 추가 반환")
+  @Operation(summary = "오늘 랭킹 조회", description = "인증 시 myRank 추가 반환")
   @StandardErrorResponses
   @GetMapping("/today")
   public ResponseEntity<RankingResponse> getTodayRanking(
