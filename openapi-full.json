@@ -4147,7 +4147,7 @@
           "Ranking"
         ],
         "summary": "오늘 랭킹 조회",
-        "description": "인증 시 myRank, yesterdayRank 추가 반환",
+        "description": "인증 시 myRank 추가 반환",
         "operationId": "getTodayRanking",
         "responses": {
           "200": {
@@ -4364,6 +4364,113 @@
             }
           }
         }
+      }
+    },
+    "/daily/yesterday/me": {
+      "get": {
+        "tags": [
+          "Daily Game"
+        ],
+        "summary": "어제 내 기록 조회",
+        "description": "어제 참여 기록(등수, 최고 추측, 유사도, 시도 횟수) 반환. 미참여 시 participated\u003dfalse",
+        "operationId": "getYesterdayMe",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/YesterdayMeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                },
+                "example": {
+                  "status": 400,
+                  "code": "VALIDATION_FAILED",
+                  "message": "요청 검증에 실패했습니다",
+                  "timestamp": "2026-04-17T12:00:00Z"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                },
+                "example": {
+                  "status": 401,
+                  "code": "UNAUTHORIZED",
+                  "message": "인증이 필요합니다",
+                  "timestamp": "2026-04-17T12:00:00Z"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "리소스 없음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                },
+                "example": {
+                  "status": 404,
+                  "code": "MEMBER_NOT_FOUND",
+                  "message": "회원을 찾을 수 없습니다",
+                  "timestamp": "2026-04-17T12:00:00Z"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "요청 제한 초과",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                },
+                "example": {
+                  "status": 429,
+                  "code": "RATE_LIMIT_EXCEEDED",
+                  "message": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요",
+                  "timestamp": "2026-04-17T12:00:00Z"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "서비스 불가",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                },
+                "example": {
+                  "status": 503,
+                  "code": "AI_SERVICE_UNAVAILABLE",
+                  "message": "AI 서비스를 일시적으로 이용할 수 없습니다",
+                  "timestamp": "2026-04-17T12:00:00Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ]
       }
     },
     "/daily/today": {
@@ -8052,18 +8159,6 @@
           "myRank": {
             "$ref": "#/components/schemas/MyRank",
             "description": "내 랭킹 (비인증 시 null)"
-          },
-          "yesterdayRank": {
-            "type": "integer",
-            "format": "int32",
-            "description": "어제 내 최종 순위 (비인증 시 null)",
-            "example": 5
-          },
-          "yesterdayTotalPlayers": {
-            "type": "integer",
-            "format": "int32",
-            "description": "어제 총 참여자 (비인증 시 null)",
-            "example": 38
           }
         }
       },
@@ -8073,6 +8168,56 @@
           "timeout": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "YesterdayMeResponse": {
+        "type": "object",
+        "description": "어제 내 게임 기록 응답",
+        "properties": {
+          "yesterdayDate": {
+            "type": "string",
+            "format": "date",
+            "description": "어제 날짜 (어제 문장 없으면 null)",
+            "example": "2026-09-05"
+          },
+          "participated": {
+            "type": "boolean",
+            "description": "어제 참여 여부 (false면 아래 필드 전부 null)",
+            "example": true
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32",
+            "description": "어제 최종 순위 (미확정 시 null)",
+            "example": 3
+          },
+          "totalPlayers": {
+            "type": "integer",
+            "format": "int32",
+            "description": "어제 총 참여자 수",
+            "example": 12
+          },
+          "bestGuessText": {
+            "type": "string",
+            "description": "최고 유사도 추측 문장",
+            "example": "고양이가 창가에서 잠을 잔다"
+          },
+          "bestSimilarity": {
+            "type": "number",
+            "description": "최고 유사도",
+            "example": 85.7
+          },
+          "attemptCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "시도 횟수",
+            "example": 15
+          },
+          "cleared": {
+            "type": "boolean",
+            "description": "클리어 여부",
+            "example": false
           }
         }
       },
