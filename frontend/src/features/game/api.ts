@@ -6,6 +6,7 @@ import type {
   HistoryResponse,
   StatusResponse,
   TodayResponse,
+  YesterdayMeResponse,
 } from "@/shared/api/types";
 
 export function getToday() {
@@ -29,4 +30,8 @@ export function getStatus() {
 
 export function getHints(sentenceId: string) {
   return apiFetch<HintResponse>(`/daily/hints?sentenceId=${sentenceId}`);
+}
+
+export function getYesterdayMe() {
+  return apiFetch<YesterdayMeResponse>("/daily/yesterday/me");
 }

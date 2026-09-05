@@ -8,6 +8,7 @@ import com.gakkaweo.backend.game.dto.GuessRequest;
 import com.gakkaweo.backend.game.dto.GuessResponse;
 import com.gakkaweo.backend.game.dto.HintResponse;
 import com.gakkaweo.backend.game.dto.TodayResponse;
+import com.gakkaweo.backend.game.dto.YesterdayMeResponse;
 import com.gakkaweo.backend.game.service.DailyGameService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -88,5 +89,16 @@ public class DailyGameController {
   public ResponseEntity<GameStatusResponse> getStatus(
       @AuthenticationPrincipal CustomUserDetails userDetails) {
     return ResponseEntity.ok(dailyGameService.getStatus(userDetails.publicId()));
+  }
+
+  @Operation(
+      summary = "어제 내 기록 조회",
+      description = "어제 참여 기록(등수, 최고 추측, 유사도, 시도 횟수) 반환. 미참여 시 participated=false")
+  @SecurityRequirement(name = "cookieAuth")
+  @StandardErrorResponses
+  @GetMapping("/yesterday/me")
+  public ResponseEntity<YesterdayMeResponse> getYesterdayMe(
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+    return ResponseEntity.ok(dailyGameService.getYesterdayMe(userDetails.publicId()));
   }
 }

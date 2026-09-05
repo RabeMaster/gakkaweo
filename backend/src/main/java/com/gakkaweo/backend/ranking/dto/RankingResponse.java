@@ -9,14 +9,10 @@ import java.util.UUID;
 public record RankingResponse(
     @Schema(description = "랭킹 목록") List<RankingEntry> rankings,
     @Schema(description = "총 참여자 수", example = "42") long totalPlayers,
-    @Schema(description = "내 랭킹 (비인증 시 null)", nullable = true) MyRank myRank,
-    @Schema(description = "어제 내 최종 순위 (비인증 시 null)", nullable = true, example = "5")
-        Integer yesterdayRank,
-    @Schema(description = "어제 총 참여자 (비인증 시 null)", nullable = true, example = "38")
-        Integer yesterdayTotalPlayers) {
+    @Schema(description = "내 랭킹 (비인증 시 null)", nullable = true) MyRank myRank) {
 
   public RankingResponse(List<RankingEntry> rankings, long totalPlayers) {
-    this(rankings, totalPlayers, null, null, null);
+    this(rankings, totalPlayers, null);
   }
 
   @Schema(description = "랭킹 항목")
