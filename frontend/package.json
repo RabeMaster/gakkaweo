@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "test": "vitest run",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\""
   },
@@ -19,7 +20,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-easy-crop": "^5.5.7",
-    "react-router-dom": "^7.13.1",
+    "react-router-dom": "^7.18.4",
     "zustand": "^5.0.12"
   },
   "packageManager": "pnpm@10.32.1",
@@ -40,7 +41,8 @@
     "tailwindcss": "^4.2.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.57.1",
-    "vite": "^8.0.1",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3",
     "lint-staged": "^16.1.0"
   },
   "lint-staged": {
