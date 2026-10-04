@@ -253,13 +253,28 @@ Redis는 백업하지 않는다. 랭킹 등 캐시 데이터는 DB만 있으면 
 
 변경된 서비스만 검증한다 (`dorny/paths-filter`).
 
-| 서비스     | 검증 항목                                                    |
-| ---------- | ------------------------------------------------------------ |
-| Frontend   | ESLint → Prettier format:check → Vite build                  |
-| Backend    | Spotless check (Google Java Format) → Gradle build (-x test) |
-| AI Service | Ruff check → Ruff format --check                             |
+| 서비스     | 검증 항목                                                            |
+| ---------- | -------------------------------------------------------------------- |
+| Frontend   | pnpm audit (high 이상) → ESLint → Prettier format:check → Vite build |
+| Backend    | Spotless check (Google Java Format) → Gradle build (테스트 포함)     |
+| AI Service | Ruff check → Ruff format --check                                     |
 
-Branch Protection: 3개 job의 결과를 집계하는 `CI Result` job이 필수 상태 체크로 걸려 있어, 하나라도 실패하면 머지가 차단된다.
+Frontend의 Vitest 설정과 `pnpm test` 명령, AI의 Python 3.14 경량 테스트 의존성을 준비했습니다.
+
+AI job은 Ruff 검사 후 테스트 의존성을 설치합니다.  
+기능 테스트 파일을 추가하는 단계에서 FE/AI 테스트 실행을 CI에 연결하며, 현재 단계에서는 빈 테스트를 성공 처리하는 옵션을 사용하지 않습니다.
+
+Infrastructure job은 기존 백업 스크립트의 Bash 문법을 검사합니다.  
+백업 동작 테스트, 관측 설정 검증, 배포 복구 테스트는 해당 파일이 도입되는 단계에서 연결합니다.
+
+CI workflow와 공통 LF·ignore 설정 변경은 관련 서비스 검사를 다시 실행합니다.  
+PR 파일 조회 권한은 변경 감지 job에만 부여합니다.
+
+`CI Result`는 변경 감지와 Frontend/Backend/AI/Infrastructure 결과를 집계합니다.  
+변경 감지가 성공하고, 변경된 영역의 검사는 성공하며, 무관한 영역의 검사는 정상적으로 건너뛴 경우에만 통과합니다.
+
+필요한 검사의 실패·취소·누락은 실패로 처리합니다.  
+dev 브랜치의 실제 보호 설정과 필수 상태 체크 등록 여부는 저장소 설정에서 별도로 확인해야 합니다.
 
 ### CD - Push to main
 

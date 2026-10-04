@@ -6,6 +6,7 @@ on:
     paths:
       - 'backend/**'
       - 'docs-site/**'
+      - '.github/workflows/openapi-docs.yml'
   workflow_dispatch:
 
 concurrency:
