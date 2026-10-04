@@ -8,28 +8,53 @@ concurrency:
   group: ci-${{ github.head_ref }}
   cancel-in-progress: true
 
+# 자동 인증 토큰은 기본적으로 저장소 코드를 읽는 데만 사용합니다.
+permissions:
+  contents: read
+
 jobs:
   changes:
     name: Detect Changes
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # paths-filter가 PR에서 변경한 파일 목록을 조회하는 데 필요합니다.
+      pull-requests: read
     outputs:
       frontend: ${{ steps.filter.outputs.frontend }}
       backend: ${{ steps.filter.outputs.backend }}
       ai_service: ${{ steps.filter.outputs.ai_service }}
+      infra: ${{ steps.filter.outputs.infra }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
         id: filter
         with:
+          # 각 목록의 경로 중 하나라도 바뀌면 해당 영역의 검사를 실행합니다.
+          # CI와 공통 설정 변경은 모든 영역에서 다시 검사합니다.
           filters: |
             frontend:
               - 'frontend/**'
+              - '.github/workflows/ci.yml'
+              - '.gitattributes'
+              - '.gitignore'
             backend:
               - 'backend/**'
+              - '.github/workflows/ci.yml'
+              - '.gitattributes'
+              - '.gitignore'
             ai_service:
               - 'ai-service/**'
+              - '.github/workflows/ci.yml'
+              - '.gitattributes'
+              - '.gitignore'
+            infra:
+              - 'infra/**'
+              - 'docker-compose*.yml'
+              - 'nginx/**'
+              - '.github/workflows/**'
+              - '.gitattributes'
+              - '.gitignore'
 
   frontend:
     name: Frontend
@@ -53,6 +78,9 @@ jobs:
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+
+      # 의존성에 알려진 high/critical 보안 취약점이 있으면 CI를 실패시킵니다.
+      - run: pnpm audit --audit-level high
 
       - run: pnpm lint
 
@@ -104,15 +132,67 @@ jobs:
           args: format --check
           src: ai-service
 
+      # 테스트용 Python과 의존성을 준비합니다. 테스트 실행은 파일 추가 후 연결합니다.
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: ai-service/requirements-test.txt
+
+      - run: python -m pip install -r requirements-test.txt
+        working-directory: ai-service
+
+  # 인프라 관련 파일이 바뀌면 기존 백업 스크립트의 문법을 검사합니다.
+  infra:
+    name: Infrastructure
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Validate backup shell syntax
+        # -n은 스크립트를 실행하지 않고 Bash 문법만 검사합니다.
+        run: bash -n infra/backup/lib.sh infra/backup/backup.sh infra/backup/restore-test.sh
+
+  # 변경 감지와 각 검사 결과를 모아 최종 CI 성공 여부를 판단합니다.
   ci-result:
     name: CI Result
     if: always()
-    needs: [frontend, backend, ai-service]
+    needs: [changes, frontend, backend, ai-service, infra]
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" ]]; then
-            echo "CI failed"
+      # 변경 여부와 실행 결과를 아래 Bash 코드에서 사용할 환경변수로 전달합니다.
+      - env:
+          CI_CHANGES_RESULT: ${{ needs.changes.result }}
+          CI_FRONTEND_CHANGED: ${{ needs.changes.outputs.frontend }}
+          CI_FRONTEND_RESULT: ${{ needs.frontend.result }}
+          CI_BACKEND_CHANGED: ${{ needs.changes.outputs.backend }}
+          CI_BACKEND_RESULT: ${{ needs.backend.result }}
+          CI_AI_CHANGED: ${{ needs.changes.outputs.ai_service }}
+          CI_AI_RESULT: ${{ needs.ai-service.result }}
+          CI_INFRA_CHANGED: ${{ needs.changes.outputs.infra }}
+          CI_INFRA_RESULT: ${{ needs.infra.result }}
+        run: |
+          if [[ "$CI_CHANGES_RESULT" != "success" ]]; then
+            echo "Change detection did not succeed"
             exit 1
           fi
+
+          check_job() {
+            local name="$1" changed="$2" result="$3"
+            # 변경된 영역은 검사 성공, 무관한 영역은 정상 건너뛰기인 경우만 통과합니다.
+            if [[ "$changed" == "true" && "$result" == "success" ]] ||
+               [[ "$changed" == "false" && "$result" == "skipped" ]]; then
+              return 0
+            fi
+            echo "$name: unexpected result $result (changed=$changed)"
+            return 1
+          }
+
+          check_job frontend "$CI_FRONTEND_CHANGED" "$CI_FRONTEND_RESULT" || exit 1
+          check_job backend "$CI_BACKEND_CHANGED" "$CI_BACKEND_RESULT" || exit 1
+          check_job ai-service "$CI_AI_CHANGED" "$CI_AI_RESULT" || exit 1
+          check_job infra "$CI_INFRA_CHANGED" "$CI_INFRA_RESULT" || exit 1
           echo "CI passed"
