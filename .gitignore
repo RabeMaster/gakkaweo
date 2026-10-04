@@ -4,6 +4,8 @@
 ### dotenv ###
 .env
 .env.prod
+.env.local
+.env.*.local
 
 ### Git ###
 # Created by git for backups. To disable backups in Git:
@@ -191,6 +193,8 @@ package-lock.json
 uploads/
 dumps/
 backups/
+__pycache__/
+*.pyc
 
 .playwright-mcp/
 .claude/
