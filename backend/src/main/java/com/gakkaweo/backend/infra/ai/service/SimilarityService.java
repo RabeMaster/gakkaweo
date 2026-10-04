@@ -75,7 +75,7 @@ public class SimilarityService implements SimilarityClient {
             return BigDecimal.valueOf(response.score()).setScale(1, RoundingMode.HALF_UP);
           });
     } catch (CallNotPermittedException e) {
-      log.warn("서킷 브레이커 OPEN 상태: {}", e.getMessage(), e);
+      log.warn("서킷 브레이커 차단 상태: {}", e.getMessage(), e);
       throw new BusinessException(ErrorCode.AI_SERVICE_UNAVAILABLE);
     } catch (AiServiceException e) {
       log.warn("AI 서비스 호출 실패: {}", e.getMessage(), e);
@@ -92,9 +92,13 @@ public class SimilarityService implements SimilarityClient {
     try {
       String value = redisTemplate.opsForValue().get(cacheKey);
       if (value != null) {
-        return new BigDecimal(value);
+        BigDecimal score = new BigDecimal(value);
+        if (score.signum() < 0 || score.compareTo(BigDecimal.valueOf(100)) > 0) {
+          throw new NumberFormatException("캐시 점수 범위 오류");
+        }
+        return score;
       }
-    } catch (DataAccessException e) {
+    } catch (DataAccessException | NumberFormatException e) {
       log.warn("Redis 캐시 조회 실패: {}", e.getMessage(), e);
     }
     return null;

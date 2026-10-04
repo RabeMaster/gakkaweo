@@ -7,8 +7,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class TextNormalizer {
 
-  private static final Pattern CLEAN_PATTERN = Pattern.compile("[^가-힣a-zA-Z0-9\\s]");
-  private static final Pattern COLLAPSE_PATTERN = Pattern.compile("\\s+");
+  private static final Pattern CLEAN_PATTERN =
+      Pattern.compile("[^가-힣a-zA-Z0-9\\s]", Pattern.UNICODE_CHARACTER_CLASS);
+  private static final Pattern COLLAPSE_PATTERN =
+      Pattern.compile("\\s+", Pattern.UNICODE_CHARACTER_CLASS);
 
   public String normalize(String text) {
     String nfc = Normalizer.normalize(text, Normalizer.Form.NFC);

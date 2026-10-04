@@ -22,6 +22,8 @@ import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -89,6 +91,29 @@ class SimilarityServiceTest {
     assertThat(score).isEqualByComparingTo("88.0");
     verify(aiServiceClient, never()).calculateSimilarity(anyString(), anyString());
     verify(valueOps, never()).set(anyString(), anyString(), any(Duration.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"broken", "NaN", "Infinity", "-Infinity", "-1", "101", ""})
+  @DisplayName("손상되거나 범위 밖인 캐시는 AI 재계산 후 덮어쓰기")
+  void 손상된_캐시_복구(String cached) {
+    when(valueOps.get(anyString())).thenReturn(cached);
+    when(aiServiceClient.calculateSimilarity(anyString(), anyString()))
+        .thenReturn(new SimilarityResponse(42.1));
+    assertThat(service.calculateSimilarity(1L, "추측", "원문", Duration.ofMinutes(10)))
+        .isEqualByComparingTo("42.1");
+    verify(aiServiceClient).calculateSimilarity("원문", "추측");
+    verify(valueOps).set(anyString(), Mockito.eq("42.1"), Mockito.eq(Duration.ofMinutes(10)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"0", "100"})
+  @DisplayName("캐시 경계 점수는 재계산하지 않음")
+  void 캐시_경계_점수(String cached) {
+    when(valueOps.get(anyString())).thenReturn(cached);
+    assertThat(service.calculateSimilarity(1L, "추측", "원문", Duration.ofMinutes(10)))
+        .isEqualByComparingTo(cached);
+    verify(aiServiceClient, never()).calculateSimilarity(anyString(), anyString());
   }
 
   @Test
