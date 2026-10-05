@@ -253,16 +253,19 @@ Redis는 백업하지 않는다. 랭킹 등 캐시 데이터는 DB만 있으면 
 
 변경된 서비스만 검증한다 (`dorny/paths-filter`).
 
-| 서비스     | 검증 항목                                                            |
-| ---------- | -------------------------------------------------------------------- |
-| Frontend   | pnpm audit (high 이상) → ESLint → Prettier format:check → Vite build |
-| Backend    | Spotless check (Google Java Format) → Gradle build (테스트 포함)     |
-| AI Service | Ruff check → Ruff format --check                                     |
+| 서비스     | 검증 항목                                                                     |
+| ---------- | ----------------------------------------------------------------------------- |
+| Frontend   | pnpm audit (high 이상) → ESLint → Prettier format:check → Vitest → Vite build |
+| Backend    | Spotless check (Google Java Format) → Gradle build (테스트 포함)              |
+| AI Service | Ruff check → Ruff format --check → Python 경량 기능 테스트                    |
 
-Frontend의 Vitest 설정과 `pnpm test` 명령, AI의 Python 3.14 경량 테스트 의존성을 준비했습니다.
+Frontend는 `pnpm test`로 정규화 회귀를 실행합니다.
 
-AI job은 Ruff 검사 후 테스트 의존성을 설치합니다.  
-기능 테스트 파일을 추가하는 단계에서 FE/AI 테스트 실행을 CI에 연결하며, 현재 단계에서는 빈 테스트를 성공 처리하는 옵션을 사용하지 않습니다.
+AI는 Python 3.14 경량 테스트 의존성을 설치한 뒤 `python -m unittest discover -s tests -v`로 입력·점수·모델 생명주기·동시 캐시 처리를 검사합니다.
+
+AI 테스트는 모델 생성과 코사인 계산을 mock하여 PyTorch와 weights를 다운로드하지 않습니다.
+
+> 실제 모델의 정확도·성능·운영 검증과 구분하며 빈 테스트를 성공 처리하는 옵션은 사용하지 않습니다.
 
 Infrastructure job은 기존 백업 스크립트의 Bash 문법을 검사합니다.  
 백업 동작 테스트, 관측 설정 검증, 배포 복구 테스트는 해당 파일이 도입되는 단계에서 연결합니다.

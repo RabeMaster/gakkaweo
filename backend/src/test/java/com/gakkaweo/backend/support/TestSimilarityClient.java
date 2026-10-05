@@ -2,6 +2,7 @@ package com.gakkaweo.backend.support;
 
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
+import com.gakkaweo.backend.common.util.TextNormalizer;
 import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -62,6 +63,6 @@ public class TestSimilarityClient implements SimilarityClient {
     if (text == null) {
       return "";
     }
-    return text.replaceAll("[^가-힣a-zA-Z0-9\\s]", "").replaceAll("\\s+", " ").trim();
+    return new TextNormalizer().normalize(text);
   }
 }

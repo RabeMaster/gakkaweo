@@ -1,5 +1,5 @@
-const CLEAN_PATTERN = /[^가-힣a-zA-Z0-9\s]/g;
-const COLLAPSE_PATTERN = /\s+/g;
+const CLEAN_PATTERN = /[^가-힣a-zA-Z0-9\p{White_Space}]/gu;
+const COLLAPSE_PATTERN = /\p{White_Space}+/gu;
 
 /**
  * BE TextNormalizer.normalize()와 동일한 로직.

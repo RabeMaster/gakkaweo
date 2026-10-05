@@ -86,6 +86,8 @@ jobs:
 
       - run: pnpm format:check
 
+      - run: pnpm test
+
       - run: pnpm build
 
   backend:
@@ -132,7 +134,7 @@ jobs:
           args: format --check
           src: ai-service
 
-      # 테스트용 Python과 의존성을 준비합니다. 테스트 실행은 파일 추가 후 연결합니다.
+      # PyTorch나 모델 weights 다운로드 없이 경량 기능 테스트를 실행합니다.
       - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
@@ -140,6 +142,9 @@ jobs:
           cache-dependency-path: ai-service/requirements-test.txt
 
       - run: python -m pip install -r requirements-test.txt
+        working-directory: ai-service
+
+      - run: python -m unittest discover -s tests -v
         working-directory: ai-service
 
   # 인프라 관련 파일이 바뀌면 기존 백업 스크립트의 문법을 검사합니다.
@@ -176,7 +181,7 @@ jobs:
           CI_INFRA_RESULT: ${{ needs.infra.result }}
         run: |
           if [[ "$CI_CHANGES_RESULT" != "success" ]]; then
-            echo "Change detection did not succeed"
+            echo "변경 경로 확인에 실패했습니다"
             exit 1
           fi
 
@@ -187,7 +192,7 @@ jobs:
                [[ "$changed" == "false" && "$result" == "skipped" ]]; then
               return 0
             fi
-            echo "$name: unexpected result $result (changed=$changed)"
+            echo "$name: 예상하지 못한 검사 결과 $result (변경 여부=$changed)"
             return 1
           }
 
@@ -195,4 +200,4 @@ jobs:
           check_job backend "$CI_BACKEND_CHANGED" "$CI_BACKEND_RESULT" || exit 1
           check_job ai-service "$CI_AI_CHANGED" "$CI_AI_RESULT" || exit 1
           check_job infra "$CI_INFRA_CHANGED" "$CI_INFRA_RESULT" || exit 1
-          echo "CI passed"
+          echo "CI 검사를 통과했습니다"

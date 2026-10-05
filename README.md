@@ -84,7 +84,7 @@ AI 임베딩 유사도 판별 기반 데일리 웹 게임입니다. 세멘틀(Se
 | **Deployment**   | Self-hosted Ubuntu server (Docker-based), GitHub Container Registry, SSH/SCP deployment scripts               |
 | **CI/CD**        | GitHub Actions                                                                                                |
 | **Code Quality** | ESLint + Prettier (FE), Spotless + Google Java Format (BE), Ruff (AI), Husky + lint-staged                    |
-| **Testing**      | JUnit 5 + Spring Boot Test, 실제 PostgreSQL/Redis 기반 통합 테스트 (백엔드 테스트 369개)                      |
+| **Testing**      | JUnit 5 + Spring Boot Test/Testcontainers (BE), Vitest 정규화 회귀 (FE), unittest 경량 회귀 (AI)              |
 | **Tools**        | IntelliJ IDEA, VS Code, Postman, pgAdmin, RedisInsight, ChatGPT, Gemini, Copilot, Claude                      |
 
 ---
@@ -204,7 +204,9 @@ mklink backend\.env ..\.env
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-> AI Service는 최초 실행 시 모델(`jhgan/ko-sbert-sts`)을 다운로드합니다. 약 1~2분 소요.
+> AI Service는 FastAPI lifespan에서 CPU 모델(`jhgan/ko-sbert-sts`)을 로드하고 warmup합니다. > 최초 실행에는 모델 다운로드가 필요하며 소요 시간은 환경에 따라 달라집니다.
+
+FE·BE·AI는 NFC 및 Unicode White_Space 입력 정책을 맞추고, 원문 2~200자 제한과 정규화 후 최소 2자 검증을 적용합니다.
 
 ### 3. Backend 실행
 
