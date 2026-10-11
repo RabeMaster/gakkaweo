@@ -40,4 +40,8 @@ public class LocalAccount extends BaseTimeEntity {
     this.username = username;
     this.passwordHash = passwordHash;
   }
+
+  public void changePasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
 }

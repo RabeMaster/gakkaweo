@@ -4,7 +4,6 @@ import com.gakkaweo.backend.auth.metrics.AuthMetrics;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
-import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.LocalAccountRepository;
@@ -29,8 +28,7 @@ public class AccountService {
   private final SentenceUploadRepository sentenceUploadRepository;
   private final LocalAccountRepository localAccountRepository;
   private final SocialAccountRepository socialAccountRepository;
-  private final RefreshTokenRepository refreshTokenRepository;
-  private final AuthService authService;
+  private final AuthSessionService authSessionService;
   private final RankingService rankingService;
   private final ApplicationEventPublisher eventPublisher;
   private final AuthMetrics authMetrics;
@@ -39,7 +37,7 @@ public class AccountService {
   public void deleteAccount(UUID publicId) {
     Member member =
         memberRepository
-            .findByPublicId(publicId)
+            .findByPublicIdForUpdate(publicId)
             .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
     int anonymizedSessions = gameSessionRepository.anonymizeByMember(member);
@@ -47,8 +45,8 @@ public class AccountService {
 
     localAccountRepository.deleteByMember(member);
     socialAccountRepository.deleteByMember(member);
-    refreshTokenRepository.deleteByMemberId(member.getId());
-    memberRepository.delete(member);
+    authSessionService.deleteAll(member.getId());
+    memberRepository.deleteById(member.getId());
 
     authMetrics.recordWithdraw();
     log.info(
@@ -58,15 +56,7 @@ public class AccountService {
         anonymizedUploads);
   }
 
-  public void cleanupRedis(UUID publicId, String accessToken) {
-    if (accessToken != null) {
-      try {
-        authService.logout(accessToken);
-      } catch (Exception e) {
-        log.warn("탈퇴 회원 로그아웃 실패, Redis 정리 계속: publicId={}", publicId, e);
-      }
-    }
-
+  public void cleanupRedis(UUID publicId) {
     if (rankingService.cleanupMemberRanking(publicId)) {
       eventPublisher.publishEvent(new RankingUpdateEvent());
     }

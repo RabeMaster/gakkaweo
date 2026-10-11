@@ -5,7 +5,7 @@ import com.gakkaweo.backend.auth.dto.TokenPair;
 import com.gakkaweo.backend.auth.metrics.AuthMetrics;
 import com.gakkaweo.backend.auth.oauth2.CookieAuthorizationRequestRepository;
 import com.gakkaweo.backend.auth.oauth2.CustomOAuth2User;
-import com.gakkaweo.backend.auth.service.AuthService;
+import com.gakkaweo.backend.auth.service.AuthSessionService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-  private final AuthService authService;
+  private final AuthSessionService authSessionService;
   private final CookieUtils cookieUtils;
   private final OAuth2Properties oAuth2Properties;
   private final CookieAuthorizationRequestRepository authorizationRequestRepository;
@@ -38,9 +38,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         authentication instanceof OAuth2AuthenticationToken oauthToken
             ? oauthToken.getAuthorizedClientRegistrationId()
             : "unknown";
+
+    TokenPair tokenPair = authSessionService.issue(oAuth2User.getMember().getId());
+
     authMetrics.recordLogin(provider, true);
-    log.info("OAuth2 로그인 성공: memberId={}", oAuth2User.getMember().getPublicId());
-    TokenPair tokenPair = authService.issueTokens(oAuth2User.getMember());
+    log.info("OAuth2 로그인 성공: publicId={}", oAuth2User.getMember().getPublicId());
 
     response.addHeader(
         HttpHeaders.SET_COOKIE,
@@ -50,6 +52,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString());
     response.addHeader(
         HttpHeaders.SET_COOKIE, cookieUtils.createSessionIndicatorCookie().toString());
+    response.addHeader(
+        HttpHeaders.SET_COOKIE, cookieUtils.deleteLegacyRefreshTokenCookie().toString());
 
     authorizationRequestRepository.deleteCookie(response);
 

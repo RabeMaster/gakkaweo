@@ -1,7 +1,6 @@
 package com.gakkaweo.backend.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gakkaweo.backend.auth.config.CookieProperties;
@@ -66,6 +65,7 @@ class CookieAuthorizationRequestRepositoryTest {
     repository.saveAuthorizationRequest(original, new MockHttpServletRequest(), response);
 
     HttpCookie parsed = firstSetCookie(response);
+
     assertThat(parsed.getName()).isEqualTo(COOKIE_NAME);
     assertThat(parsed.getMaxAge()).isEqualTo(300);
     assertThat(parsed.getSecure()).isTrue();
@@ -91,6 +91,7 @@ class CookieAuthorizationRequestRepositoryTest {
     repository.saveAuthorizationRequest(null, new MockHttpServletRequest(), response);
 
     HttpCookie parsed = firstSetCookie(response);
+
     assertThat(parsed.getMaxAge()).isZero();
     assertThat(parsed.getValue()).isEmpty();
   }
@@ -114,6 +115,7 @@ class CookieAuthorizationRequestRepositoryTest {
     assertThat(removed.getState()).isEqualTo(original.getState());
 
     HttpCookie deleted = firstSetCookie(removeResponse);
+
     assertThat(deleted.getMaxAge()).isZero();
   }
 
@@ -137,11 +139,12 @@ class CookieAuthorizationRequestRepositoryTest {
     repository.deleteCookie(response);
 
     HttpCookie parsed = firstSetCookie(response);
+
     assertThat(parsed.getMaxAge()).isZero();
   }
 
   @Test
-  @DisplayName("잘못된 쿠키 값 - IllegalStateException")
+  @DisplayName("잘못된 JSON 쿠키 값은 인증 요청으로 인정하지 않음")
   void 역직렬화_실패() {
     // Base64 URL-safe 디코딩은 성공하지만 JSON 역직렬화 단계에서 IOException 유발
     String invalidJsonBase64 =
@@ -149,9 +152,21 @@ class CookieAuthorizationRequestRepositoryTest {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setCookies(new Cookie(COOKIE_NAME, invalidJsonBase64));
 
-    assertThatThrownBy(() -> repository.loadAuthorizationRequest(request))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("역직렬화 실패");
+    assertThat(repository.loadAuthorizationRequest(request)).isNull();
+  }
+
+  @Test
+  @DisplayName("깨진 Base64와 필수 데이터가 빠진 쿠키도 500 없이 무시")
+  void 깨진_쿠키_무시() {
+    for (String value :
+        List.of(
+            "!not-base64!",
+            Base64.getUrlEncoder().encodeToString("{}".getBytes(StandardCharsets.UTF_8)))) {
+      MockHttpServletRequest request = new MockHttpServletRequest();
+      request.setCookies(new Cookie(COOKIE_NAME, value));
+
+      assertThat(repository.loadAuthorizationRequest(request)).isNull();
+    }
   }
 
   @Test
@@ -166,6 +181,7 @@ class CookieAuthorizationRequestRepositoryTest {
         sampleRequest(), new MockHttpServletRequest(), response);
 
     HttpCookie parsed = firstSetCookie(response);
+
     assertThat(parsed.getSecure()).isFalse();
   }
 
@@ -184,8 +200,10 @@ class CookieAuthorizationRequestRepositoryTest {
 
   private HttpCookie firstSetCookie(MockHttpServletResponse response) {
     String header = response.getHeader(HttpHeaders.SET_COOKIE);
+
     assertThat(header).as("Set-Cookie header").isNotNull();
     List<HttpCookie> parsed = HttpCookie.parse(header);
+
     assertThat(parsed).isNotEmpty();
     return parsed.stream().filter(c -> COOKIE_NAME.equals(c.getName())).findFirst().orElseThrow();
   }

@@ -11,12 +11,12 @@ import com.gakkaweo.backend.admin.dto.UserListResponse;
 import com.gakkaweo.backend.admin.sort.SortRequestParser;
 import com.gakkaweo.backend.admin.sort.SortSpecBuilder;
 import com.gakkaweo.backend.admin.sort.UserSortField;
+import com.gakkaweo.backend.auth.service.AuthSessionService;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.util.EnumParser;
 import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.admin.repository.SentenceUploadRepository;
-import com.gakkaweo.backend.domain.auth.repository.RefreshTokenRepository;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
 import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.member.entity.Member;
@@ -55,7 +55,6 @@ public class AdminUserService {
   private final SocialAccountRepository socialAccountRepository;
   private final LocalAccountRepository localAccountRepository;
   private final GameSessionRepository gameSessionRepository;
-  private final RefreshTokenRepository refreshTokenRepository;
   private final SentenceUploadRepository sentenceUploadRepository;
   private final ProfileImageService profileImageService;
   private final MemberRedisSyncer memberRedisSyncer;
@@ -64,6 +63,7 @@ public class AdminUserService {
   private final RankingService rankingService;
   private final AdminAuditService adminAuditService;
   private final Clock clock;
+  private final AuthSessionService authSessionService;
 
   private static Specification<Member> memberFilters(String nickname, Boolean banned) {
     return (root, query, cb) -> {
@@ -72,9 +72,11 @@ public class AdminUserService {
         predicates.add(
             cb.like(cb.lower(root.get("nickname")), "%" + nickname.toLowerCase(Locale.ROOT) + "%"));
       }
+
       if (banned != null) {
         predicates.add(cb.equal(root.get("banned"), banned));
       }
+
       return cb.and(predicates.toArray(new Predicate[0]));
     };
   }
@@ -126,7 +128,7 @@ public class AdminUserService {
       UUID targetPublicId, UUID adminPublicId, RoleChangeRequest request, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findByPublicIdOrThrow(targetPublicId);
+    Member member = findByPublicIdForUpdateOrThrow(targetPublicId);
     requireSufficientRoleOver(adminPublicId, member);
     MemberRole newRole =
         EnumParser.parseOrThrow(MemberRole.class, request.role(), ErrorCode.VALIDATION_FAILED);
@@ -137,6 +139,8 @@ public class AdminUserService {
     }
 
     member.setRole(newRole);
+    authSessionService.revokeAll(member.getId());
+
     adminAuditService.log(
         adminPublicId,
         AuditAction.ROLE_CHANGE,
@@ -150,16 +154,12 @@ public class AdminUserService {
   public void banUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findByPublicIdOrThrow(targetPublicId);
+    Member member = findByPublicIdForUpdateOrThrow(targetPublicId);
     requireSufficientRoleOver(adminPublicId, member);
-    Long memberId = member.getId();
 
-    // clearAutomatically=true로 영속성 컨텍스트 초기화됨 → delete 먼저, 재조회 후 set
-    refreshTokenRepository.deleteByMemberId(memberId);
-
-    Member reloaded = findByPublicIdOrThrow(targetPublicId);
-    reloaded.setBanned(true);
-    reloaded.setBannedAt(clock.instant());
+    member.setBanned(true);
+    member.setBannedAt(clock.instant());
+    authSessionService.revokeAll(member.getId());
 
     log.info("사용자 차단: publicId={}", targetPublicId);
     adminAuditService.log(
@@ -170,10 +170,12 @@ public class AdminUserService {
   public void unbanUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findByPublicIdOrThrow(targetPublicId);
+    Member member = findByPublicIdForUpdateOrThrow(targetPublicId);
     requireSufficientRoleOver(adminPublicId, member);
+
     member.setBanned(false);
     member.setBannedAt(null);
+    authSessionService.revokeAll(member.getId());
 
     log.info("사용자 차단 해제: publicId={}", targetPublicId);
     adminAuditService.log(
@@ -184,15 +186,15 @@ public class AdminUserService {
   public void forceDeleteUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
     preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findByPublicIdOrThrow(targetPublicId);
+    Member member = findByPublicIdForUpdateOrThrow(targetPublicId);
     requireSufficientRoleOver(adminPublicId, member);
 
     gameSessionRepository.anonymizeByMember(member);
     sentenceUploadRepository.anonymizeByAdmin(member);
     localAccountRepository.deleteByMember(member);
     socialAccountRepository.deleteByMember(member);
-    refreshTokenRepository.deleteByMemberId(member.getId());
-    memberRepository.delete(member);
+    authSessionService.deleteAll(member.getId());
+    memberRepository.deleteById(member.getId());
 
     log.info("관리자 강제 탈퇴: publicId={}", targetPublicId);
     adminAuditService.log(
@@ -267,6 +269,12 @@ public class AdminUserService {
         .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
   }
 
+  private Member findByPublicIdForUpdateOrThrow(UUID publicId) {
+    return memberRepository
+        .findByPublicIdForUpdate(publicId)
+        .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+  }
+
   private void preventSelfAction(UUID targetPublicId, UUID adminPublicId) {
     if (targetPublicId.equals(adminPublicId)) {
       throw new BusinessException(ErrorCode.ADMIN_SELF_ACTION);
@@ -278,6 +286,7 @@ public class AdminUserService {
     if (newRole == MemberRole.SUPERADMIN) {
       throw new BusinessException(ErrorCode.INSUFFICIENT_ROLE);
     }
+
     if (newRole == MemberRole.ADMIN) {
       Member admin = findByPublicIdOrThrow(adminPublicId);
       if (admin.getRole() != MemberRole.SUPERADMIN) {
@@ -292,10 +301,12 @@ public class AdminUserService {
     if (targetRole == MemberRole.USER) {
       return;
     }
+
     Member admin = findByPublicIdOrThrow(adminPublicId);
     if (targetRole == MemberRole.ADMIN && admin.getRole() == MemberRole.SUPERADMIN) {
       return;
     }
+
     throw new BusinessException(ErrorCode.INSUFFICIENT_ROLE);
   }
 
