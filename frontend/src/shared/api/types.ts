@@ -5,6 +5,7 @@ export interface MeResponse {
   nickname: string;
   profileUrl: string | null;
   role: "USER" | "ADMIN" | "SUPERADMIN";
+  canChangePassword: boolean;
 }
 
 // --- 일일 게임 ---

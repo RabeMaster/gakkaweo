@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -48,6 +49,10 @@ public class Member extends BaseAuditableEntity {
   private Boolean banned = false;
 
   @Setter private Instant bannedAt;
+
+  @Version
+  @Column(nullable = false)
+  private Long entityVersion;
 
   public Member(String nickname) {
     this.nickname = nickname;

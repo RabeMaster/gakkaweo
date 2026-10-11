@@ -15,13 +15,15 @@ public record AuthResponse(
             description = "역할",
             allowableValues = {"USER", "ADMIN", "SUPERADMIN"},
             example = "USER")
-        String role) {
+        String role,
+    @Schema(description = "아이디/비밀번호로 가입한 계정이 있어 비밀번호 변경이 가능한지 여부") boolean canChangePassword) {
 
-  public static AuthResponse from(Member member) {
+  public static AuthResponse from(Member member, boolean canChangePassword) {
     return new AuthResponse(
         member.getPublicId(),
         member.getNickname(),
         member.getProfileUrl(),
-        member.getRole().name());
+        member.getRole().name(),
+        canChangePassword);
   }
 }

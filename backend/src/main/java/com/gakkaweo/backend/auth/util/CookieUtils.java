@@ -29,7 +29,7 @@ public class CookieUtils {
             ResponseCookie.from("refresh_token", token)
                 .httpOnly(true)
                 .secure(cookieProperties.secure())
-                .path("/auth/refresh")
+                .path("/auth")
                 .maxAge(jwtProperties.refreshExpiration())
                 .sameSite("Lax"))
         .build();
@@ -51,7 +51,7 @@ public class CookieUtils {
             ResponseCookie.from("refresh_token", "")
                 .httpOnly(true)
                 .secure(cookieProperties.secure())
-                .path("/auth/refresh")
+                .path("/auth")
                 .maxAge(0)
                 .sameSite("Lax"))
         .build();
@@ -64,6 +64,17 @@ public class CookieUtils {
                 .secure(cookieProperties.secure())
                 .path("/")
                 .maxAge(jwtProperties.refreshExpiration())
+                .sameSite("Lax"))
+        .build();
+  }
+
+  public ResponseCookie deleteLegacyRefreshTokenCookie() {
+    return applyDomain(
+            ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(cookieProperties.secure())
+                .path("/auth/refresh")
+                .maxAge(0)
                 .sameSite("Lax"))
         .build();
   }
@@ -85,6 +96,7 @@ public class CookieUtils {
     if (domain != null && !domain.isBlank()) {
       builder.domain(domain);
     }
+
     return builder;
   }
 }

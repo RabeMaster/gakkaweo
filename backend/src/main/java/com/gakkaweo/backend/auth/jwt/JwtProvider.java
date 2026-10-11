@@ -27,6 +27,10 @@ public class JwtProvider {
   }
 
   public String createAccessToken(UUID publicId, String role) {
+    return createAccessToken(publicId, role, null);
+  }
+
+  public String createAccessToken(UUID publicId, String role, UUID sessionPublicId) {
     Date now = Date.from(clock.instant());
     Date expiry = new Date(now.getTime() + accessExpirationMillis);
 
@@ -34,6 +38,7 @@ public class JwtProvider {
         .subject(publicId.toString())
         .id(UUID.randomUUID().toString())
         .claim("role", role)
+        .claim("sid", sessionPublicId == null ? null : sessionPublicId.toString())
         .issuedAt(now)
         .expiration(expiry)
         .signWith(secretKey)
@@ -41,7 +46,12 @@ public class JwtProvider {
   }
 
   public Claims parseAccessToken(String token) {
-    return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
+    return Jwts.parser()
+        .verifyWith(secretKey)
+        .clock(() -> Date.from(clock.instant()))
+        .build()
+        .parseSignedClaims(token)
+        .getPayload();
   }
 
   public boolean validateAccessToken(String token) {

@@ -25,6 +25,19 @@ class AuthIntegrationTest extends IntegrationTestBase {
   class Register {
 
     @Test
+    @DisplayName("UTF-8 72바이트 초과 비밀번호는 BCrypt 예외 대신 400")
+    void 한글_비밀번호_바이트_상한() {
+      var response =
+          restTemplate.postForEntity(
+              url("/auth/register"),
+              new RegisterRequest("byteuser", "가".repeat(25)),
+              ErrorBody.class);
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+      assertThat(response.getBody().code()).isEqualTo("VALIDATION_FAILED");
+    }
+
+    @Test
     @DisplayName("성공 - 201 + 쿠키 3종 발급")
     void 성공_201() {
       RegisterRequest request = new RegisterRequest("testuser", "password123");
@@ -37,6 +50,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
       assertThat(response.getBody().role()).isEqualTo("USER");
 
       java.util.List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+
       assertThat(cookies).isNotNull();
       assertThat(cookies.stream().anyMatch(c -> c.startsWith("access_token="))).isTrue();
       assertThat(cookies.stream().anyMatch(c -> c.startsWith("refresh_token="))).isTrue();
@@ -72,6 +86,19 @@ class AuthIntegrationTest extends IntegrationTestBase {
   @Nested
   @DisplayName("로그인")
   class Login {
+
+    @Test
+    @DisplayName("UTF-8 72바이트 초과 로그인 비밀번호는 401")
+    void 긴_비밀번호_로그인_거부() {
+      Member member = testAuthHelper.createMember();
+      testAuthHelper.createLocalAccount(member, "byteuser", "password123");
+      var response =
+          restTemplate.postForEntity(
+              url("/auth/login"), new LoginRequest("byteuser", "가".repeat(25)), ErrorBody.class);
+
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+      assertThat(response.getBody().code()).isEqualTo("INVALID_CREDENTIALS");
+    }
 
     @Test
     @DisplayName("성공 - 200 + 쿠키")
@@ -166,6 +193,7 @@ class AuthIntegrationTest extends IntegrationTestBase {
 
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
       java.util.List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+
       assertThat(cookies).isNotNull();
       assertThat(cookies.stream().anyMatch(c -> c.contains("Max-Age=0"))).isTrue();
     }

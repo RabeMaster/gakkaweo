@@ -3,11 +3,13 @@ package com.gakkaweo.backend.auth.controller;
 import com.gakkaweo.backend.auth.dto.AuthResponse;
 import com.gakkaweo.backend.auth.dto.LoginRequest;
 import com.gakkaweo.backend.auth.dto.NicknameUpdateRequest;
+import com.gakkaweo.backend.auth.dto.PasswordChangeRequest;
 import com.gakkaweo.backend.auth.dto.RegisterRequest;
 import com.gakkaweo.backend.auth.dto.TokenPair;
 import com.gakkaweo.backend.auth.security.CustomUserDetails;
 import com.gakkaweo.backend.auth.service.AccountService;
 import com.gakkaweo.backend.auth.service.AuthService;
+import com.gakkaweo.backend.auth.service.AuthSessionService;
 import com.gakkaweo.backend.auth.service.LocalAuthService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
 import com.gakkaweo.backend.config.openapi.StandardErrorResponses;
@@ -45,6 +47,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
   private final AuthService authService;
+  private final AuthSessionService authSessionService;
   private final LocalAuthService localAuthService;
   private final AccountService accountService;
   private final ProfileImageService profileImageService;
@@ -64,14 +67,14 @@ public class AuthController {
                       name = "Set-Cookie",
                       description =
                           "3개 쿠키 발급: access_token (HttpOnly, Path=/, 30m), "
-                              + "refresh_token (HttpOnly, Path=/auth/refresh, 7d), "
+                              + "refresh_token (HttpOnly, Path=/auth, 7d), "
                               + "has_session (non-HttpOnly, Path=/, 7d)",
                       schema = @Schema(type = "string"))))
   @StandardErrorResponses
   @PostMapping("/register")
   public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-    Member member = localAuthService.register(request.username(), request.password());
-    return issueTokensAndRespond(member, HttpStatus.CREATED);
+    var registration = localAuthService.registerAndLogin(request.username(), request.password());
+    return tokensAndRespond(registration.member(), registration.tokens(), HttpStatus.CREATED);
   }
 
   @Operation(
@@ -87,21 +90,21 @@ public class AuthController {
                       name = "Set-Cookie",
                       description =
                           "3개 쿠키 발급: access_token (HttpOnly, Path=/, 30m), "
-                              + "refresh_token (HttpOnly, Path=/auth/refresh, 7d), "
+                              + "refresh_token (HttpOnly, Path=/auth, 7d), "
                               + "has_session (non-HttpOnly, Path=/, 7d)",
                       schema = @Schema(type = "string"))))
   @StandardErrorResponses
   @PostMapping("/login")
   public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-    Member member = localAuthService.authenticate(request.username(), request.password());
-    return issueTokensAndRespond(member, HttpStatus.OK);
+    var login = localAuthService.login(request.username(), request.password());
+    return tokensAndRespond(login.member(), login.tokens(), HttpStatus.OK);
   }
 
   @Operation(
       summary = "토큰 갱신",
       description =
           "에러 코드:\n- `INVALID_REFRESH_TOKEN` (401): 유효하지 않은 리프레시 토큰\n"
-              + "- `REFRESH_TOKEN_REUSE_DETECTED` (401): 토큰 재사용 감지, 전체 세션 종료\n"
+              + "- `REFRESH_TOKEN_REUSE_DETECTED` (401): 토큰 재사용 감지, 해당 로그인 세션 종료\n"
               + "- `MEMBER_BANNED` (403): 차단된 계정",
       responses =
           @ApiResponse(
@@ -111,13 +114,13 @@ public class AuthController {
                       name = "Set-Cookie",
                       description =
                           "3개 쿠키 발급: access_token (HttpOnly, Path=/, 30m), "
-                              + "refresh_token (HttpOnly, Path=/auth/refresh, 7d), "
+                              + "refresh_token (HttpOnly, Path=/auth, 7d), "
                               + "has_session (non-HttpOnly, Path=/, 7d)",
                       schema = @Schema(type = "string"))))
   @StandardErrorResponses
   @PostMapping("/refresh")
   public ResponseEntity<Void> refresh(@CookieValue("refresh_token") String refreshToken) {
-    TokenPair tokenPair = authService.refresh(refreshToken);
+    TokenPair tokenPair = authSessionService.rotate(refreshToken);
 
     return ResponseEntity.ok()
         .header(
@@ -127,26 +130,51 @@ public class AuthController {
             HttpHeaders.SET_COOKIE,
             cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.createSessionIndicatorCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteLegacyRefreshTokenCookie().toString())
         .build();
   }
 
   @Operation(
       summary = "로그아웃",
       description = "쿠키 삭제: access_token, refresh_token, has_session (MaxAge=0)")
-  @SecurityRequirement(name = "cookieAuth")
   @StandardErrorResponses
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(
-      @CookieValue(value = "access_token", required = false) String accessToken) {
-    if (accessToken != null) {
-      authService.logout(accessToken);
-    }
+      @CookieValue(value = "access_token", required = false) String accessToken,
+      @CookieValue(value = "refresh_token", required = false) String refreshToken) {
+    authSessionService.logout(accessToken, refreshToken);
 
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteAccessTokenCookie().toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteRefreshTokenCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteLegacyRefreshTokenCookie().toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteSessionIndicatorCookie().toString())
         .build();
+  }
+
+  @Operation(summary = "모든 기기 로그아웃", description = "현재 회원의 모든 로그인 세션과 액세스 토큰을 폐기합니다")
+  @SecurityRequirement(name = "cookieAuth")
+  @StandardErrorResponses
+  @PostMapping("/logout-all")
+  public ResponseEntity<Void> logoutAll(@AuthenticationPrincipal CustomUserDetails userDetails) {
+    authSessionService.logoutAll(userDetails.publicId());
+
+    return clearedCookies(HttpStatus.OK);
+  }
+
+  @Operation(
+      summary = "로컬 계정 비밀번호 변경",
+      description = "현재 비밀번호 확인 후 변경하며 모든 기기를 로그아웃합니다. 소셜 계정은 LOCAL_ACCOUNT_REQUIRED(403)")
+  @SecurityRequirement(name = "cookieAuth")
+  @StandardErrorResponses
+  @PatchMapping("/password")
+  public ResponseEntity<Void> changePassword(
+      @Valid @RequestBody PasswordChangeRequest request,
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
+    localAuthService.changePassword(
+        userDetails.publicId(), request.currentPassword(), request.newPassword());
+
+    return clearedCookies(HttpStatus.NO_CONTENT);
   }
 
   @Operation(summary = "내 정보 조회")
@@ -213,28 +241,31 @@ public class AuthController {
   @StandardErrorResponses
   @DeleteMapping("/account")
   public ResponseEntity<Void> deleteAccount(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
-      @CookieValue(value = "access_token", required = false) String accessToken) {
+      @AuthenticationPrincipal CustomUserDetails userDetails) {
     accountService.deleteAccount(userDetails.publicId());
     profileImageService.delete(userDetails.publicId());
-    accountService.cleanupRedis(userDetails.publicId(), accessToken);
+    accountService.cleanupRedis(userDetails.publicId());
 
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteAccessTokenCookie().toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteRefreshTokenCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteLegacyRefreshTokenCookie().toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteSessionIndicatorCookie().toString())
         .build();
   }
 
-  private ResponseEntity<AuthResponse> issueTokensAndRespond(Member member, HttpStatus status) {
-    TokenPair tokenPair = authService.issueTokens(member);
+  private ResponseEntity<Void> clearedCookies(HttpStatus status) {
+    return ResponseEntity.status(status)
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteAccessTokenCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteRefreshTokenCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteLegacyRefreshTokenCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteSessionIndicatorCookie().toString())
+        .build();
+  }
 
-    AuthResponse response =
-        new AuthResponse(
-            member.getPublicId(),
-            member.getNickname(),
-            member.getProfileUrl(),
-            member.getRole().name());
+  private ResponseEntity<AuthResponse> tokensAndRespond(
+      Member member, TokenPair tokenPair, HttpStatus status) {
+    AuthResponse response = authService.responseFrom(member);
 
     return ResponseEntity.status(status)
         .header(
@@ -244,6 +275,7 @@ public class AuthController {
             HttpHeaders.SET_COOKIE,
             cookieUtils.createRefreshTokenCookie(tokenPair.refreshToken()).toString())
         .header(HttpHeaders.SET_COOKIE, cookieUtils.createSessionIndicatorCookie().toString())
+        .header(HttpHeaders.SET_COOKIE, cookieUtils.deleteLegacyRefreshTokenCookie().toString())
         .body(response);
   }
 }

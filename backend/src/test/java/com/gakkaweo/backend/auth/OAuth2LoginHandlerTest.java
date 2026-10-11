@@ -1,7 +1,9 @@
 package com.gakkaweo.backend.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,7 +16,7 @@ import com.gakkaweo.backend.auth.oauth2.CookieAuthorizationRequestRepository;
 import com.gakkaweo.backend.auth.oauth2.CustomOAuth2User;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginFailureHandler;
 import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginSuccessHandler;
-import com.gakkaweo.backend.auth.service.AuthService;
+import com.gakkaweo.backend.auth.service.AuthSessionService;
 import com.gakkaweo.backend.auth.util.CookieUtils;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -43,11 +45,12 @@ class OAuth2LoginHandlerTest {
 
   private static final String REDIRECT_URI = "https://gakkaweo.example/oauth/callback";
 
-  private AuthService authService;
+  private AuthSessionService authSessionService;
   private CookieUtils cookieUtils;
   private OAuth2Properties oAuth2Properties;
   private CookieAuthorizationRequestRepository authorizationRequestRepository;
   private AuthMetrics authMetrics;
+  private SimpleMeterRegistry meterRegistry;
 
   private static List<HttpCookie> allSetCookies(MockHttpServletResponse response) {
     return response.getHeaders(HttpHeaders.SET_COOKIE).stream()
@@ -61,7 +64,7 @@ class OAuth2LoginHandlerTest {
 
   @BeforeEach
   void setUp() {
-    authService = Mockito.mock(AuthService.class);
+    authSessionService = Mockito.mock(AuthSessionService.class);
     JwtProperties jwtProperties =
         new JwtProperties(
             "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=",
@@ -72,10 +75,12 @@ class OAuth2LoginHandlerTest {
     oAuth2Properties = new OAuth2Properties(REDIRECT_URI);
     authorizationRequestRepository =
         new CookieAuthorizationRequestRepository(cookieProperties, new ObjectMapper());
-    authMetrics = new AuthMetrics(new SimpleMeterRegistry());
+    meterRegistry = new SimpleMeterRegistry();
+    authMetrics = new AuthMetrics(meterRegistry);
   }
 
   private static class NullMessageAuthenticationException extends AuthenticationException {
+
     NullMessageAuthenticationException() {
       super(null);
     }
@@ -85,19 +90,90 @@ class OAuth2LoginHandlerTest {
   @DisplayName("SuccessHandler")
   class SuccessHandler {
 
+    private double successfulLogins() {
+      var counter =
+          meterRegistry
+              .find("auth.login.total")
+              .tag("provider", "unknown")
+              .tag("result", "success")
+              .counter();
+      return counter == null ? 0 : counter.count();
+    }
+
+    @Test
+    @DisplayName("소셜 로그인 성공 지표는 토큰 발급이 끝난 뒤 기록한다")
+    void 토큰발급_완료후_성공지표_기록() throws Exception {
+      var member = Mockito.mock(Member.class);
+      when(member.getId()).thenReturn(7L);
+
+      doAnswer(
+              invocation -> {
+                assertThat(successfulLogins()).isZero();
+                return new TokenPair("access-value", "refresh-value");
+              })
+          .when(authSessionService)
+          .issue(7L);
+
+      var handler =
+          new OAuth2LoginSuccessHandler(
+              authSessionService,
+              cookieUtils,
+              oAuth2Properties,
+              authorizationRequestRepository,
+              authMetrics);
+
+      handler.onAuthenticationSuccess(
+          new MockHttpServletRequest(),
+          new MockHttpServletResponse(),
+          new UsernamePasswordAuthenticationToken(new CustomOAuth2User(member, Map.of()), null));
+
+      verify(authSessionService).issue(7L);
+      assertThat(successfulLogins()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("소셜 토큰 발급 실패는 성공 지표·쿠키·리다이렉트를 남기지 않는다")
+    void 토큰발급_실패_성공지표_쿠키_미발급() {
+      var member = Mockito.mock(Member.class);
+      when(member.getId()).thenReturn(7L);
+      when(authSessionService.issue(7L)).thenThrow(new IllegalStateException("issuance failed"));
+
+      var handler =
+          new OAuth2LoginSuccessHandler(
+              authSessionService,
+              cookieUtils,
+              oAuth2Properties,
+              authorizationRequestRepository,
+              authMetrics);
+      var response = new MockHttpServletResponse();
+
+      assertThatThrownBy(
+              () ->
+                  handler.onAuthenticationSuccess(
+                      new MockHttpServletRequest(),
+                      response,
+                      new UsernamePasswordAuthenticationToken(
+                          new CustomOAuth2User(member, Map.of()), null)))
+          .isInstanceOf(IllegalStateException.class);
+
+      assertThat(successfulLogins()).isZero();
+      assertThat(response.getHeaders(HttpHeaders.SET_COOKIE)).isEmpty();
+      assertThat(response.getRedirectedUrl()).isNull();
+    }
+
     @Test
     @DisplayName("인증 성공 - access/refresh/has_session 3종 쿠키 + 리다이렉트")
     void 성공_쿠키_리다이렉트() throws Exception {
       OAuth2LoginSuccessHandler handler =
           new OAuth2LoginSuccessHandler(
-              authService,
+              authSessionService,
               cookieUtils,
               oAuth2Properties,
               authorizationRequestRepository,
               authMetrics);
-      Member member = new Member("tester");
-      when(authService.issueTokens(any(Member.class)))
-          .thenReturn(new TokenPair("access-value", "refresh-value"));
+      Member member = Mockito.mock(Member.class);
+      when(member.getId()).thenReturn(7L);
+      when(authSessionService.issue(7L)).thenReturn(new TokenPair("access-value", "refresh-value"));
 
       Authentication authentication =
           new UsernamePasswordAuthenticationToken(
@@ -107,6 +183,7 @@ class OAuth2LoginHandlerTest {
       handler.onAuthenticationSuccess(new MockHttpServletRequest(), response, authentication);
 
       List<HttpCookie> setCookies = allSetCookies(response);
+
       assertThat(setCookies)
           .extracting(HttpCookie::getName)
           .contains("access_token", "refresh_token", "has_session");
@@ -134,6 +211,7 @@ class OAuth2LoginHandlerTest {
       handler.onAuthenticationFailure(new MockHttpServletRequest(), response, exception);
 
       String encoded = URLEncoder.encode("차단된 계정입니다", StandardCharsets.UTF_8);
+
       assertThat(response.getRedirectedUrl()).isEqualTo(REDIRECT_URI + "?error=" + encoded);
     }
 
@@ -149,6 +227,7 @@ class OAuth2LoginHandlerTest {
       handler.onAuthenticationFailure(new MockHttpServletRequest(), response, exception);
 
       String encoded = URLEncoder.encode("로그인에 실패했습니다", StandardCharsets.UTF_8);
+
       assertThat(response.getRedirectedUrl()).isEqualTo(REDIRECT_URI + "?error=" + encoded);
     }
 
@@ -165,6 +244,7 @@ class OAuth2LoginHandlerTest {
       handler.onAuthenticationFailure(new MockHttpServletRequest(), response, exception);
 
       HttpCookie authReq = findCookie(allSetCookies(response), "oauth2_auth_request");
+
       assertThat(authReq).isNotNull();
       assertThat(authReq.getMaxAge()).isZero();
     }
