@@ -10,6 +10,7 @@ import { queryClient } from "@/shared/api/queryClient";
 import { API_BASE_URL } from "@/shared/config/env";
 import { login } from "@/features/auth/api";
 import { RegisterDialog } from "@/features/auth/components/RegisterDialog";
+import { isPasswordTooLong } from "@/features/auth/utils/password";
 
 const PROVIDERS: {
   id: Provider;
@@ -42,6 +43,10 @@ export function LoginPage() {
     if (!canSubmit) {
       return;
     }
+    if (isPasswordTooLong(password)) {
+      setError("비밀번호가 너무 깁니다. 더 짧게 입력해 주세요.");
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -50,6 +55,9 @@ export function LoginPage() {
       await login(username, password);
       saveLastProvider("local");
       await fetchUser();
+      if (!useAuthStore.getState().isAuthenticated) {
+        setError("로그인 상태를 확인할 수 없습니다. 다시 시도해주세요.");
+      }
       queryClient.invalidateQueries({ queryKey: ["ranking"] });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -57,6 +65,7 @@ export function LoginPage() {
       } else {
         setError("로그인에 실패했습니다");
       }
+    } finally {
       setIsSubmitting(false);
     }
   };

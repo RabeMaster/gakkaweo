@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiError } from "@/shared/api/client";
 import { Button } from "@/shared/ui/Button";
 import { Dialog } from "@/shared/ui/Dialog";
 import { Input } from "@/shared/ui/Input";
 import { register } from "@/features/auth/api";
+import { isPasswordTooLong } from "@/features/auth/utils/password";
 
 const USERNAME_PATTERN = /^[a-zA-Z][a-zA-Z0-9_]*$/;
 const USERNAME_MIN = 4;
@@ -32,6 +33,9 @@ function validateUsername(value: string): string | null {
 function validatePassword(value: string): string | null {
   if (value.length < PASSWORD_MIN) {
     return `${PASSWORD_MIN}자 이상 입력해주세요`;
+  }
+  if (isPasswordTooLong(value)) {
+    return "비밀번호가 너무 깁니다. 더 짧게 입력해 주세요.";
   }
   return null;
 }

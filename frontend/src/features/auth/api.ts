@@ -5,6 +5,14 @@ export function logout() {
   return apiFetch<void>("/auth/logout", { method: "POST" });
 }
 
+export function logoutAll() {
+  return apiFetch<void>("/auth/logout-all", { method: "POST" });
+}
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return apiFetch<void>("/auth/password", { method: "PATCH", body: { currentPassword, newPassword } });
+}
+
 export function deleteAccount() {
   return apiFetch<void>("/auth/account", { method: "DELETE" });
 }
