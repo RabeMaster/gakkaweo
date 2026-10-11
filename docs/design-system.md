@@ -303,6 +303,12 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **볼륨 아이콘 mute 토글**: 🔊/🔇 아이콘은 `border-2 shadow-brutal-sm-hover w-7 h-7` 버튼. 클릭 시 mute 토글, 이전 볼륨은 localStorage `sound_last_volume`에 보존(0 초과 값만 저장). 접근성: `aria-label` 동적 전환 + `aria-pressed`
 - **사운드 테스트**: 런치패드 버튼 (`border-2 shadow-brutal-sm`). 색상별 구분 (클리어=green-400, 실패=red-400). 기존 재생 중 사운드 정지 후 새로 재생. 음소거 시 disabled
 
+### 계정 관리 (마이페이지)
+
+- 로그아웃 버튼은 공용 `Button`, 확인창은 `ConfirmDialog`를 사용한다.
+- 비밀번호 변경은 공용 `Dialog`와 라벨이 있는 비밀번호 입력창으로 구성한다.
+- 비밀번호 안내는 “8자 이상”, 길이 초과 오류는 “비밀번호가 너무 깁니다. 더 짧게 입력해 주세요.”처럼 쉽게 쓴다. 화면에는 인코딩·바이트 단위나 한글/영문별 최대 길이를 설명하지 않는다.
+
 ### 프로필 이미지 (마이페이지)
 
 - **프로필 이미지 클릭** → 팝오버(변경/삭제) 표시
