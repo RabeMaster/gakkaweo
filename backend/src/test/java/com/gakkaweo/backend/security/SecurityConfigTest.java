@@ -4,9 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.gakkaweo.backend.admin.dto.RoleChangeRequest;
 import com.gakkaweo.backend.admin.service.AdminUserService;
-import com.gakkaweo.backend.auth.jwt.JwtProvider;
+import com.gakkaweo.backend.auth.service.AccountService;
 import com.gakkaweo.backend.domain.member.entity.Member;
-import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.support.IntegrationTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,9 +19,8 @@ import org.springframework.http.ResponseEntity;
 @DisplayName("Security 접근 매트릭스 통합 테스트")
 class SecurityConfigTest extends IntegrationTestBase {
 
-  @Autowired MemberRepository memberRepository;
   @Autowired AdminUserService adminUserService;
-  @Autowired JwtProvider jwtProvider;
+  @Autowired AccountService accountService;
 
   @Test
   @DisplayName("관리자 강등 후 이미 발급한 access token으로 관리자 API 접근 불가")
@@ -82,15 +80,15 @@ class SecurityConfigTest extends IntegrationTestBase {
   @DisplayName("회원 삭제 후 이미 발급한 access token으로 인증 API 접근 불가")
   void 기존_토큰_회원_삭제_반영() {
     Member member = testAuthHelper.createMember();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(member);
 
-    // refresh token FK 없이 access token만 발급하여 회원 삭제 상황을 재현합니다.
-    HttpHeaders headers = new HttpHeaders();
-    headers.set(
-        HttpHeaders.COOKIE,
-        "access_token="
-            + jwtProvider.createAccessToken(member.getPublicId(), member.getRole().name()));
+    ResponseEntity<String> beforeResponse =
+        restTemplate.exchange(
+            url("/auth/me"), HttpMethod.GET, new HttpEntity<>(headers), String.class);
 
-    memberRepository.delete(member);
+    assertThat(beforeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    accountService.deleteAccount(member.getPublicId());
 
     ResponseEntity<String> response =
         restTemplate.exchange(
