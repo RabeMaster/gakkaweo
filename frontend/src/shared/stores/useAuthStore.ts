@@ -12,36 +12,62 @@ interface AuthState {
   updateUser: (patch: Partial<MeResponse>) => void;
 }
 
+let authRequestVersion = 0;
+
+function finishAuth(user: MeResponse | null) {
+  if (useAuthStore.getState().user?.publicId !== user?.publicId) {
+    queryClient.clear();
+  }
+
+  useAuthStore.setState({ user, isAuthenticated: Boolean(user), isLoading: false });
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true,
+
   fetchUser: async () => {
-    if (!document.cookie.split("; ").some((c) => c.startsWith("has_session="))) {
-      set({ user: null, isAuthenticated: false, isLoading: false });
+    const version = ++authRequestVersion;
+
+    if (!document.cookie.split(";").some((c) => c.trim().startsWith("has_session="))) {
+      finishAuth(null);
       return;
     }
 
     try {
       const user = await apiFetch<MeResponse>("/auth/me");
+
+      if (version !== authRequestVersion) {
+        return;
+      }
+
       if (user?.publicId) {
-        set({ user, isAuthenticated: true, isLoading: false });
+        finishAuth(user);
       } else {
-        set({ user: null, isAuthenticated: false, isLoading: false });
+        finishAuth(null);
       }
     } catch {
-      set({ user: null, isAuthenticated: false, isLoading: false });
+      if (version !== authRequestVersion) {
+        return;
+      }
+
+      finishAuth(null);
     }
   },
+
   clearUser: () => {
+    authRequestVersion++;
     queryClient.clear();
     set({ user: null, isAuthenticated: false, isLoading: false });
   },
+
   updateUser: (patch) => {
     set((state) => {
       if (!state.user) {
         return state;
       }
+
       return { user: { ...state.user, ...patch } };
     });
   },
