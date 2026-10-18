@@ -69,6 +69,7 @@ cookie:
 
 app:
   ranking:
+    recovery-enabled: false
     recovery-delay: 3600000
     recovery-initial-delay: 3600000
   oauth2:

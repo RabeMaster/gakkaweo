@@ -6,6 +6,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -23,14 +24,27 @@ public class RankingRecoveryScheduler {
   private final ApplicationEventPublisher eventPublisher;
   private final Clock clock;
 
+  @Value("${app.ranking.recovery-enabled:true}")
+  private boolean recoveryEnabled;
+
   @EventListener(ApplicationReadyEvent.class)
   public void onReady() {
+    if (!recoveryEnabled) {
+      return;
+    }
     recover();
   }
 
   @Scheduled(
       fixedDelayString = "${app.ranking.recovery-delay:60000}",
       initialDelayString = "${app.ranking.recovery-initial-delay:60000}")
+  public void scheduledRecover() {
+    if (!recoveryEnabled) {
+      return;
+    }
+    recover();
+  }
+
   public void recover() {
     LocalDate today = LocalDate.now(clock);
     try {
