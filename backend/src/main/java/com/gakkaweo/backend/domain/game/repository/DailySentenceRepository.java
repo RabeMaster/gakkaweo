@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface DailySentenceRepository
     extends JpaRepository<DailySentence, Long>, JpaSpecificationExecutor<DailySentence> {
@@ -35,4 +36,12 @@ public interface DailySentenceRepository
   Optional<DailySentence> findByScheduledAt(LocalDate scheduledAt);
 
   boolean existsByScheduledAt(LocalDate scheduledAt);
+
+  @Query(
+      "SELECT d.usedAt FROM DailySentence d WHERE d.usedAt < :today"
+          + " AND (d.totalPlayers IS NULL OR EXISTS (SELECT g.id FROM GameSession g"
+          + " WHERE g.sentence = d AND g.member IS NOT NULL"
+          + " AND g.bestSimilarity > 0 AND g.finalRank IS NULL))"
+          + " ORDER BY d.usedAt ASC")
+  List<LocalDate> findDatesWithMissingFinalRank(@Param("today") LocalDate today);
 }

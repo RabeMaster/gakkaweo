@@ -7,12 +7,14 @@ import com.gakkaweo.backend.ranking.service.RankingService;
 import com.gakkaweo.backend.ranking.sse.SseConnectionManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -25,15 +27,18 @@ public class RankingController {
   private final RankingService rankingService;
   private final SseConnectionManager sseConnectionManager;
 
-  @Operation(summary = "오늘 랭킹 조회", description = "인증 시 myRank 추가 반환")
+  @Operation(
+      summary = "오늘 랭킹 조회",
+      description = "인증 시 myRank 추가 반환. 정상 0명은 200/빈 목록, 캐시 장애는 503/RANKING_UNAVAILABLE")
   @StandardErrorResponses
   @GetMapping("/today")
   public ResponseEntity<RankingResponse> getTodayRanking(
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
+      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @RequestParam(required = false) UUID sentenceId) {
     if (userDetails == null) {
-      return ResponseEntity.ok(rankingService.getRankings());
+      return ResponseEntity.ok(rankingService.getRankingsForUser(null, sentenceId));
     }
-    return ResponseEntity.ok(rankingService.getRankingsForUser(userDetails.publicId()));
+    return ResponseEntity.ok(rankingService.getRankingsForUser(userDetails.publicId(), sentenceId));
   }
 
   @Operation(

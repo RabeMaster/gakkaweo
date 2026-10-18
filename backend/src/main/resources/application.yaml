@@ -20,6 +20,8 @@ spring:
     locations: classpath:db/migration
   data:
     redis:
+      timeout: 500ms
+      connect-timeout: 500ms
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD}

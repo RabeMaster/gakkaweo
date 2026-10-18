@@ -16,7 +16,6 @@ import com.gakkaweo.backend.admin.sort.SortRequestParser;
 import com.gakkaweo.backend.admin.sort.SortSpecBuilder;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
-import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.common.util.EnumParser;
 import com.gakkaweo.backend.domain.admin.entity.AuditAction;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
@@ -26,6 +25,8 @@ import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.domain.game.repository.GuessHistoryRepository;
 import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.DayChangeEvent;
+import com.gakkaweo.backend.ranking.service.RankingService;
+import com.gakkaweo.backend.ranking.service.RankingWriteCoordinator;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -39,7 +40,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -55,11 +55,12 @@ public class AdminSentenceService {
   private final GameSessionRepository gameSessionRepository;
   private final GuessHistoryRepository guessHistoryRepository;
   private final SimilarityClient similarityService;
-  private final StringRedisTemplate redisTemplate;
   private final ApplicationEventPublisher eventPublisher;
   private final TransactionTemplate transactionTemplate;
   private final AdminAuditService adminAuditService;
   private final Clock clock;
+  private final RankingWriteCoordinator rankingWriteCoordinator;
+  private final RankingService rankingService;
 
   @Transactional(readOnly = true)
   public SentenceListResponse getSentences(String status, String sort, int page, int size) {
@@ -228,7 +229,8 @@ public class AdminSentenceService {
     LocalDate today = LocalDate.now(clock);
 
     UUID newPublicId =
-        transactionTemplate.execute(
+        rankingWriteCoordinator.write(
+            transactionTemplate,
             status -> {
               DailySentence currentSentence =
                   dailySentenceRepository
@@ -282,7 +284,12 @@ public class AdminSentenceService {
               return newSentence.getPublicId();
             });
 
-    redisTemplate.delete(RedisKeyConstants.rankingKey(today));
+    rankingService.markRecoveryNeeded(today);
+    try {
+      rankingService.rebuildRankingCache(today);
+    } catch (RuntimeException e) {
+      log.warn("교체 후 랭킹 복구를 다음 주기에 재시도합니다", e);
+    }
 
     eventPublisher.publishEvent(new DayChangeEvent(newPublicId));
 

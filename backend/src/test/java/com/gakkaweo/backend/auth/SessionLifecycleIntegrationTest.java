@@ -343,6 +343,10 @@ class SessionLifecycleIntegrationTest extends IntegrationTestBase {
 
     try {
       statistics.clear();
+      assertThat(restTemplate.getForEntity(url("/ranking/today"), String.class).getStatusCode())
+          .isEqualTo(HttpStatus.OK);
+      long rankingStatements = statistics.getPrepareStatementCount();
+      statistics.clear();
 
       assertThat(
               restTemplate
@@ -354,7 +358,7 @@ class SessionLifecycleIntegrationTest extends IntegrationTestBase {
                   .getStatusCode())
           .isEqualTo(HttpStatus.OK);
 
-      assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
+      assertThat(statistics.getPrepareStatementCount()).isEqualTo(rankingStatements + 1);
     } finally {
       statistics.setStatisticsEnabled(false);
     }

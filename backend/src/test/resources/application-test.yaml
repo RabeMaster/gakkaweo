@@ -68,6 +68,9 @@ cookie:
   domain: ""
 
 app:
+  ranking:
+    recovery-delay: 3600000
+    recovery-initial-delay: 3600000
   oauth2:
     authorized-redirect-uri: http://localhost:3000
   ai-service:

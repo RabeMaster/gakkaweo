@@ -12,9 +12,15 @@ public final class RedisKeyConstants {
   private static final String RANKING_DETAIL_PREFIX = "ranking_detail:";
   private static final String SIMILARITY_CACHE_PREFIX = "similarity:";
   private static final String RANKING_MEMBER_PREFIX = "member:";
+  private static final String RANKING_SYNC_PREFIX = "ranking_sync:";
 
   private static final Set<String> KNOWN_PREFIXES =
-      Set.of(BLACKLIST_PREFIX, RANKING_KEY_PREFIX, RANKING_DETAIL_PREFIX, SIMILARITY_CACHE_PREFIX);
+      Set.of(
+          BLACKLIST_PREFIX,
+          RANKING_KEY_PREFIX,
+          RANKING_DETAIL_PREFIX,
+          SIMILARITY_CACHE_PREFIX,
+          RANKING_SYNC_PREFIX);
 
   private RedisKeyConstants() {}
 
@@ -28,6 +34,10 @@ public final class RedisKeyConstants {
 
   public static String rankingKey(LocalDate date) {
     return RANKING_KEY_PREFIX + date;
+  }
+
+  public static String rankingSyncKey(LocalDate date) {
+    return RANKING_SYNC_PREFIX + date;
   }
 
   public static String memberKey(UUID publicId) {

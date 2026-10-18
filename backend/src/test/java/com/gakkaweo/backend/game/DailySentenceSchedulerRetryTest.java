@@ -46,7 +46,7 @@ class DailySentenceSchedulerRetryTest extends IntegrationTestBase {
   }
 
   @Test
-  @DisplayName("getAllRankingsForDate 첫 호출 실패 → 재시도 후 성공하면 총 2번 호출")
+  @DisplayName("getCanonicalSnapshotForDate 첫 호출 실패 → 재시도 후 성공하면 총 2번 호출")
   void 스냅샷_단계_재시도_후_성공() {
     TestClock testClock = (TestClock) clock;
     LocalDate yesterday = LocalDate.now(testClock);
@@ -61,17 +61,17 @@ class DailySentenceSchedulerRetryTest extends IntegrationTestBase {
     testAuthHelper.createActiveSentence("오늘 후보");
     testClock.advanceBy(Duration.ofDays(1));
 
-    when(rankingService.getAllRankingsForDate(yesterday))
+    when(rankingService.getCanonicalSnapshotForDate(yesterday))
         .thenThrow(new RuntimeException("일시적 오류"))
         .thenReturn(new RankingSnapshot(List.of(), 0));
 
     scheduler.executeMidnightJob();
 
-    verify(rankingService, times(2)).getAllRankingsForDate(yesterday);
+    verify(rankingService, times(2)).getCanonicalSnapshotForDate(yesterday);
   }
 
   @Test
-  @DisplayName("getAllRankingsForDate 3회 모두 실패 시 스냅샷 단계 최종 실패로 embed 경고 전송")
+  @DisplayName("getCanonicalSnapshotForDate 3회 모두 실패 시 스냅샷 단계 최종 실패로 embed 경고 전송")
   void 스냅샷_단계_최대_재시도_초과() {
     TestClock testClock = (TestClock) clock;
     LocalDate yesterday = LocalDate.now(testClock);
@@ -86,11 +86,12 @@ class DailySentenceSchedulerRetryTest extends IntegrationTestBase {
     testAuthHelper.createActiveSentence("오늘 후보");
     testClock.advanceBy(Duration.ofDays(1));
 
-    when(rankingService.getAllRankingsForDate(yesterday)).thenThrow(new RuntimeException("영구 오류"));
+    when(rankingService.getCanonicalSnapshotForDate(yesterday))
+        .thenThrow(new RuntimeException("영구 오류"));
 
     scheduler.executeMidnightJob();
 
-    verify(rankingService, times(3)).getAllRankingsForDate(yesterday);
+    verify(rankingService, times(3)).getCanonicalSnapshotForDate(yesterday);
 
     ArgumentCaptor<DiscordEmbed> captor = ArgumentCaptor.forClass(DiscordEmbed.class);
     verify(discordWebhookClient).send(eq(NotificationLevel.INFO), captor.capture());
@@ -102,7 +103,8 @@ class DailySentenceSchedulerRetryTest extends IntegrationTestBase {
   @Test
   @DisplayName("executeMidnightJob 완료 시 Discord embed에 스포일러 문장 포함 전송")
   void Discord_embed_스포일러_전송() {
-    when(rankingService.getAllRankingsForDate(any())).thenReturn(new RankingSnapshot(List.of(), 0));
+    when(rankingService.getCanonicalSnapshotForDate(any()))
+        .thenReturn(new RankingSnapshot(List.of(), 0));
 
     testAuthHelper.createActiveSentence("오늘 테스트 문장");
 

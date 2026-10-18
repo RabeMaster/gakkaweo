@@ -29,6 +29,7 @@ import com.gakkaweo.backend.member.service.MemberRedisSyncer;
 import com.gakkaweo.backend.member.service.ProfileImageService;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
+import com.gakkaweo.backend.ranking.service.RankingWriteCoordinator;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -45,12 +46,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AdminUserService {
 
+  private final TransactionTemplate transactionTemplate;
+  private final RankingWriteCoordinator rankingWriteCoordinator;
   private final MemberRepository memberRepository;
   private final SocialAccountRepository socialAccountRepository;
   private final LocalAccountRepository localAccountRepository;
@@ -182,23 +186,32 @@ public class AdminUserService {
         adminPublicId, AuditAction.USER_UNBAN, targetPublicId.toString(), null, ipAddress);
   }
 
-  @Transactional
   public void forceDeleteUser(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
-    preventSelfAction(targetPublicId, adminPublicId);
+    rankingWriteCoordinator.write(
+        transactionTemplate,
+        status -> {
+          preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findByPublicIdForUpdateOrThrow(targetPublicId);
-    requireSufficientRoleOver(adminPublicId, member);
+          Member member = findByPublicIdForUpdateOrThrow(targetPublicId);
+          requireSufficientRoleOver(adminPublicId, member);
 
-    gameSessionRepository.anonymizeByMember(member);
-    sentenceUploadRepository.anonymizeByAdmin(member);
-    localAccountRepository.deleteByMember(member);
-    socialAccountRepository.deleteByMember(member);
-    authSessionService.deleteAll(member.getId());
-    memberRepository.deleteById(member.getId());
+          gameSessionRepository.anonymizeByMember(member);
+          sentenceUploadRepository.anonymizeByAdmin(member);
+          localAccountRepository.deleteByMember(member);
+          socialAccountRepository.deleteByMember(member);
+          authSessionService.deleteAll(member.getId());
+          memberRepository.deleteById(member.getId());
 
-    log.info("관리자 강제 탈퇴: publicId={}", targetPublicId);
-    adminAuditService.log(
-        adminPublicId, AuditAction.USER_FORCE_DELETE, targetPublicId.toString(), null, ipAddress);
+          log.info("관리자 강제 탈퇴: publicId={}", targetPublicId);
+          adminAuditService.log(
+              adminPublicId,
+              AuditAction.USER_FORCE_DELETE,
+              targetPublicId.toString(),
+              null,
+              ipAddress);
+
+          return null;
+        });
   }
 
   public void cleanupRedisAfterDelete(UUID publicId) {
@@ -211,51 +224,59 @@ public class AdminUserService {
     profileImageService.delete(publicId);
   }
 
-  @Transactional
   public AdminUserResponse forceChangeNickname(
       UUID targetPublicId, UUID adminPublicId, ForceNicknameRequest request, String ipAddress) {
-    preventSelfAction(targetPublicId, adminPublicId);
+    return rankingWriteCoordinator.write(
+        transactionTemplate,
+        status -> {
+          preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findByPublicIdOrThrow(targetPublicId);
-    requireSufficientRoleOver(adminPublicId, member);
-    String nickname = nicknameValidator.normalize(request.nickname());
-    nicknameValidator.validate(nickname);
+          Member member = findByPublicIdForUpdateOrThrow(targetPublicId);
+          requireSufficientRoleOver(adminPublicId, member);
+          String nickname = nicknameValidator.normalize(request.nickname());
+          nicknameValidator.validate(nickname);
 
-    if (memberRepository.existsByNickname(nickname)) {
-      throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
-    }
+          if (memberRepository.existsByNickname(nickname)) {
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
+          }
 
-    member.setNickname(nickname);
+          member.setNickname(nickname);
 
-    try {
-      memberRepository.flush();
-    } catch (DataIntegrityViolationException e) {
-      throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
-    }
+          try {
+            memberRepository.flush();
+          } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
+          }
 
-    adminAuditService.log(
-        adminPublicId,
-        AuditAction.USER_FORCE_NICKNAME,
-        targetPublicId.toString(),
-        "newNickname=" + member.getNickname(),
-        ipAddress);
+          adminAuditService.log(
+              adminPublicId,
+              AuditAction.USER_FORCE_NICKNAME,
+              targetPublicId.toString(),
+              "newNickname=" + member.getNickname(),
+              ipAddress);
 
-    return toUserResponse(member);
+          return toUserResponse(member);
+        });
   }
 
-  @Transactional
   public void forceDeleteProfileImage(UUID targetPublicId, UUID adminPublicId, String ipAddress) {
-    preventSelfAction(targetPublicId, adminPublicId);
+    rankingWriteCoordinator.write(
+        transactionTemplate,
+        status -> {
+          preventSelfAction(targetPublicId, adminPublicId);
 
-    Member member = findByPublicIdOrThrow(targetPublicId);
-    requireSufficientRoleOver(adminPublicId, member);
-    member.setProfileUrl(null);
-    adminAuditService.log(
-        adminPublicId,
-        AuditAction.USER_FORCE_PROFILE_DELETE,
-        targetPublicId.toString(),
-        null,
-        ipAddress);
+          Member member = findByPublicIdForUpdateOrThrow(targetPublicId);
+          requireSufficientRoleOver(adminPublicId, member);
+          member.setProfileUrl(null);
+          adminAuditService.log(
+              adminPublicId,
+              AuditAction.USER_FORCE_PROFILE_DELETE,
+              targetPublicId.toString(),
+              null,
+              ipAddress);
+
+          return null;
+        });
   }
 
   public void cleanupProfileImageAndRedis(UUID publicId) {
