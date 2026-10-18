@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import confetti from "canvas-confetti";
 import { ApiError } from "@/shared/api/client";
-import type { GuessResponse, HistoryResponse } from "@/shared/api/types";
+import type { GuessResponse, HistoryResponse, TodayResponse } from "@/shared/api/types";
 import { Card } from "@/shared/ui/Card";
+import { Button } from "@/shared/ui/Button";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { useToday, useGameStatus, useGameHistory, useGuess } from "@/features/game/hooks/useGameQueries";
@@ -17,18 +18,29 @@ import { GameClearedCard } from "@/features/game/components/GameClearedCard";
 import { YesterdayResultCard } from "@/features/game/components/YesterdayResultCard";
 import { HelpModal, HELP_SHOWN_KEY } from "@/features/game/components/HelpModal";
 import { playSound } from "@/shared/config/sound";
+import { isCurrentGuessContext, type GuessContext } from "@/features/game/guessContext";
 import { normalizeGuessText } from "@/shared/utils/normalize";
 
 export function GamePage() {
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
-  const { isAuthenticated, isLoading: authLoading } = useAuthStore();
+  const { isAuthenticated, isLoading: authLoading, user, sessionGeneration } = useAuthStore();
 
   const { data: today, isLoading: todayLoading, error: todayError } = useToday();
   const sentenceId = today?.sentenceId;
 
-  const { data: status } = useGameStatus(sentenceId);
-  const { data: history } = useGameHistory(sentenceId);
+  const {
+    data: status,
+    isLoading: statusLoading,
+    isError: statusError,
+    refetch: refetchStatus,
+  } = useGameStatus(sentenceId);
+  const {
+    data: history,
+    isLoading: historyLoading,
+    isError: historyError,
+    refetch: refetchHistory,
+  } = useGameHistory(sentenceId);
   const { state: anonState, addGuess: addAnonGuess } = useAnonymousGame(sentenceId);
 
   const guessMutation = useGuess();
@@ -45,6 +57,13 @@ export function GamePage() {
     }
   });
   const retryRef = useRef(false);
+  const mounted = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [trackedSentenceId, setTrackedSentenceId] = useState(sentenceId);
 
@@ -95,7 +114,7 @@ export function GamePage() {
     if (!localCleared) {
       return;
     }
-    const opts = { particleCount: 200, spread: 360, origin: { y: 0.5 } };
+    const opts = { particleCount: 200, spread: 360, origin: { y: 0.5 }, disableForReducedMotion: true };
     confetti({ ...opts, origin: { x: 0.2, y: 0.5 } });
     confetti({ ...opts, origin: { x: 0.35, y: 0.5 } });
     confetti({ ...opts, origin: { x: 0.5, y: 0.5 } });
@@ -113,23 +132,42 @@ export function GamePage() {
   );
 
   function appendGuessToCache(guessText: string, res: GuessResponse) {
-    queryClient.setQueryData<HistoryResponse>(["game", "history", sentenceId], (old) => ({
-      guesses: [
-        ...(old?.guesses ?? []),
-        {
-          guessText,
-          similarity: res.similarity,
-          attemptNumber: (old?.guesses?.length ?? 0) + 1,
-          createdAt: res.timestamp,
-        },
-      ],
-    }));
+    queryClient.setQueryData<HistoryResponse>(
+      ["game", "history", sentenceId, user?.publicId, sessionGeneration],
+      (old) => ({
+        guesses: [
+          ...(old?.guesses ?? []),
+          {
+            guessText,
+            similarity: res.similarity,
+            attemptNumber: (old?.guesses?.length ?? 0) + 1,
+            createdAt: res.timestamp,
+          },
+        ],
+      }),
+    );
     queryClient.invalidateQueries({ queryKey: ["game", "status", sentenceId] });
     queryClient.invalidateQueries({ queryKey: ["game", "hints", sentenceId] });
     queryClient.invalidateQueries({ queryKey: ["ranking"] });
   }
 
-  function handleGuessSuccess(guessText: string, res: GuessResponse) {
+  function isCurrentResponse(context: GuessContext) {
+    const auth = useAuthStore.getState();
+    return (
+      mounted.current &&
+      isCurrentGuessContext(context, {
+        sentenceId:
+          queryClient.getQueryData<TodayResponse>(["game", "today", auth.sessionGeneration])?.sentenceId ?? "",
+        userId: auth.user?.publicId ?? null,
+        generation: auth.sessionGeneration,
+      })
+    );
+  }
+
+  function handleGuessSuccess(guessText: string, res: GuessResponse, context: GuessContext) {
+    if (!isCurrentResponse(context)) {
+      return;
+    }
     if (isAuthenticated) {
       appendGuessToCache(guessText, res);
     } else {
@@ -143,7 +181,10 @@ export function GamePage() {
     }
   }
 
-  function handleGuessError(err: unknown, sentenceId: string, guessText: string) {
+  function handleGuessError(err: unknown, sentenceId: string, guessText: string, context: GuessContext) {
+    if (!isCurrentResponse(context)) {
+      return;
+    }
     if (!(err instanceof ApiError)) {
       addToast("알 수 없는 오류가 발생했습니다.", "error");
       return;
@@ -155,6 +196,9 @@ export function GamePage() {
         setRateLimited(true);
         clearTimeout(rateLimitTimerRef.current ?? undefined);
         rateLimitTimerRef.current = setTimeout(() => {
+          if (!isCurrentResponse(context)) {
+            return;
+          }
           setRateLimited(false);
           rateLimitTimerRef.current = null;
         }, seconds * 1000);
@@ -164,7 +208,7 @@ export function GamePage() {
       case "GAME_EXPIRED":
       case "SENTENCE_NOT_FOUND":
         addToast("새로운 문제를 불러옵니다.", "info");
-        queryClient.removeQueries({ queryKey: ["game"] });
+        queryClient.resetQueries({ queryKey: ["game"] });
         break;
       case "CONCURRENT_MODIFICATION":
         if (!retryRef.current) {
@@ -174,9 +218,12 @@ export function GamePage() {
             {
               onSuccess: (res) => {
                 retryRef.current = false;
-                handleGuessSuccess(guessText, res);
+                handleGuessSuccess(guessText, res, context);
               },
               onError: () => {
+                if (!isCurrentResponse(context)) {
+                  return;
+                }
                 retryRef.current = false;
                 addToast("다시 시도해주세요.", "error");
               },
@@ -216,16 +263,17 @@ export function GamePage() {
       return;
     }
 
+    const context: GuessContext = { sentenceId, userId: user?.publicId ?? null, generation: sessionGeneration };
     guessMutation.mutate(
       { sentenceId, guessText: text },
       {
-        onSuccess: (res) => handleGuessSuccess(text, res),
-        onError: (err) => handleGuessError(err, sentenceId, text),
+        onSuccess: (res) => handleGuessSuccess(text, res, context),
+        onError: (err) => handleGuessError(err, sentenceId, text, context),
       },
     );
   }
 
-  if (todayLoading || authLoading) {
+  if (todayLoading || authLoading || (isAuthenticated && (statusLoading || historyLoading))) {
     return (
       <div className="max-w-2xl flex-1 min-w-0 space-y-6">
         <div className="h-10 w-48 bg-gray-200 dark:bg-gray-800 animate-pulse" />
@@ -289,7 +337,26 @@ export function GamePage() {
 
       <GuessFeedback error={inputError} lastGuess={lastGuess} bestGuess={bestGuess} />
 
-      <GuessInput onSubmit={handleSubmit} isLoading={guessMutation.isPending} disabled={rateLimited} />
+      {isAuthenticated && (statusError || historyError) && (
+        <Card>
+          <p role="alert">게임 기록을 불러올 수 없습니다.</p>
+          <Button
+            size="sm"
+            className="mt-3"
+            onClick={() => {
+              void refetchStatus();
+              void refetchHistory();
+            }}
+          >
+            다시 시도
+          </Button>
+        </Card>
+      )}
+      <GuessInput
+        onSubmit={handleSubmit}
+        isLoading={guessMutation.isPending}
+        disabled={rateLimited || isExpired || (isAuthenticated && (statusError || historyError))}
+      />
 
       <GuessHistory key={sentenceId} guesses={displayGuesses} />
 

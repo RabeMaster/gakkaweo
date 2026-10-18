@@ -203,8 +203,6 @@ public class AuthSessionService {
     revoke(session);
   }
 
-  private record LogoutReference(UUID owner, UUID sessionPublicId) {}
-
   @Transactional
   public void logoutAll(UUID publicId) {
     Member member =
@@ -297,4 +295,6 @@ public class AuthSessionService {
   private String hashToken(String rawToken) {
     return HashUtils.sha256Hex(rawToken);
   }
+
+  private record LogoutReference(UUID owner, UUID sessionPublicId) {}
 }

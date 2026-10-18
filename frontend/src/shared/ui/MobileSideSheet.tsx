@@ -1,7 +1,8 @@
-import { useState, useRef, useCallback, type ReactNode, type AnimationEvent } from "react";
+import { useState, useRef, useId, useCallback, useEffect, type ReactNode, type AnimationEvent } from "react";
 import { useClickOutside } from "@/shared/hooks/useClickOutside";
 import { useEscapeStack } from "@/shared/hooks/useEscapeStack";
 import { useScrollLock } from "@/shared/hooks/useScrollLock";
+import { useFocusTrap } from "@/shared/hooks/useFocusTrap";
 
 type TabKey = "ranking" | "hint";
 
@@ -19,7 +20,19 @@ export function MobileSideSheet({ tabs }: MobileSideSheetProps) {
   const [activeTab, setActiveTab] = useState<TabKey | null>(null);
   const [isClosing, setIsClosing] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const triggerRefs = useRef<Partial<Record<TabKey, HTMLButtonElement>>>({});
+  const openedFrom = useRef<TabKey | null>(null);
   const isOpen = activeTab !== null;
+  const titleId = useId();
+  useFocusTrap(isOpen, drawerRef);
+
+  useEffect(() => {
+    if (!isOpen && openedFrom.current) {
+      // 열 때 실행 버튼이 제거되므로 닫은 뒤 다시 생성된 버튼으로 초점을 복원합니다.
+      triggerRefs.current[openedFrom.current]?.focus();
+      openedFrom.current = null;
+    }
+  }, [isOpen]);
 
   const handleClose = useCallback(() => {
     if (isClosing) {
@@ -50,6 +63,9 @@ export function MobileSideSheet({ tabs }: MobileSideSheetProps) {
     if (activeTab === key) {
       handleClose();
     } else {
+      if (!isOpen) {
+        openedFrom.current = key;
+      }
       setActiveTab(key);
     }
   }
@@ -64,8 +80,15 @@ export function MobileSideSheet({ tabs }: MobileSideSheetProps) {
           {tabs.map((tab, i) => (
             <button
               key={tab.key}
+              ref={(element) => {
+                if (element) {
+                  triggerRefs.current[tab.key] = element;
+                } else {
+                  delete triggerRefs.current[tab.key];
+                }
+              }}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabClick(tab.key)}
               className={[
                 "bg-white dark:bg-gray-950 text-black dark:text-white px-2 py-2.5 font-black text-[10px] transition-colors duration-100 hover:bg-yellow-300 hover:text-black active:bg-black active:text-white dark:active:bg-white dark:active:text-black",
                 i > 0 ? "border-t-2 border-black dark:border-white" : "",
@@ -81,11 +104,17 @@ export function MobileSideSheet({ tabs }: MobileSideSheetProps) {
         <div className="fixed inset-0 z-50 bg-black/40">
           <div
             ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
             className={`absolute top-0 right-0 bottom-0 w-72 border-l-4 border-black dark:border-white bg-white dark:bg-gray-950 overflow-y-auto ${isClosing ? "animate-slide-out-right" : "animate-slide-in-right"}`}
             onAnimationEnd={handleAnimationEnd}
           >
             <div className="flex items-center justify-between border-b-4 border-black dark:border-white px-4 py-3">
-              <h2 className="text-lg font-black">{activeLabel}</h2>
+              <h2 id={titleId} className="text-lg font-black">
+                {activeLabel}
+              </h2>
               <button
                 type="button"
                 onClick={handleClose}

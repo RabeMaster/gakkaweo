@@ -80,7 +80,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
             <span className="shrink-0 w-6 h-6 border-2 border-black dark:border-white bg-yellow-300 flex items-center justify-center text-xs font-black">
               5
             </span>
-            <span>적은 시도로 맞출수록 높은 순위를 차지합니다.</span>
+            <span>유사도가 높을수록 높은 순위를 차지합니다.</span>
           </li>
         </ol>
         <div className="mt-3 border-l-4 border-yellow-400 pl-3 bg-yellow-50 dark:bg-yellow-900/20 py-2">
@@ -120,7 +120,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </li>
           <li className="flex gap-2">
             <span className="shrink-0 font-black">·</span>
-            <span>좌측 패널에서 확인할 수 있습니다 (모바일: 하단, 로그인 필요)</span>
+            <span>좌측 패널에서 확인할 수 있습니다 (모바일: 오른쪽 힌트 버튼, 로그인 필요)</span>
           </li>
         </ul>
       </section>
@@ -134,7 +134,7 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </li>
           <li className="flex gap-2">
             <span className="shrink-0 font-black">·</span>
-            <span>유사도가 같으면 시도 횟수가 적은 사람이 상위</span>
+            <span>100% 미만에서 유사도가 같으면 최고 기록을 적은 시도로 달성한 사람이 상위</span>
           </li>
           <li className="flex gap-2">
             <span className="shrink-0 font-black">·</span>

@@ -7,17 +7,33 @@ import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { MobileSideSheet } from "@/shared/ui/MobileSideSheet";
 
 export function HomePage() {
-  const { data: ranking, isLoading: rankingLoading } = useRankings();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { isAuthenticated, user, sessionGeneration } = useAuthStore();
 
   const { data: today } = useToday();
   const sentenceId = today?.sentenceId;
+  const {
+    data: ranking,
+    isLoading: rankingLoading,
+    isError: rankingError,
+    refetch,
+    isFetching,
+  } = useRankings(sentenceId);
+  const contextKey = `${sentenceId ?? ""}:${user?.publicId ?? "guest"}:${sessionGeneration}`;
   const { data: status } = useGameStatus(sentenceId);
   const bestSimilarity = status?.bestSimilarity ?? 0;
 
   const { data: hints, isLoading: hintsLoading } = useHints(sentenceId, bestSimilarity);
 
-  const rankingPanel = <RankingPanel ranking={ranking} isLoading={rankingLoading} />;
+  const rankingPanel = (
+    <RankingPanel
+      key={contextKey}
+      ranking={ranking}
+      isLoading={rankingLoading}
+      isUnavailable={rankingError}
+      onRetry={() => void refetch()}
+      isRetrying={isFetching}
+    />
+  );
   const hintPanel = (
     <HintPanel
       hints={hints?.hints ?? []}
@@ -34,7 +50,7 @@ export function HomePage() {
           {rankingPanel}
           {hintPanel}
         </div>
-        <GamePage />
+        <GamePage key={contextKey} />
       </div>
 
       <MobileSideSheet

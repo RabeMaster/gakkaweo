@@ -1,37 +1,30 @@
 import { useCallback, useState } from "react";
+import {
+  EMPTY_ANONYMOUS_STATE,
+  parseAnonymousState,
+  type AnonymousGuess,
+  type AnonymousGameState,
+} from "@/features/game/anonymousState";
 
 const STORAGE_PREFIX = "gakkaweo-guesses-";
 
-export interface AnonymousGuess {
-  guessText: string;
-  similarity: number;
-  attemptNumber: number;
-  timestamp: string;
-}
-
-interface AnonymousGameState {
-  guesses: AnonymousGuess[];
-  attemptCount: number;
-  bestSimilarity: number;
-  isCleared: boolean;
-}
-
-const EMPTY_STATE: AnonymousGameState = { guesses: [], attemptCount: 0, bestSimilarity: 0, isCleared: false };
+const EMPTY_STATE = EMPTY_ANONYMOUS_STATE;
 
 function loadState(sentenceId: string): AnonymousGameState {
   try {
-    const raw = localStorage.getItem(STORAGE_PREFIX + sentenceId);
-    if (raw) {
-      return JSON.parse(raw);
-    }
+    return parseAnonymousState(localStorage.getItem(STORAGE_PREFIX + sentenceId));
   } catch {
-    // ignore parse errors
+    // 파싱 오류는 무시합니다.
   }
   return EMPTY_STATE;
 }
 
 function saveState(sentenceId: string, state: AnonymousGameState) {
-  localStorage.setItem(STORAGE_PREFIX + sentenceId, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_PREFIX + sentenceId, JSON.stringify(state));
+  } catch {
+    // 저장소가 차단되거나 가득 차도 메모리에서 게임을 계속합니다.
+  }
 }
 
 export function useAnonymousGame(sentenceId: string | undefined) {

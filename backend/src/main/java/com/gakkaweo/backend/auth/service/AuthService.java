@@ -7,12 +7,14 @@ import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.domain.member.repository.LocalAccountRepository;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.validation.NicknameValidator;
+import com.gakkaweo.backend.ranking.service.RankingWriteCoordinator;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @Slf4j
@@ -20,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
   private final MemberRepository memberRepository;
+  private final RankingWriteCoordinator rankingWriteCoordinator;
+  private final TransactionTemplate transactionTemplate;
   private final LocalAccountRepository localAccountRepository;
   private final NicknameValidator nicknameValidator;
 
@@ -33,45 +37,51 @@ public class AuthService {
     return responseFrom(member);
   }
 
-  @Transactional
   public AuthResponse changeNickname(UUID publicId, String rawNickname) {
-    String nickname = nicknameValidator.normalize(rawNickname);
-    nicknameValidator.validate(nickname);
+    return rankingWriteCoordinator.write(
+        transactionTemplate,
+        status -> {
+          String nickname = nicknameValidator.normalize(rawNickname);
+          nicknameValidator.validate(nickname);
 
-    Member member =
-        memberRepository
-            .findByPublicId(publicId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+          Member member =
+              memberRepository
+                  .findByPublicIdForUpdate(publicId)
+                  .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-    if (member.getNickname().equals(nickname)) {
-      throw new BusinessException(ErrorCode.NICKNAME_UNCHANGED);
-    }
+          if (member.getNickname().equals(nickname)) {
+            throw new BusinessException(ErrorCode.NICKNAME_UNCHANGED);
+          }
 
-    if (memberRepository.existsByNickname(nickname)) {
-      throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
-    }
+          if (memberRepository.existsByNickname(nickname)) {
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
+          }
 
-    member.setNickname(nickname);
+          member.setNickname(nickname);
 
-    try {
-      memberRepository.flush();
-    } catch (DataIntegrityViolationException e) {
-      throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
-    }
+          try {
+            memberRepository.flush();
+          } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
+          }
 
-    return responseFrom(member);
+          return responseFrom(member);
+        });
   }
 
-  @Transactional
   public AuthResponse updateProfileUrl(UUID publicId, String profileUrl) {
-    Member member =
-        memberRepository
-            .findByPublicId(publicId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+    return rankingWriteCoordinator.write(
+        transactionTemplate,
+        status -> {
+          Member member =
+              memberRepository
+                  .findByPublicIdForUpdate(publicId)
+                  .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-    member.setProfileUrl(profileUrl);
+          member.setProfileUrl(profileUrl);
 
-    return responseFrom(member);
+          return responseFrom(member);
+        });
   }
 
   public AuthResponse responseFrom(Member member) {

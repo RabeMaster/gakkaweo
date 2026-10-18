@@ -58,6 +58,9 @@ public class GameSession extends BaseAuditableEntity {
 
   private Instant clearedAt;
 
+  private Integer rankingAttemptCount;
+  private Instant rankingAchievedAt;
+
   @Column(nullable = true)
   private Integer finalRank;
 
@@ -76,6 +79,11 @@ public class GameSession extends BaseAuditableEntity {
     if (similarity.compareTo(this.bestSimilarity) > 0) {
       this.bestSimilarity = similarity;
     }
+  }
+
+  public void recordRankingImprovement(Instant now) {
+    rankingAttemptCount = attemptCount;
+    rankingAchievedAt = now;
   }
 
   public void updateClearedAt(Instant now) {

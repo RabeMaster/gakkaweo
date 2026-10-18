@@ -101,7 +101,15 @@ public class SseConnectionManager {
   private void sendInitialRanking(SseEmitter emitter) {
     try {
       emitter.send(heartbeatEvent());
-      RankingResponse ranking = rankingService.getRankings();
+      RankingResponse ranking;
+      try {
+        ranking = rankingService.getRankings();
+      } catch (BusinessException unavailable) {
+        if (unavailable.getErrorCode() == ErrorCode.RANKING_UNAVAILABLE) {
+          return;
+        }
+        throw unavailable;
+      }
       emitter.send(SseEmitter.event().name(SseEventType.RANKING_UPDATE.name()).data(ranking));
     } catch (Exception e) {
       removeAndComplete(emitter);

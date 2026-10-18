@@ -151,7 +151,7 @@ hue = (similarity / 100) × 120
 - Tailwind `darkMode: 'class'` 전략 사용
 - 기본값: 브라우저 시스템 설정 따름 (`prefers-color-scheme`)
 - 수동 토글: 헤더에 라이트/다크 스위치 배치, `localStorage`에 저장
-- 테두리/그림자 색상 반전: `border-black` ↔ `dark:border-white`, 그림자도 동일
+- 테두리/그림자 색상 반전: `border-black` <-> `dark:border-white`, 그림자도 동일
 
 ## 6. Typography (타이포그래피)
 
@@ -277,12 +277,17 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 
 ### 랭킹 패널
 
-- **1·2·3등 액센트**: `box-shadow: inset 4px 0 0 0` CSS 변수 (`--rank-1-accent`, `--rank-2-accent`, `--rank-3-accent`). 다크모드 변수 자동 전환
+- **1/2/3등 액센트**: `box-shadow: inset 4px 0 0 0` CSS 변수 (`--rank-1-accent`, `--rank-2-accent`, `--rank-3-accent`). 다크모드 변수 자동 전환
 - **1등 shine**: `rank-shine` 애니메이션 (행 전체를 훑는 반짝임, 4s linear)
 - **1등 배지**: 트로피 SVG 아이콘 (`text-black`)
 - **배지 색상**: 1등=`yellow-400/300`, 2등=`slate-300/400`, 3등=`amber-600/500 text-white`. 4+등=`gray-200/700`
 - **라이브 인디케이터**: `live-pulse` 애니메이션 (초록 펄스 도트) + `sseConnectionCount` (Zustand store, HEARTBEAT 기반)
 - **재생/정지 버튼**: `border-2 shadow-brutal-sm-hover w-7 h-7`. 호버 시 `-top-7 right-0` 우측 기준 툴팁 (재생/정지)
+- **장애 안내**: 마지막 정상 목록, 노란 상태 표시, 지연 문구, '다시 시도' 버튼을 제공한다.  
+  최초 조회 실패는 '참여자 수 확인 중'으로 표시한다.
+- **동작 줄이기**: `prefers-reduced-motion` 설정에 따라 반짝임과 자동 스크롤, 클리어 효과를 줄인다.
+- **결과 공유**: 기본 공유가 실패하면 클립보드에 복사한다. 사용자가 공유를 취소하면 복사하지 않는다.  
+  클립보드 복사도 실패하거나 지원하지 않으면 숨긴 임시 입력란으로 복사하고 바로 제거한다.
 
 ### 플레이 방법 모달
 
@@ -292,7 +297,8 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - 섹션 간 `border-t-2 border-gray-200 dark:border-gray-800` 구분선
 - AI 유사도 설명: 의미 기반 측정, 글자 매칭 아님 (예시 포함)
 - 클리어 후 계속 플레이 가능 안내 (left-accent 콜아웃, `<ul><li>` 구조)
-- 랭킹 선정 방식 안내 섹션: 유사도 > 시도 횟수 > 100% 선착순
+- 랭킹 안내: 유사도 우선. 100% 동점자는 먼저 달성한 순서.  
+  그 미만 동점자는 최고 기록 달성까지의 시도 횟수, 달성 시각 순서.
 - 플레이 방법 번호 리스트: `<ol>` 내 노란 배지에 1~5 숫자
 
 ### 설정 모달
@@ -307,13 +313,13 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 
 - 로그아웃 버튼은 공용 `Button`, 확인창은 `ConfirmDialog`를 사용한다.
 - 비밀번호 변경은 공용 `Dialog`와 라벨이 있는 비밀번호 입력창으로 구성한다.
-- 비밀번호 안내는 “8자 이상”, 길이 초과 오류는 “비밀번호가 너무 깁니다. 더 짧게 입력해 주세요.”처럼 쉽게 쓴다. 화면에는 인코딩·바이트 단위나 한글/영문별 최대 길이를 설명하지 않는다.
+- 비밀번호 안내는 “8자 이상”, 길이 초과 오류는 “비밀번호가 너무 깁니다. 더 짧게 입력해 주세요.”처럼 쉽게 쓴다. 화면에는 인코딩/바이트 단위나 한글/영문별 최대 길이를 설명하지 않는다.
 
 ### 프로필 이미지 (마이페이지)
 
-- **프로필 이미지 클릭** → 팝오버(변경/삭제) 표시
-- **변경**: hidden `<input type="file" accept="image/*">` → 크롭 모달 → 256×256 WebP 리사이징 → 서버 업로드
-- **삭제**: ConfirmDialog 확인 후 서버 삭제 → 기본 아바타 복원
+- **프로필 이미지 클릭** -> 팝오버(변경/삭제) 표시
+- **변경**: hidden `<input type="file" accept="image/*">` -> 크롭 모달 -> 256×256 WebP 리사이징 -> 서버 업로드
+- **삭제**: ConfirmDialog 확인 후 서버 삭제 -> 기본 아바타 복원
 - **크롭 모달**: `react-easy-crop` - `aspect={1}`, `cropShape="rect"` (직각, 네오브루탈리즘). 줌 슬라이더 1.0~10.0
 - **팝오버**: `border-4 shadow-brutal-sm`, click-outside/Escape 닫기
 - **hover 오버레이**: `bg-black/40` + 편집 아이콘 (프로필 이미지 위)
@@ -325,7 +331,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **Row 1**: 최고 유사도 - `displayGuesses`에서 `useMemo` 파생. HSL 색상 퍼센트
 - **Row 2**: 에러 시 에러 메시지 (`text-red-500`) / 정상 시 마지막 추측 (guessText + HSL 퍼센트)
 - **빈 상태**: 라벨 + `-` (하이픈)로 공간 유지
-- **데이터 원천**: `displayGuesses` 파생 (추가 API 없음). 새로고침 시 history API → 자동 복원
+- **데이터 원천**: `displayGuesses` 파생 (추가 API 없음). 새로고침 시 history API -> 자동 복원
 - **FE 정규화**: `normalizeGuessText()` - BE `TextNormalizer`와 동일 로직 (`[^가-힣a-zA-Z0-9\s]` 제거). 서버 호출 전 선검증
 
 ### 추측 기록 (GuessHistory)
@@ -352,10 +358,10 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 ### 힌트 패널
 
 - **위치**: 좌측 칼럼, RankingPanel 아래. 부모 `div.w-72.shrink-0.space-y-6`이 RankingPanel + HintPanel 래핑
-- **조건**: 항상 표시. 비로그인 → 로그인 유도 안내. 로그인 + bestSimilarity < 60 → 잠금 안내
+- **조건**: 항상 표시. 비로그인 -> 로그인 유도 안내. 로그인 + bestSimilarity < 60 -> 잠금 안내
 - **카드**: `Card` + `!p-4 space-y-3` (RankingPanel과 동일 배경)
 - **제목**: "다른 플레이어의 추측" `text-lg font-extrabold`
-- **상태 분기**: (1) 비로그인 → 로그인 유도 (2) bestSimilarity < 60 → 잠금 안내 (3) 빈 목록 (4) 힌트 목록 (스포일러 처리)
+- **상태 분기**: (1) 비로그인 -> 로그인 유도 (2) bestSimilarity < 60 -> 잠금 안내 (3) 빈 목록 (4) 힌트 목록 (스포일러 처리)
 - **스포일러**: 힌트 목록 기본 `blur-sm` 처리. 클릭 시 전체 해제. 새로고침 시 자동 리셋 (React state, localStorage 미사용)
 - **행 구분선**: `border-b-2 border-black/20 dark:border-white/20` (마지막 항목 제외)
 - **HintRow 툴팁**: `line-clamp-2` + `scrollHeight > clientHeight` 검출 시 hover + click(터치) 커스텀 툴팁 (네이티브 `title` 미사용). 데스크톱 hover와 모바일 터치 모두 지원
@@ -368,7 +374,7 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **사이드바**: `border-4 shadow-brutal`. 탭: 대시보드/문장/사용자/시스템. 활성 탭 `bg-yellow-300 text-black`
 - **테이블**: `border-4 shadow-brutal` 래퍼. 헤더 `border-b-4 bg-gray-100 dark:bg-gray-800`. 행 `border-b-2 border-black/20` + hover `bg-yellow-50`
 - **테이블 정렬 헤더**: `features/admin/components/SortableHeader.tsx` + `useSortState()` 훅. 정렬 가능 컬럼만 `<SortableHeader>` 사용, 정렬 불가 컬럼은 정적 `<th>` 유지
-  - **비활성 인디케이터**: 라벨 옆 회색 `⇅` 아이콘 항상 노출하여 정렬 가능함을 시각화. hover 시 셀 배경 `bg-yellow-100 dark:bg-yellow-900/30` + 라벨 underline
+  - **비활성 인디케이터**: 라벨 옆 회색 상하 화살표 아이콘 항상 노출하여 정렬 가능함을 시각화. hover 시 셀 배경 `bg-yellow-100 dark:bg-yellow-900/30` + 라벨 underline
   - **활성 인디케이터**: 셀 배경 `bg-yellow-300 dark:bg-yellow-600` + 라벨 `underline underline-offset-4` + 방향 박스(`border-2 border-black bg-white` 안에 ▲/▼). 좌측 라인은 사용하지 않음
   - **클릭 동작**: 같은 필드 재클릭 시 방향 토글, 다른 필드 클릭 시 `desc`로 진입. 정렬 변경 시 `setPage(0)` 리셋 필수
   - **a11y**: `<th scope="col" aria-sort="ascending|descending|none">` + 헤더 라벨은 `<button type="button">` 래핑. 버튼 `title` 속성으로 호버 안내(`클릭하여 정렬` / `오름차순/내림차순 정렬 중`)
@@ -419,6 +425,8 @@ max-w-6xl mx-auto px-6 py-6 flex items-center justify-between
 - **백드롭**: `fixed inset-0 bg-black/40` (Dialog와 동일)
 - **헤더**: 제목 + ✕ 닫기 버튼. 하단에 랭킹/힌트 탭 전환 바
 - **닫기**: 백드롭 클릭, Escape, ✕ 버튼, 같은 탭 재클릭. body scroll lock 적용
+- **키보드**: Tab으로 열린 패널 안에서 이동하며, 닫으면 패널을 연 버튼으로 포커스가 돌아간다.  
+  `role="dialog"`, `aria-modal`, 제목 연결을 제공한다.
 - **데스크톱**: `md:hidden`으로 숨김
 
 ### LoginPage

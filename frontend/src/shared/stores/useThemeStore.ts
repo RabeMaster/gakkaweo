@@ -23,11 +23,15 @@ function applyTheme(theme: Theme) {
 }
 
 function loadTheme(): Theme {
-  const stored = localStorage.getItem("theme");
-  if (isValidTheme(stored)) {
-    return stored;
+  try {
+    const stored = localStorage.getItem("theme");
+    if (isValidTheme(stored)) {
+      return stored;
+    }
+    localStorage.removeItem("theme");
+  } catch {
+    // 저장소가 차단되어도 테마를 선택할 수 있습니다.
   }
-  localStorage.removeItem("theme");
   return "system";
 }
 
@@ -37,7 +41,11 @@ applyTheme(initialTheme);
 export const useThemeStore = create<ThemeState>((set) => ({
   theme: initialTheme,
   setTheme: (theme) => {
-    localStorage.setItem("theme", theme);
+    try {
+      localStorage.setItem("theme", theme);
+    } catch {
+      // 저장할 수 없어도 현재 탭에 적용합니다.
+    }
     applyTheme(theme);
     set({ theme });
   },
