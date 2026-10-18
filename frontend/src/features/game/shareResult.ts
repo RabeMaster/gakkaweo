@@ -1,7 +1,9 @@
-export async function shareGameResult(text: string, url: string) {
+const GAME_SHARE_URL = "https://gakkaweo.r4b2.xyz/";
+
+export async function shareGameResult(text: string) {
   if (navigator.share) {
     try {
-      await navigator.share({ title: "가까워", text, url });
+      await navigator.share({ title: "가까워", text, url: GAME_SHARE_URL });
       return "shared";
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
@@ -9,7 +11,11 @@ export async function shareGameResult(text: string, url: string) {
       }
     }
   }
-  const result = `${text}\n${url}`;
+  return copyGameResult(text);
+}
+
+export async function copyGameResult(text: string) {
+  const result = `${text}\n${GAME_SHARE_URL}`;
   try {
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(result);
