@@ -152,7 +152,6 @@ gakkaweo/
 │   ├── default.conf             # IP 직접 접근 차단 (444 응답)
 │   └── cloudflare-ips.conf      # Cloudflare real_ip 복원
 │
-├── docs-site/                   # Swagger UI 정적 사이트 (GitHub Pages)
 │
 ├── infra/                       # Prometheus, Grafana, 백업
 │   └── backup/                  # DB 백업 자동화 (스크립트 + 운영/복구 문서)
