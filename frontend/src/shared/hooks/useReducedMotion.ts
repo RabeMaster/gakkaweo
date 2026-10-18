@@ -1,15 +1,22 @@
 import { useSyncExternalStore } from "react";
 
-const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+function getQuery() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return null;
+  }
+  return window.matchMedia("(prefers-reduced-motion: reduce)");
+}
+
 const subscribe = (onChange: () => void) => {
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
+  const query = getQuery();
+  query?.addEventListener("change", onChange);
+  return () => query?.removeEventListener("change", onChange);
 };
 
 export function useReducedMotion() {
   return useSyncExternalStore(
     subscribe,
-    () => query.matches,
+    () => getQuery()?.matches ?? false,
     () => false,
   );
 }
