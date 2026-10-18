@@ -26,6 +26,7 @@ import com.gakkaweo.backend.game.util.HintMaskGenerator;
 import com.gakkaweo.backend.infra.ai.service.SimilarityClient;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
+import com.gakkaweo.backend.ranking.service.RankingWriteCoordinator;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PostConstruct;
@@ -40,7 +41,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -53,6 +53,7 @@ public class DailyGameService {
   private final DailySentenceRepository dailySentenceRepository;
   private final GameSessionRepository gameSessionRepository;
   private final GuessHistoryRepository guessHistoryRepository;
+  private final RankingWriteCoordinator rankingWriteCoordinator;
   private final MemberRepository memberRepository;
   private final SimilarityClient similarityService;
   private final RankingService rankingService;
@@ -111,23 +112,36 @@ public class DailyGameService {
     DailySentence sentence = findTodaySentenceByPublicId(request.sentenceId());
     Member member = findMember(memberPublicId);
 
-    GameSession session = findOrCreateSession(member, sentence);
-
-    validateGuessAllowed(session);
+    gameSessionRepository
+        .findByMemberAndSentence(member, sentence)
+        .ifPresent(this::validateGuessAllowed);
 
     BigDecimal similarity =
         similarityService.calculateSimilarity(
             sentence.getId(), request.guessText(), sentence.getSentence(), remainingTtl());
 
     boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
-    Instant now = clock.instant();
-
-    record TxResult(GameSession updatedSession, BigDecimal previousBest, boolean cleared) {}
+    record TxResult(
+        GameSession updatedSession, BigDecimal previousBest, boolean cleared, Instant timestamp) {}
 
     TxResult txResult =
-        transactionTemplate.execute(
+        rankingWriteCoordinator.write(
+            transactionTemplate,
             status -> {
-              GameSession s = gameSessionRepository.findById(session.getId()).orElseThrow();
+              Member currentMember =
+                  memberRepository
+                      .findByPublicIdForUpdate(memberPublicId)
+                      .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+              if (Boolean.TRUE.equals(currentMember.getBanned())) {
+                throw new BusinessException(ErrorCode.MEMBER_BANNED);
+              }
+              DailySentence currentSentence = findTodaySentenceByPublicId(request.sentenceId());
+              GameSession s =
+                  gameSessionRepository
+                      .findByMemberAndSentence(currentMember, currentSentence)
+                      .orElseGet(() -> new GameSession(currentMember, currentSentence));
+              validateGuessAllowed(s);
+              Instant now = clock.instant();
               BigDecimal prevBest = s.getBestSimilarity();
               boolean justCleared = false;
 
@@ -141,15 +155,19 @@ public class DailyGameService {
                 s.updateClearedAt(now);
               }
               s.updateBestSimilarity(similarity);
+              if (similarity.compareTo(prevBest) > 0) {
+                s.recordRankingImprovement(now);
+              }
+
+              gameSessionRepository.save(s);
 
               int guessSequence = (int) guessHistoryRepository.countBySession(s) + 1;
               guessHistoryRepository.save(
                   new GuessHistory(s, request.guessText(), similarity, guessSequence));
 
-              gameSessionRepository.save(s);
-
-              return new TxResult(s, prevBest, justCleared);
-            });
+              return new TxResult(s, prevBest, justCleared, now);
+            },
+            result -> similarity.compareTo(result.previousBest()) > 0);
 
     GameSession updated = txResult.updatedSession();
 
@@ -170,7 +188,7 @@ public class DailyGameService {
         similarity,
         isCorrect);
 
-    return GuessResponse.from(similarity, updated, isCorrect, now);
+    return GuessResponse.from(similarity, updated, isCorrect, txResult.timestamp());
   }
 
   public GuessResponse guessAnonymous(GuessRequest request) {
@@ -180,6 +198,12 @@ public class DailyGameService {
         similarityService.calculateSimilarity(
             sentence.getId(), request.guessText(), sentence.getSentence(), remainingTtl());
 
+    rankingWriteCoordinator.lock();
+    try {
+      findTodaySentenceByPublicId(request.sentenceId());
+    } finally {
+      rankingWriteCoordinator.unlock();
+    }
     boolean isCorrect = similarity.compareTo(gameProperties.similarityThreshold()) >= 0;
     (isCorrect ? guessCorrectCounter : guessIncorrectCounter).increment();
 
@@ -265,25 +289,6 @@ public class DailyGameService {
                   .orElse(YesterdayMeResponse.notParticipated(yesterday));
             })
         .orElse(YesterdayMeResponse.notParticipated(null));
-  }
-
-  private GameSession findOrCreateSession(Member member, DailySentence sentence) {
-    return gameSessionRepository
-        .findByMemberAndSentence(member, sentence)
-        .orElseGet(
-            () -> {
-              try {
-                return gameSessionRepository.save(new GameSession(member, sentence));
-              } catch (DataIntegrityViolationException e) {
-                log.debug(
-                    "세션 동시 생성 감지, 기존 세션 재조회: memberId={}, sentenceId={}",
-                    member.getPublicId(),
-                    sentence.getPublicId());
-                return gameSessionRepository
-                    .findByMemberAndSentence(member, sentence)
-                    .orElseThrow(() -> new BusinessException(ErrorCode.SESSION_NOT_FOUND));
-              }
-            });
   }
 
   private Duration remainingTtl() {

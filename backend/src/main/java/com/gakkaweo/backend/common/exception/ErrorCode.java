@@ -22,6 +22,8 @@ public enum ErrorCode {
   INVALID_GUESS_TEXT(HttpStatus.BAD_REQUEST, "유효하지 않은 추측 입력입니다"),
   AI_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "AI 서비스를 일시적으로 이용할 수 없습니다"),
 
+  RANKING_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "랭킹 갱신이 지연되고 있습니다."),
+
   HINT_NOT_AVAILABLE(HttpStatus.FORBIDDEN, "힌트를 사용하려면 유사도 60% 이상이 필요합니다"),
   SENTENCE_NOT_FOUND(HttpStatus.NOT_FOUND, "오늘의 문제를 찾을 수 없습니다"),
   SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "게임 세션을 찾을 수 없습니다"),
@@ -30,6 +32,10 @@ public enum ErrorCode {
   RATE_LIMIT_EXCEEDED(HttpStatus.TOO_MANY_REQUESTS, "요청이 너무 많습니다. 잠시 후 다시 시도해주세요"),
   DUPLICATE_USERNAME(HttpStatus.CONFLICT, "이미 사용 중인 아이디입니다"),
   INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다"),
+  LOCAL_ACCOUNT_REQUIRED(HttpStatus.FORBIDDEN, "로컬 계정만 비밀번호를 변경할 수 있습니다"),
+  CURRENT_PASSWORD_INCORRECT(HttpStatus.BAD_REQUEST, "현재 비밀번호가 올바르지 않습니다"),
+  PASSWORD_UNCHANGED(HttpStatus.BAD_REQUEST, "새 비밀번호가 현재 비밀번호와 같습니다"),
+  AUTH_SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "인증 서비스를 일시적으로 이용할 수 없습니다"),
   MISSING_PARAMETER(HttpStatus.BAD_REQUEST, "필수 파라미터가 누락되었습니다"),
   METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 HTTP 메서드입니다"),
   INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "지원하지 않는 파일 형식입니다"),

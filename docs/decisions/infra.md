@@ -13,7 +13,7 @@
 
 - OS: `Ubuntu 24.04.4 LTS (Server)`
 - 스펙: `Intel(R) Celeron(R) G4930 CPU @ 3.20GHz`, `8GB RAM`(4GB에서 증설), `128GB SSD`
-- 네트워크: `KT 회선 → 스위치 → 공인 IP 직접 할당`
+- 네트워크: `KT 회선 -> 스위치 -> 공인 IP 직접 할당`
 - 단일 서버에 모든 서비스 배포 (Frontend 정적 파일 + Docker Compose)
 
 ## 도메인
@@ -33,7 +33,7 @@ Cloudflare를 리버스 프록시로 사용한다. 선택한 이유는 크게 �
 
 ### SSL 구성
 
-- **Origin Certificate**: Cloudflare가 발급하는 인증서를 Nginx에 설치. 브라우저 ↔ Cloudflare는 Cloudflare 인증서, Cloudflare ↔ Origin은 Origin Certificate로 E2E 암호화
+- **Origin Certificate**: Cloudflare가 발급하는 인증서를 Nginx에 설치. 브라우저 <-> Cloudflare는 Cloudflare 인증서, Cloudflare <-> Origin은 Origin Certificate로 E2E 암호화
 - **SSL Mode**: Full (strict) - Origin Certificate 검증 활성화
 - **캐싱**: 정적 자산(JS/CSS/이미지)은 Cloudflare 엣지에서 캐시. HTML/API는 캐시하지 않음
 
@@ -53,7 +53,7 @@ Cloudflare를 리버스 프록시로 사용한다. 선택한 이유는 크게 �
 당시 4GB RAM으로 PostgreSQL, Redis, AI Service, Backend를 모두 돌리기 때문에, 메모리 부족에 대비한 설정이 필수였다. 이후 8GB로 증설했지만 대비 설정은 그대로 유지한다.
 
 - **Swap**: 16GB 스왑 영역 확보. RAM이 부족해도 서비스가 즉시 죽지 않도록 버퍼 역할
-- **Swappiness**: 60 → 10으로 낮춤. 가능한 한 물리 RAM을 우선 사용하고, 정말 부족할 때만 스왑을 사용
+- **Swappiness**: 60 -> 10으로 낮춤. 가능한 한 물리 RAM을 우선 사용하고, 정말 부족할 때만 스왑을 사용
 - **OOM 방어**: SSH 프로세스는 OOM Killer가 죽이지 못하도록 보호했다. 만약 SSH마저 죽으면 서버에 원격 접근 자체가 불가능해지기 때문
   > (키보드와 모니터 꼽기 귀찮기에...)
 - **시스템 예약 메모리**: 약 300MB를 시스템 전용으로 예약. 일반 앱이 메모리를 다 먹어도 SSH 등 핵심 시스템 명령이 동작할 수 있도록 보장
@@ -212,7 +212,15 @@ Prometheus와 Grafana 모두 외부에 직접 노출하지 않는다.
 
 백업 단위는 `db.dump + uploads.tar + manifest.json`을 묶은 tar.gz 하나다. manifest에는 생성 시각, 테이블별 행 개수, 이미지 개수, 파일별 SHA-256이 들어간다. 복원 리허설 때 무엇과 맞춰 봐야 하는지가 아카이브 안에 같이 담겨 있는 셈이다.
 
-Redis는 백업하지 않는다. 랭킹 등 캐시 데이터는 DB만 있으면 다시 만들 수 있는 유실 허용 데이터다 (복구 시에는 어드민의 '랭킹 캐시 리셋'으로 재구축한다). Prometheus/Grafana 관측 데이터도 제외했다. 대시보드는 코드로 관리되어 언제든 다시 만들 수 있다.
+Redis는 DB 기록으로 다시 만들 수 있어 백업에서 제외한다.  
+랭킹은 서버 시작 시와 60초마다 자동 복구하며, 어드민의 '랭킹 캐시 리셋'으로도 복구할 수 있다.
+
+Redis 접속/명령 제한 시간은 500ms다.  
+접속 실패 후에는 일반 요청의 반복 접속을 막고 복구 작업에서 재시도한다.  
+현재 랭킹 복구는 백엔드 한 대와 Redis 한 대를 기준으로 한다.
+
+Prometheus/Grafana 데이터도 백업에서 제외한다.  
+대시보드 설정은 코드로 관리한다.
 
 ### 오프사이트 보관: Cloudflare R2
 
@@ -253,24 +261,44 @@ Redis는 백업하지 않는다. 랭킹 등 캐시 데이터는 DB만 있으면 
 
 변경된 서비스만 검증한다 (`dorny/paths-filter`).
 
-| 서비스     | 검증 항목                                                    |
-| ---------- | ------------------------------------------------------------ |
-| Frontend   | ESLint → Prettier format:check → Vite build                  |
-| Backend    | Spotless check (Google Java Format) → Gradle build (-x test) |
-| AI Service | Ruff check → Ruff format --check                             |
+| 서비스     | 검증 항목                                                                     |
+| ---------- | ----------------------------------------------------------------------------- |
+| Frontend   | pnpm audit (high 이상) -> ESLint -> Prettier format:check -> Vitest -> Vite build |
+| Backend    | Spotless check (Google Java Format) -> Gradle build (테스트 포함)              |
+| AI Service | Ruff check -> Ruff format --check -> Python 경량 기능 테스트                    |
 
-Branch Protection: 3개 job의 결과를 집계하는 `CI Result` job이 필수 상태 체크로 걸려 있어, 하나라도 실패하면 머지가 차단된다.
+Frontend는 `pnpm test`로 정규화 회귀를 실행합니다.
+
+AI는 Python 3.14 경량 테스트 의존성을 설치한 뒤 `python -m unittest discover -s tests -v`로 입력/점수/모델 생명주기/동시 캐시 처리를 검사합니다.
+
+AI 테스트는 모델 생성과 코사인 계산을 mock하여 PyTorch와 weights를 다운로드하지 않습니다.
+
+> 실제 모델의 정확도/성능/운영 검증과 구분하며 빈 테스트를 성공 처리하는 옵션은 사용하지 않습니다.
+
+Infrastructure job은 기존 백업 스크립트의 Bash 문법을 검사합니다.  
+백업 동작 테스트, 관측 설정 검증, 배포 복구 테스트는 해당 파일이 도입되는 단계에서 연결합니다.
+
+CI workflow와 공통 LF/ignore 설정 변경은 관련 서비스 검사를 다시 실행합니다.
+
+PR 파일 조회 권한은 변경 감지 job에만 부여합니다.
+
+`CI Result`는 변경 감지와 Frontend/Backend/AI/Infrastructure 결과를 집계합니다.  
+변경 감지가 성공하고, 변경된 영역의 검사는 성공하며, 무관한 영역의 검사는 정상적으로 건너뛴 경우에만 통과합니다.
+
+필요한 검사의 실패/취소/누락은 실패로 처리합니다.
+
+dev 브랜치의 실제 보호 설정과 필수 상태 체크 등록 여부는 저장소 설정에서 별도로 확인해야 합니다.
 
 ### CD - Push to main
 
-변경 감지 → 병렬 빌드 → 조건부 배포.
+변경 감지 -> 병렬 빌드 -> 조건부 배포.
 
 ```
 변경 감지 (paths-filter)
-    ├── Frontend 변경 → Vite build → SCP dist/ → Nginx 서빙
-    ├── Backend 변경 → Docker build → GHCR push → SSH docker compose up
-    ├── AI 변경 → Docker build → GHCR push → SSH docker compose up
-    └── Nginx 변경 → SCP conf → SSH nginx reload
+    ├── Frontend 변경 -> Vite build -> SCP dist/ -> Nginx 서빙
+    ├── Backend 변경 -> Docker build -> GHCR push -> SSH docker compose up
+    ├── AI 변경 -> Docker build -> GHCR push -> SSH docker compose up
+    └── Nginx 변경 -> SCP conf -> SSH nginx reload
 ```
 
 Docker 이미지는 GHCR(GitHub Container Registry)에 push하고, 서버에서 pull하는 방식이다. 서버에서 빌드하지 않음.

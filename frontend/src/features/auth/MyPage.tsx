@@ -1,24 +1,28 @@
-import { useState, useRef, useEffect } from "react";
 import type { ChangeEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { MeResponse } from "@/shared/api/types";
 import { useAuthStore } from "@/shared/stores/useAuthStore";
 import { useToastStore } from "@/shared/stores/useToastStore";
 import { Card } from "@/shared/ui/Card";
 import { Button } from "@/shared/ui/Button";
-import { logout, deleteAccount, deleteProfileImage } from "@/features/auth/api";
+import { deleteAccount, deleteProfileImage, logout, logoutAll } from "@/features/auth/api";
 import { resolveProfileUrl } from "@/shared/utils/url";
 import { DefaultAvatar } from "@/shared/ui/DefaultAvatar";
 import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { NicknameEditDialog } from "@/features/auth/components/NicknameEditDialog";
 import { ProfileImageCropDialog } from "@/features/auth/components/ProfileImageCropDialog";
 import { ProfileImagePopover } from "@/features/auth/components/ProfileImagePopover";
+import { PasswordChangeDialog } from "@/features/auth/components/PasswordChangeDialog";
 
 export function MyPage() {
   const { user, clearUser, updateUser } = useAuthStore();
   const addToast = useToastStore((s) => s.addToast);
+  const navigate = useNavigate();
 
   const [isNicknameEditOpen, setIsNicknameEditOpen] = useState(false);
-  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [logoutScope, setLogoutScope] = useState<"current" | "all" | null>(null);
+  const [isPasswordChangeOpen, setIsPasswordChangeOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -46,16 +50,23 @@ export function MyPage() {
   };
 
   const handleLogout = async () => {
+    if (!logoutScope || isLoggingOut) {
+      return;
+    }
+
+    const allDevices = logoutScope === "all";
     setIsLoggingOut(true);
+
     try {
-      await logout();
-      addToast("로그아웃되었습니다", "success");
+      await (allDevices ? logoutAll() : logout());
+      clearUser();
+      addToast(allDevices ? "모든 기기에서 로그아웃되었습니다" : "현재 기기에서 로그아웃되었습니다", "success");
+      setLogoutScope(null);
+      navigate("/", { replace: true });
     } catch {
       addToast("로그아웃 중 문제가 발생했습니다", "error");
     } finally {
-      clearUser();
       setIsLoggingOut(false);
-      setIsLogoutConfirmOpen(false);
     }
   };
 
@@ -207,16 +218,40 @@ export function MyPage() {
       </Card>
 
       <div className="space-y-3">
+        {user?.canChangePassword && (
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => setIsPasswordChangeOpen(true)}
+            disabled={isLoggingOut || isDeleting}
+          >
+            비밀번호 변경
+          </Button>
+        )}
         <Button
           variant="secondary"
           className="w-full"
-          onClick={() => setIsLogoutConfirmOpen(true)}
-          disabled={isLoggingOut}
+          onClick={() => setLogoutScope("current")}
+          disabled={isLoggingOut || isDeleting}
         >
-          로그아웃
+          현재 기기 로그아웃
         </Button>
 
-        <Button variant="danger" className="w-full" onClick={() => setIsDeleteConfirmOpen(true)} disabled={isDeleting}>
+        <Button
+          variant="secondary"
+          className="w-full"
+          onClick={() => setLogoutScope("all")}
+          disabled={isLoggingOut || isDeleting}
+        >
+          모든 기기 로그아웃
+        </Button>
+
+        <Button
+          variant="danger"
+          className="w-full"
+          onClick={() => setIsDeleteConfirmOpen(true)}
+          disabled={isDeleting || isLoggingOut}
+        >
           회원 탈퇴
         </Button>
       </div>
@@ -234,14 +269,31 @@ export function MyPage() {
       )}
 
       <ConfirmDialog
-        isOpen={isLogoutConfirmOpen}
-        onClose={() => setIsLogoutConfirmOpen(false)}
-        onConfirm={handleLogout}
-        title="로그아웃"
-        message="로그아웃하시겠습니까?"
-        confirmLabel="로그아웃"
+        isOpen={logoutScope !== null}
+        onClose={() => setLogoutScope(null)}
+        onConfirm={() => {
+          void handleLogout();
+        }}
+        title={logoutScope === "all" ? "모든 기기 로그아웃" : "현재 기기 로그아웃"}
+        message={
+          logoutScope === "all"
+            ? "현재 기기를 포함한 모든 기기에서 로그아웃하시겠습니까?"
+            : "이 브라우저에서 로그아웃하시겠습니까? 다른 기기의 로그인은 유지됩니다."
+        }
+        confirmLabel={logoutScope === "all" ? "모두 로그아웃" : "로그아웃"}
         isLoading={isLoggingOut}
       />
+
+      {isPasswordChangeOpen && user?.canChangePassword && (
+        <PasswordChangeDialog
+          onClose={() => setIsPasswordChangeOpen(false)}
+          onSuccess={() => {
+            clearUser();
+            addToast("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.", "success");
+            navigate("/login", { replace: true });
+          }}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={isDeleteConfirmOpen}

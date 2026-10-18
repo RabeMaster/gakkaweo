@@ -3,6 +3,7 @@ package com.gakkaweo.backend.domain.member.repository;
 import com.gakkaweo.backend.domain.member.entity.LocalAccount;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -17,6 +18,12 @@ public interface LocalAccountRepository extends JpaRepository<LocalAccount, Long
   boolean existsByUsernameIgnoreCase(String username);
 
   boolean existsByMember(Member member);
+
+  @EntityGraph(attributePaths = "member")
+  Optional<LocalAccount> findByMemberPublicId(UUID publicId);
+
+  @EntityGraph(attributePaths = "member")
+  Optional<LocalAccount> findByMemberId(Long memberId);
 
   @Modifying(clearAutomatically = true)
   @Query("DELETE FROM LocalAccount l WHERE l.member = :member")

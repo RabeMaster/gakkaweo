@@ -2,10 +2,14 @@ package com.gakkaweo.backend.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.gakkaweo.backend.admin.dto.RoleChangeRequest;
+import com.gakkaweo.backend.admin.service.AdminUserService;
+import com.gakkaweo.backend.auth.service.AccountService;
 import com.gakkaweo.backend.domain.member.entity.Member;
 import com.gakkaweo.backend.support.IntegrationTestBase;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -15,10 +19,135 @@ import org.springframework.http.ResponseEntity;
 @DisplayName("Security 접근 매트릭스 통합 테스트")
 class SecurityConfigTest extends IntegrationTestBase {
 
+  @Autowired AdminUserService adminUserService;
+  @Autowired AccountService accountService;
+
+  @Test
+  @DisplayName("관리자 강등 후 이미 발급한 access token으로 관리자 API 접근 불가")
+  void 기존_토큰_관리자_강등_반영() {
+    Member admin = testAuthHelper.createAdmin();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+    Member superAdmin = testAuthHelper.createSuperAdmin();
+
+    adminUserService.changeRole(
+        admin.getPublicId(), superAdmin.getPublicId(), new RoleChangeRequest("USER"), "127.0.0.1");
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/admin/users?page=0&size=10"),
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+  }
+
+  @Test
+  @DisplayName("차단 후 이미 발급한 access token으로 공개 API를 호출해도 차단 오류")
+  void 기존_토큰_계정_차단_반영() {
+    Member member = testAuthHelper.createMember();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(member);
+
+    adminUserService.banUser(
+        member.getPublicId(), testAuthHelper.createSuperAdmin().getPublicId(), "127.0.0.1");
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/ranking/today"), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(response.getBody()).contains("MEMBER_BANNED");
+  }
+
+  @Test
+  @DisplayName("차단 계정도 유효한 기존 access token으로 로그아웃하여 쿠키를 정리할 수 있음")
+  void 차단_계정_로그아웃_허용() {
+    Member member = testAuthHelper.createMember();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(member);
+
+    adminUserService.banUser(
+        member.getPublicId(), testAuthHelper.createSuperAdmin().getPublicId(), "127.0.0.1");
+
+    var response =
+        restTemplate.exchange(
+            url("/auth/logout"), HttpMethod.POST, new HttpEntity<>(headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getHeaders().get(HttpHeaders.SET_COOKIE)).hasSize(4);
+  }
+
+  @Test
+  @DisplayName("회원 삭제 후 이미 발급한 access token으로 인증 API 접근 불가")
+  void 기존_토큰_회원_삭제_반영() {
+    Member member = testAuthHelper.createMember();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(member);
+
+    ResponseEntity<String> beforeResponse =
+        restTemplate.exchange(
+            url("/auth/me"), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+    assertThat(beforeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    accountService.deleteAccount(member.getPublicId());
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/auth/me"), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+  }
+
+  @Test
+  @DisplayName("런타임 public API 문서는 미인증 접근 허용")
+  void public_API_문서_미인증_허용() {
+    ResponseEntity<String> response =
+        restTemplate.getForEntity(url("/v3/api-docs/public"), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).contains("\"openapi\"").doesNotContain("\"/admin/");
+  }
+
+  @Test
+  @DisplayName("런타임 admin API 문서는 일반 회원 접근 차단, 관리자 접근 허용")
+  void admin_API_문서_권한_제한() {
+    Member member = testAuthHelper.createMember();
+    Member admin = testAuthHelper.createAdmin();
+
+    ResponseEntity<String> memberResponse =
+        restTemplate.exchange(
+            url("/v3/api-docs/admin"),
+            HttpMethod.GET,
+            new HttpEntity<>(testAuthHelper.cookieHeaderFor(member)),
+            String.class);
+    ResponseEntity<String> adminResponse =
+        restTemplate.exchange(
+            url("/v3/api-docs/admin"),
+            HttpMethod.GET,
+            new HttpEntity<>(testAuthHelper.cookieHeaderFor(admin)),
+            String.class);
+
+    assertThat(memberResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(adminResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  @DisplayName("별도 게시용 full API 문서는 관리자도 접근 차단")
+  void full_API_문서_관리자_접근_차단() {
+    Member admin = testAuthHelper.createAdmin();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/v3/api-docs/full"), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+  }
+
   @Test
   @DisplayName("public 엔드포인트 - 미인증 접근 허용")
   void public_미인증_허용() {
     ResponseEntity<String> health = restTemplate.getForEntity(url("/health"), String.class);
+
     assertThat(health.getStatusCode()).isIn(HttpStatus.OK, HttpStatus.NOT_FOUND);
   }
 
@@ -26,6 +155,7 @@ class SecurityConfigTest extends IntegrationTestBase {
   @DisplayName("/auth/me - 미인증 401")
   void me_미인증_401() {
     ResponseEntity<String> response = restTemplate.getForEntity(url("/auth/me"), String.class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
   }
 
@@ -35,6 +165,7 @@ class SecurityConfigTest extends IntegrationTestBase {
     ResponseEntity<String> response =
         restTemplate.getForEntity(
             url("/daily/history?sentenceId=550e8400-e29b-41d4-a716-446655440000"), String.class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
   }
 
@@ -43,6 +174,7 @@ class SecurityConfigTest extends IntegrationTestBase {
   void admin_미인증_401() {
     ResponseEntity<String> response =
         restTemplate.getForEntity(url("/admin/users?page=0&size=10"), String.class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
   }
 
@@ -83,6 +215,7 @@ class SecurityConfigTest extends IntegrationTestBase {
   void daily_today_미인증_200() {
     testAuthHelper.createTodaySentence("안녕하세요");
     ResponseEntity<String> response = restTemplate.getForEntity(url("/daily/today"), String.class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 
@@ -91,6 +224,7 @@ class SecurityConfigTest extends IntegrationTestBase {
   void ranking_today_미인증_200() {
     ResponseEntity<String> response =
         restTemplate.getForEntity(url("/ranking/today"), String.class);
+
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 }

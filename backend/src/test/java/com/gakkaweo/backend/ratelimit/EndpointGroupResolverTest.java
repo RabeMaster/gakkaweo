@@ -54,6 +54,8 @@ class EndpointGroupResolverTest {
   void AUTH_다른_auth_경로() {
     assertThat(resolver.resolve("POST", "/auth/login")).isEqualTo(EndpointGroup.AUTH);
     assertThat(resolver.resolve("POST", "/auth/refresh")).isEqualTo(EndpointGroup.AUTH);
+    assertThat(resolver.resolve("POST", "/auth/logout-all")).isEqualTo(EndpointGroup.AUTH);
+    assertThat(resolver.resolve("PATCH", "/auth/password")).isEqualTo(EndpointGroup.AUTH);
   }
 
   @Test

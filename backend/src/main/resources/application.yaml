@@ -20,6 +20,8 @@ spring:
     locations: classpath:db/migration
   data:
     redis:
+      timeout: 500ms
+      connect-timeout: 500ms
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD}
@@ -117,9 +119,6 @@ app:
       cooldown: ${ERROR_ALERT_COOLDOWN:5m}
     dedup:
       cleanup-interval-ms: ${NOTIFICATION_DEDUP_CLEANUP_INTERVAL_MS:300000}
-
-  openapi:
-    docs-mode: ${APP_OPENAPI_DOCS_MODE:false}
 
   redis:
     cleanup:

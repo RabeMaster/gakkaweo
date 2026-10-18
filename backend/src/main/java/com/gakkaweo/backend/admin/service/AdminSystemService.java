@@ -11,7 +11,6 @@ import com.gakkaweo.backend.admin.sort.SortRequestParser;
 import com.gakkaweo.backend.admin.sort.SortSpecBuilder;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
-import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.common.util.EnumParser;
 import com.gakkaweo.backend.domain.admin.entity.Announcement;
 import com.gakkaweo.backend.domain.admin.entity.AnnouncementType;
@@ -34,7 +33,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -227,18 +225,6 @@ public class AdminSystemService {
 
   public void resetRankingCache(UUID adminPublicId, String ipAddress) {
     LocalDate today = LocalDate.now(clock);
-    String rankingKey = RedisKeyConstants.rankingKey(today);
-
-    Set<String> members = redisTemplate.opsForZSet().range(rankingKey, 0, -1);
-    if (members != null) {
-      for (String memberKey : members) {
-        UUID publicId = RedisKeyConstants.extractMemberPublicId(memberKey);
-        String detailKey = RedisKeyConstants.rankingDetailKey(today, publicId);
-        redisTemplate.delete(detailKey);
-      }
-    }
-    redisTemplate.delete(rankingKey);
-
     int rebuilt = rankingService.rebuildRankingCache(today);
     eventPublisher.publishEvent(new RankingUpdateEvent());
     log.info("랭킹 캐시 리셋 및 재구축: date={}, rebuilt={}", today, rebuilt);

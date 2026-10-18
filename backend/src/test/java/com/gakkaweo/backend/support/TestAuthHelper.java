@@ -1,7 +1,7 @@
 package com.gakkaweo.backend.support;
 
 import com.gakkaweo.backend.auth.dto.TokenPair;
-import com.gakkaweo.backend.auth.service.AuthService;
+import com.gakkaweo.backend.auth.service.AuthSessionService;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.DailySentenceStatus;
 import com.gakkaweo.backend.domain.game.repository.DailySentenceRepository;
@@ -30,7 +30,7 @@ public class TestAuthHelper {
   private final LocalAccountRepository localAccountRepository;
   private final DailySentenceRepository dailySentenceRepository;
   private final PasswordEncoder passwordEncoder;
-  private final AuthService authService;
+  private final AuthSessionService authSessionService;
   private final TransactionTemplate transactionTemplate;
   private final Clock clock;
 
@@ -58,10 +58,12 @@ public class TestAuthHelper {
           if (role != MemberRole.USER) {
             member.setRole(role);
           }
+
           if (banned) {
             member.setBanned(true);
             member.setBannedAt(clock.instant());
           }
+
           return memberRepository.save(member);
         });
   }
@@ -78,7 +80,7 @@ public class TestAuthHelper {
   }
 
   public TokenPair issueTokens(Member member) {
-    return authService.issueTokens(member);
+    return authSessionService.issue(member.getId());
   }
 
   public HttpHeaders cookieHeaderFor(Member member) {

@@ -1,3 +1,5 @@
+import { Button } from "@/shared/ui/Button";
+import { useReducedMotion } from "@/shared/hooks/useReducedMotion";
 import { useEffect, useRef, useState } from "react";
 import type { TransitionEvent } from "react";
 import type { RankingResponse } from "@/shared/api/types";
@@ -20,14 +22,18 @@ function getCircularSlice<T>(items: T[], offset: number, count: number): T[] {
 interface RankingPanelProps {
   ranking: RankingResponse | undefined;
   isLoading: boolean;
+  isUnavailable: boolean;
+  isRetrying: boolean;
+  onRetry: () => void;
 }
 
-export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
+export function RankingPanel({ ranking, isLoading, isUnavailable, onRetry, isRetrying }: RankingPanelProps) {
   const { user, isAuthenticated } = useAuthStore();
   const sseConnectionCount = useConnectionStore((s) => s.sseConnectionCount);
 
   const entries = (ranking?.rankings ?? []).slice(0, 10);
-  const shouldAnimate = entries.length > VISIBLE;
+  const reducedMotion = useReducedMotion();
+  const shouldAnimate = entries.length > VISIBLE && !reducedMotion;
 
   const [offset, setOffset] = useState(0);
   const [isSliding, setIsSliding] = useState(false);
@@ -101,6 +107,14 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
         )}
       </div>
 
+      {isUnavailable && (
+        <div role="status" className="space-y-2 text-sm font-bold">
+          <p>랭킹 갱신이 지연되고 있습니다.</p>
+          <Button size="sm" variant="secondary" onClick={onRetry} isLoading={isRetrying}>
+            다시 시도
+          </Button>
+        </div>
+      )}
       {isLoading ? (
         <div className="space-y-1.5">
           <SkeletonRow height="h-10" className="border-2 border-transparent" />
@@ -110,7 +124,9 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
           <SkeletonRow height="h-10" className="border-2 border-transparent" />
         </div>
       ) : entries.length === 0 ? (
-        <RankingEmptyState />
+        isUnavailable ? null : (
+          <RankingEmptyState />
+        )
       ) : (
         <div
           className="overflow-hidden"
@@ -162,11 +178,17 @@ export function RankingPanel({ ranking, isLoading }: RankingPanelProps) {
         <div className="flex items-center justify-between text-xs font-bold text-gray-600 dark:text-gray-400">
           <span>
             <span
-              className="inline-block w-1.5 h-1.5 bg-green-500 dark:bg-green-400 mr-1 align-middle"
-              style={{ animation: "live-pulse 2s ease-in-out infinite" }}
+              className={`inline-block w-1.5 h-1.5 mr-1 align-middle ${isUnavailable ? "bg-yellow-500 dark:bg-yellow-300" : "bg-green-500 dark:bg-green-400"}`}
+              style={{ animation: reducedMotion ? "none" : "live-pulse 2s ease-in-out infinite" }}
             />
-            <span className="text-black dark:text-white">오늘</span>{" "}
-            <span className="text-black dark:text-white tabular-nums">{ranking?.totalPlayers ?? 0}</span>명 도전
+            {isUnavailable && !ranking ? (
+              "참여자 수 확인 중"
+            ) : (
+              <>
+                <span className="text-black dark:text-white">오늘</span>{" "}
+                <span className="text-black dark:text-white tabular-nums">{ranking?.totalPlayers ?? 0}</span>명 도전
+              </>
+            )}
           </span>
           {sseConnectionCount != null && (
             <span>

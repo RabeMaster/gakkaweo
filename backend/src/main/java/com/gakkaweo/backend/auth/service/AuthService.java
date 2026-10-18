@@ -1,76 +1,31 @@
 package com.gakkaweo.backend.auth.service;
 
 import com.gakkaweo.backend.auth.dto.AuthResponse;
-import com.gakkaweo.backend.auth.dto.TokenPair;
-import com.gakkaweo.backend.auth.jwt.JwtProvider;
 import com.gakkaweo.backend.common.exception.BusinessException;
 import com.gakkaweo.backend.common.exception.ErrorCode;
-import com.gakkaweo.backend.common.redis.RedisKeyConstants;
-import com.gakkaweo.backend.domain.auth.entity.RefreshToken;
 import com.gakkaweo.backend.domain.member.entity.Member;
+import com.gakkaweo.backend.domain.member.repository.LocalAccountRepository;
 import com.gakkaweo.backend.domain.member.repository.MemberRepository;
 import com.gakkaweo.backend.domain.member.validation.NicknameValidator;
-import io.jsonwebtoken.Claims;
-import java.time.Clock;
-import java.time.Duration;
+import com.gakkaweo.backend.ranking.service.RankingWriteCoordinator;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class AuthService {
 
-  private final JwtProvider jwtProvider;
-  private final RefreshTokenService refreshTokenService;
   private final MemberRepository memberRepository;
+  private final RankingWriteCoordinator rankingWriteCoordinator;
+  private final TransactionTemplate transactionTemplate;
+  private final LocalAccountRepository localAccountRepository;
   private final NicknameValidator nicknameValidator;
-  private final StringRedisTemplate redisTemplate;
-  private final Clock clock;
-
-  @Transactional
-  public TokenPair issueTokens(Member member) {
-    String accessToken =
-        jwtProvider.createAccessToken(member.getPublicId(), member.getRole().name());
-    String refreshToken = refreshTokenService.createRefreshToken(member);
-    log.info("토큰 발급: memberId={}", member.getPublicId());
-    return new TokenPair(accessToken, refreshToken);
-  }
-
-  @Transactional
-  public TokenPair refresh(String rawRefreshToken) {
-    RefreshToken existing = refreshTokenService.findByRawToken(rawRefreshToken);
-    String newRawRefreshToken = refreshTokenService.rotateRefreshToken(rawRefreshToken);
-
-    Member member = existing.getMember();
-    if (Boolean.TRUE.equals(member.getBanned())) {
-      throw new BusinessException(ErrorCode.MEMBER_BANNED);
-    }
-
-    String accessToken =
-        jwtProvider.createAccessToken(member.getPublicId(), member.getRole().name());
-
-    log.info("토큰 갱신: memberId={}", member.getPublicId());
-    return new TokenPair(accessToken, newRawRefreshToken);
-  }
-
-  public void logout(String accessToken) {
-    Claims claims = jwtProvider.parseAccessToken(accessToken);
-    String jti = claims.getId();
-    long remainingMillis = claims.getExpiration().getTime() - clock.millis();
-
-    if (remainingMillis > 0) {
-      redisTemplate
-          .opsForValue()
-          .set(RedisKeyConstants.blacklistKey(jti), "logout", Duration.ofMillis(remainingMillis));
-    }
-    log.info("로그아웃: jti={}", jti);
-  }
 
   @Transactional(readOnly = true)
   public AuthResponse getCurrentUser(UUID publicId) {
@@ -79,47 +34,57 @@ public class AuthService {
             .findByPublicId(publicId)
             .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-    return AuthResponse.from(member);
+    return responseFrom(member);
   }
 
-  @Transactional
   public AuthResponse changeNickname(UUID publicId, String rawNickname) {
-    String nickname = nicknameValidator.normalize(rawNickname);
-    nicknameValidator.validate(nickname);
+    return rankingWriteCoordinator.write(
+        transactionTemplate,
+        status -> {
+          String nickname = nicknameValidator.normalize(rawNickname);
+          nicknameValidator.validate(nickname);
 
-    Member member =
-        memberRepository
-            .findByPublicId(publicId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+          Member member =
+              memberRepository
+                  .findByPublicIdForUpdate(publicId)
+                  .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-    if (member.getNickname().equals(nickname)) {
-      throw new BusinessException(ErrorCode.NICKNAME_UNCHANGED);
-    }
+          if (member.getNickname().equals(nickname)) {
+            throw new BusinessException(ErrorCode.NICKNAME_UNCHANGED);
+          }
 
-    if (memberRepository.existsByNickname(nickname)) {
-      throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
-    }
+          if (memberRepository.existsByNickname(nickname)) {
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
+          }
 
-    member.setNickname(nickname);
+          member.setNickname(nickname);
 
-    try {
-      memberRepository.flush();
-    } catch (DataIntegrityViolationException e) {
-      throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
-    }
+          try {
+            memberRepository.flush();
+          } catch (DataIntegrityViolationException e) {
+            throw new BusinessException(ErrorCode.NICKNAME_DUPLICATED);
+          }
 
-    return AuthResponse.from(member);
+          return responseFrom(member);
+        });
   }
 
-  @Transactional
   public AuthResponse updateProfileUrl(UUID publicId, String profileUrl) {
-    Member member =
-        memberRepository
-            .findByPublicId(publicId)
-            .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
+    return rankingWriteCoordinator.write(
+        transactionTemplate,
+        status -> {
+          Member member =
+              memberRepository
+                  .findByPublicIdForUpdate(publicId)
+                  .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-    member.setProfileUrl(profileUrl);
+          member.setProfileUrl(profileUrl);
 
-    return AuthResponse.from(member);
+          return responseFrom(member);
+        });
+  }
+
+  public AuthResponse responseFrom(Member member) {
+    return AuthResponse.from(member, localAccountRepository.existsByMember(member));
   }
 }

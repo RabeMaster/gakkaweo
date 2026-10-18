@@ -22,6 +22,36 @@ main          ← 운영 배포 (main 머지 시 CD 자동 배포)
 | docs/#이슈번호-설명  | 문서 작업                                   | dev            |
 | chore/#이슈번호-설명 | 빌드, 설정 등 기타 작업                     | dev            |
 
+## 머지 방식
+
+| 통합 경로          | 기본 방식             | 목적                                   |
+| ------------------ | --------------------- | -------------------------------------- |
+| 작업 브랜치 → dev  | Squash and merge      | PR 하나를 하나의 작업 커밋으로 기록    |
+| dev → main         | Create a merge commit | 개발 커밋과 배포 시점의 통합 이력 보존 |
+| 운영 핫픽스 → main | Create a merge commit | main 대상 PR의 머지 규칙 준수          |
+
+- 작업 PR마다 main까지 머지하지 않습니다. dev에서 검증한 변경을 배포 시점에 dev → main PR 하나로 묶습니다.
+- 계속 사용하는 dev를 main에 통합할 때는 Squash나 Rebase and merge를 사용하지 않습니다. 기존 커밋의 연결 관계를 유지합니다.
+- Rebase and merge는 기본 흐름에서 사용하지 않습니다.
+- 작업 브랜치의 개별 커밋을 dev에 보존해야 할 때만 Merge commit을 예외로 검토합니다. 현재 dev 보호 규칙은 Squash만 허용하므로 일반 PR 머지로는 선택할 수 없습니다. 예외의 필요성과 관리자 우회 범위를 먼저 승인받습니다.
+- Squash로 생성할 최종 커밋의 제목·본문도 머지 전에 검수합니다. 작업 브랜치의 커밋 메시지 검수와 별개입니다.
+- 일반 작업 브랜치는 머지 후 삭제하고 다음 작업은 최신 dev에서 새 브랜치로 시작합니다. dev와 main은 계속 유지합니다.
+
+### GitHub 저장소 설정
+
+2026-10-05 확인 기준, 저장소 전체에서는 Merge commit·Squash·Rebase를 허용하지만 대상 브랜치의 활성 ruleset이 실제 선택을 제한합니다.
+
+- `protect dev`: dev 대상 PR은 Squash만 허용하며 최신 기준의 `CI Result` 성공이 필요합니다.
+- `protect main`: main 대상 PR은 Merge commit만 허용하며 최신 기준의 `CI Result` 성공이 필요합니다.
+- dev 규칙에는 관리자 우회가 허용되어 있지만 일반 작업에서는 우회하지 않습니다. main 규칙에는 우회 대상이 없습니다.
+- 저장소 전체의 Merge commit이나 Squash 옵션을 끄면 한쪽 브랜치의 머지가 막히므로 두 옵션을 유지합니다.
+
+### 배포 후 동기화
+
+main에 배포 머지 커밋이 생성되면 그 커밋을 dev에도 반영합니다. main의 최신 이력을 dev가 포함해야 다음 배포 PR의 기준이 맞습니다. 운영 핫픽스도 동일하게 dev에 반영합니다.
+
+main → dev 동기화는 커밋의 연결 관계를 보존해야 하므로 Squash PR로 처리하지 않습니다. 실제 브랜치 그래프와 보호 규칙을 확인하고, 관리자 우회가 필요한 동기화는 그 실행 범위를 별도로 승인받습니다. 공유 dev/main 이력을 Rebase하거나 force push하지 않습니다.
+
 ## 브랜치 네이밍 규칙
 
 ```
@@ -46,7 +76,7 @@ chore/#8-도커-설정
 | ---------------- | ------------------------------ |
 | PR to dev        | CI (lint, format, build, test) |
 | PR to main       | CI (동일)                      |
-| main 머지 (push) | CD (빌드 → 배포)              |
+| main 머지 (push) | CD (빌드 → 배포)               |
 
 ## 워크플로우
 
@@ -63,8 +93,9 @@ chore/#8-도커-설정
 
 3. **작업 및 커밋** - [커밋 컨벤션](commit-convention.md)에 맞춰 커밋합니다.
 4. **PR 생성** - GitHub에서 dev 브랜치로 PR을 생성합니다 (PR 템플릿 사용).
-5. **셀프 리뷰 및 머지** - 셀프 리뷰 후 dev에 머지합니다.
-6. **배포** - dev에서 안정화 후 dev → main PR을 생성하여 머지합니다. main 머지 시 CD가 자동 배포합니다.
+5. **셀프 리뷰 및 머지** - CI와 리뷰 완료 후 최종 커밋 제목·본문을 검수하고 Squash and merge로 dev에 머지합니다.
+6. **배포** - dev에서 안정화 후 배포할 변경 묶음으로 dev → main PR을 생성합니다. CI와 리뷰 완료 후 Create a merge commit으로 머지하며, main 머지 시 CD가 자동 배포합니다.
+7. **동기화** - 배포 머지 커밋을 포함한 main의 최신 이력을 dev에 반영합니다. 위 배포 후 동기화 규칙을 따릅니다.
 
 ### 운영 핫픽스
 
@@ -78,8 +109,8 @@ chore/#8-도커-설정
    git checkout -b fix/#99-긴급-수정
    ```
 
-2. **수정 및 PR** - main 대상 PR을 생성합니다. CI 통과 후 main에 머지합니다.
-3. **dev로 백포팅** - main의 수정 사항을 dev에 반영합니다.
+2. **수정 및 PR** - main 대상 PR을 생성합니다. CI와 리뷰 완료 후 Create a merge commit으로 main에 머지합니다.
+3. **dev로 백포팅** - main의 수정과 머지 커밋을 dev에 반영합니다. 아래 명령은 로컬 통합 예시이며 원격 반영은 위 보호 규칙과 승인 범위를 따릅니다.
 
    ```bash
    git checkout dev

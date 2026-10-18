@@ -25,23 +25,27 @@ class CookieAttributeTest extends IntegrationTestBase {
             AuthResponse.class);
 
     List<String> cookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
+
     assertThat(cookies).isNotNull();
 
     Map<String, String> byName = indexByName(cookies);
 
     String access = byName.get("access_token");
+
     assertThat(access).isNotNull();
     assertThat(access).containsIgnoringCase("HttpOnly");
     assertThat(access).contains("Path=/");
     assertThat(access).containsIgnoringCase("SameSite=Lax");
 
     String refresh = byName.get("refresh_token");
+
     assertThat(refresh).isNotNull();
     assertThat(refresh).containsIgnoringCase("HttpOnly");
-    assertThat(refresh).contains("Path=/auth/refresh");
+    assertThat(refresh).contains("Path=/auth;");
     assertThat(refresh).containsIgnoringCase("SameSite=Lax");
 
     String session = byName.get("has_session");
+
     assertThat(session).isNotNull();
     assertThat(session).doesNotContainIgnoringCase("HttpOnly");
     assertThat(session).contains("Path=/");

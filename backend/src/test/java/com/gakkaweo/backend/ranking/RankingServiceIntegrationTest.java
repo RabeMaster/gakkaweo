@@ -242,8 +242,8 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
   }
 
   @Test
-  @DisplayName("GET /ranking/today - 필수 필드가 빠진 detail 멤버는 스킵하고 나머지는 정상 반환")
-  void 랭킹_조회_부분detail_스킵() {
+  @DisplayName("GET /ranking/today - 손상된 detail을 DB 기준으로 복구하고 전체 목록 반환")
+  void 랭킹_조회_부분detail_복구() {
     DailySentence sentence = testAuthHelper.createTodaySentence("오늘 문장");
     seedRanking(sentence, "정상1", null, new BigDecimal("95.0"), false);
     Member broken = seedRanking(sentence, "깨진유저", null, new BigDecimal("90.0"), false);
@@ -261,15 +261,15 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
     assertThat(response.getBody().totalPlayers()).isEqualTo(3L);
     assertThat(response.getBody().rankings())
         .extracting(RankingResponse.RankingEntry::nickname)
-        .containsExactly("정상1", "정상2");
+        .containsExactly("정상1", "깨진유저", "정상2");
     assertThat(response.getBody().rankings())
         .extracting(RankingResponse.RankingEntry::rank)
-        .containsExactly(1L, 2L);
+        .containsExactly(1L, 2L, 3L);
   }
 
   @Test
-  @DisplayName("GET /ranking/today 인증 - 내 detail 필수 필드가 빠지면 myRank null, 목록은 정상")
-  void 랭킹_조회_인증_부분detail_myRank_null() {
+  @DisplayName("GET /ranking/today 인증 - 손상된 내 detail과 myRank를 복구")
+  void 랭킹_조회_인증_부분detail_myRank_복구() {
     DailySentence sentence = testAuthHelper.createTodaySentence("오늘 문장");
     seedRanking(sentence, "1등", null, new BigDecimal("100.0"), true);
     Member me = seedRanking(sentence, "나", null, new BigDecimal("80.0"), false);
@@ -288,11 +288,11 @@ class RankingServiceIntegrationTest extends IntegrationTestBase {
             RankingResponse.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getBody().myRank()).isNull();
+    assertThat(response.getBody().myRank()).isNotNull();
     assertThat(response.getBody().totalPlayers()).isEqualTo(2L);
     assertThat(response.getBody().rankings())
         .extracting(RankingResponse.RankingEntry::nickname)
-        .containsExactly("1등");
+        .containsExactly("1등", "나");
     assertThat(response.getBody().rankings().get(0).rank()).isEqualTo(1L);
   }
 

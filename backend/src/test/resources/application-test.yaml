@@ -68,6 +68,10 @@ cookie:
   domain: ""
 
 app:
+  ranking:
+    recovery-enabled: false
+    recovery-delay: 3600000
+    recovery-initial-delay: 3600000
   oauth2:
     authorized-redirect-uri: http://localhost:3000
   ai-service:
@@ -91,8 +95,6 @@ app:
   seed:
     enabled: false
     admin-password: ""
-  openapi:
-    docs-mode: false
 
 springdoc:
   api-docs:

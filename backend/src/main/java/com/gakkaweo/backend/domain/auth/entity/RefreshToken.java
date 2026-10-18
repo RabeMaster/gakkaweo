@@ -33,6 +33,10 @@ public class RefreshToken extends BaseTimeEntity {
   @JoinColumn(name = "member_id", nullable = false)
   private Member member;
 
+  @ManyToOne(fetch = LAZY)
+  @JoinColumn(name = "session_id")
+  private AuthSession session;
+
   @Column(nullable = false, unique = true, length = 64)
   private String tokenHash;
 
@@ -49,5 +53,10 @@ public class RefreshToken extends BaseTimeEntity {
     this.tokenHash = tokenHash;
     this.familyId = familyId;
     this.expiresAt = expiresAt;
+  }
+
+  public RefreshToken(AuthSession session, String tokenHash, Instant expiresAt) {
+    this(session.getMember(), tokenHash, session.getPublicId(), expiresAt);
+    this.session = session;
   }
 }

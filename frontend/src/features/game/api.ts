@@ -9,8 +9,8 @@ import type {
   YesterdayMeResponse,
 } from "@/shared/api/types";
 
-export function getToday() {
-  return apiFetch<TodayResponse>("/daily/today");
+export function getToday(signal?: AbortSignal) {
+  return apiFetch<TodayResponse>("/daily/today", { signal });
 }
 
 export function submitGuess(body: GuessRequest) {
@@ -20,18 +20,18 @@ export function submitGuess(body: GuessRequest) {
   });
 }
 
-export function getHistory(sentenceId: string) {
-  return apiFetch<HistoryResponse>(`/daily/history?sentenceId=${sentenceId}`);
+export function getHistory(sentenceId: string, signal?: AbortSignal) {
+  return apiFetch<HistoryResponse>(`/daily/history?sentenceId=${sentenceId}`, { signal });
 }
 
-export function getStatus() {
-  return apiFetch<StatusResponse>("/daily/status");
+export function getStatus(signal?: AbortSignal) {
+  return apiFetch<StatusResponse>("/daily/status", { signal });
 }
 
-export function getHints(sentenceId: string) {
-  return apiFetch<HintResponse>(`/daily/hints?sentenceId=${sentenceId}`);
+export function getHints(sentenceId: string, signal?: AbortSignal) {
+  return apiFetch<HintResponse>(`/daily/hints?sentenceId=${sentenceId}`, { signal });
 }
 
-export function getYesterdayMe() {
-  return apiFetch<YesterdayMeResponse>("/daily/yesterday/me");
+export function getYesterdayMe(signal?: AbortSignal) {
+  return apiFetch<YesterdayMeResponse>("/daily/yesterday/me", { signal });
 }

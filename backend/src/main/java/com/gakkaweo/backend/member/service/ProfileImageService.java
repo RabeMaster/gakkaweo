@@ -43,8 +43,8 @@ public class ProfileImageService {
     String filename = publicId + ".webp";
     Path target = uploadDir.resolve(filename);
 
-    try {
-      Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+    try (InputStream input = file.getInputStream()) {
+      Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
     } catch (IOException e) {
       log.error("프로필 이미지 저장 실패: publicId={}", publicId, e);
       throw new BusinessException(ErrorCode.FILE_UPLOAD_FAILED);
@@ -95,6 +95,7 @@ public class ProfileImageService {
         return false;
       }
     }
+
     return true;
   }
 }

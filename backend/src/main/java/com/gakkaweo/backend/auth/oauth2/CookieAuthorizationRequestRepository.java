@@ -64,6 +64,7 @@ public class CookieAuthorizationRequestRepository
     if (authorizationRequest != null) {
       deleteCookie(response);
     }
+
     return authorizationRequest;
   }
 
@@ -84,11 +85,20 @@ public class CookieAuthorizationRequestRepository
     if (cookies == null) {
       return null;
     }
+
     for (Cookie cookie : cookies) {
       if (COOKIE_NAME.equals(cookie.getName())) {
-        return deserialize(cookie.getValue());
+        try {
+          return deserialize(cookie.getValue());
+        } catch (IllegalStateException
+            | IllegalArgumentException
+            | ClassCastException
+            | NullPointerException e) {
+          return null;
+        }
       }
     }
+
     return null;
   }
 

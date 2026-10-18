@@ -31,12 +31,12 @@ class CookieUtilsTest {
   }
 
   @Test
-  @DisplayName("createRefreshTokenCookie - Path=/auth/refresh")
+  @DisplayName("createRefreshTokenCookie - Path=/auth")
   void refreshToken_쿠키_경로() {
     CookieUtils utils = new CookieUtils(jwtProperties, new CookieProperties(false, ""));
     ResponseCookie cookie = utils.createRefreshTokenCookie("rt-value");
 
-    assertThat(cookie.getPath()).isEqualTo("/auth/refresh");
+    assertThat(cookie.getPath()).isEqualTo("/auth");
     assertThat(cookie.isHttpOnly()).isTrue();
   }
 

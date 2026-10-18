@@ -17,6 +17,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
@@ -56,6 +58,56 @@ class AiServiceClientTest {
     SimilarityResponse response = client.calculateSimilarity("원문", "추측");
 
     assertThat(response.score()).isEqualTo(73.5);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{}",
+        "{\"score\":null}",
+        "{\"score\":-1}",
+        "{\"score\":101}",
+        "{\"score\":\"NaN\"}",
+        "{\"score\":\"Infinity\"}",
+        "{\"score\":\"-Infinity\"}",
+        "{\"score\":1e309}",
+        "{\"score\":\"not-a-score\"}",
+        "not-json"
+      })
+  @DisplayName("AI 점수 누락, null, 범위 밖 값은 정상 게임 점수로 처리하지 않음")
+  void 잘못된_점수_거부(String body) {
+    wireMock.stubFor(
+        post(urlEqualTo("/similarity"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody(body)));
+
+    assertThatThrownBy(() -> client.calculateSimilarity("원문", "추측"))
+        .isInstanceOf(AiServiceException.class);
+  }
+
+  @Test
+  @DisplayName("AI 빈 HTTP 204 응답은 정상 게임 점수로 처리하지 않음")
+  void 빈_응답_거부() {
+    wireMock.stubFor(post(urlEqualTo("/similarity")).willReturn(aResponse().withStatus(204)));
+    assertThatThrownBy(() -> client.calculateSimilarity("원문", "추측"))
+        .isInstanceOf(AiServiceException.class);
+  }
+
+  @ParameterizedTest
+  @ValueSource(doubles = {0.0, 100.0})
+  @DisplayName("0점과 100점은 유효한 경계 점수")
+  void 경계_점수_허용(double score) {
+    wireMock.stubFor(
+        post(urlEqualTo("/similarity"))
+            .willReturn(
+                aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{\"score\":" + score + "}")));
+    assertThat(client.calculateSimilarity("원문", "추측").score()).isEqualTo(score);
   }
 
   @Test

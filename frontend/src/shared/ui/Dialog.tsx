@@ -1,7 +1,8 @@
-import { useId, type ReactNode } from "react";
+import { useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useEscapeStack } from "@/shared/hooks/useEscapeStack";
 import { useScrollLock } from "@/shared/hooks/useScrollLock";
+import { useFocusTrap } from "@/shared/hooks/useFocusTrap";
 
 interface DialogProps {
   isOpen?: boolean;
@@ -25,6 +26,8 @@ export function Dialog({
   disableClose = false,
 }: DialogProps) {
   const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(isOpen, panelRef);
 
   useScrollLock(isOpen);
 
@@ -51,6 +54,8 @@ export function Dialog({
       }}
     >
       <div
+        ref={panelRef}
+        tabIndex={-1}
         className={[
           "border-4 border-black dark:border-white bg-white dark:bg-gray-900 shadow-brutal w-full max-h-[85vh] flex flex-col mx-4 md:mx-0",
           maxWidth,

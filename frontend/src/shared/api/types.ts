@@ -1,13 +1,14 @@
-// --- Auth ---
+// --- 인증 ---
 
 export interface MeResponse {
   publicId: string;
   nickname: string;
   profileUrl: string | null;
   role: "USER" | "ADMIN" | "SUPERADMIN";
+  canChangePassword: boolean;
 }
 
-// --- Daily Game ---
+// --- 일일 게임 ---
 
 export interface TodayResponse {
   sentenceId: string;
@@ -71,7 +72,7 @@ export interface YesterdayMeResponse {
   cleared: boolean | null;
 }
 
-// --- Ranking ---
+// --- 랭킹 ---
 
 export interface RankingEntry {
   rank: number;
@@ -94,7 +95,7 @@ export interface RankingResponse {
   myRank: MyRank | null;
 }
 
-// --- Announcement (Public) ---
+// --- 공개 공지 ---
 
 export interface ActiveAnnouncementResponse {
   id: number;
@@ -105,7 +106,7 @@ export interface ActiveAnnouncementResponse {
   endsAt: string | null;
 }
 
-// --- Error ---
+// --- 오류 ---
 
 export interface ErrorBody {
   status: number;
