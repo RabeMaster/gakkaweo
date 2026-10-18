@@ -20,7 +20,7 @@ AI 임베딩 유사도 판별 기반 데일리 웹 게임입니다. 세멘틀(Se
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-[웹사이트 (운영중)](https://gakkaweo.r4b2.xyz) · [API 문서 (Swagger)](https://api.r4b2.xyz/swagger-ui.html) · [디자인 시스템](docs/design-system.md) · [기술 의사결정](docs/decisions/)
+[웹사이트 (운영중)](https://gakkaweo.r4b2.xyz) / [API 문서 (Swagger)](https://api.r4b2.xyz/swagger-ui.html) / [디자인 시스템](docs/design-system.md) / [기술 의사결정](docs/decisions/)
 
 </div>
 
@@ -54,8 +54,11 @@ AI 임베딩 유사도 판별 기반 데일리 웹 게임입니다. 세멘틀(Se
 **랭킹**
 
 - SSE 기반 실시간 랭킹 업데이트
-- 100% 달성자 선착순 -> 유사도 -> 시도 횟수 순 정렬
+- 유사도 우선 정렬. 100% 동점자는 먼저 달성한 순서
+- 100% 미만 동점자는 최고 기록 달성까지의 시도 횟수, 달성 시각 순서
 - Redis Sorted Set 스코어 인코딩
+- 서버 시작 시와 60초마다 DB 기록으로 랭킹 복구
+- 장애 시 마지막 정상 목록을 유지하고 재시도 안내
 
 **인증**
 
@@ -206,7 +209,7 @@ docker compose -f docker-compose.dev.yml up -d
 
 > AI Service는 FastAPI lifespan에서 CPU 모델(`jhgan/ko-sbert-sts`)을 로드하고 warmup합니다. > 최초 실행에는 모델 다운로드가 필요하며 소요 시간은 환경에 따라 달라집니다.
 
-FE·BE·AI는 NFC 및 Unicode White_Space 입력 정책을 맞추고, 원문 2~200자 제한과 정규화 후 최소 2자 검증을 적용합니다.
+FE/BE/AI는 NFC 및 Unicode White_Space 입력 정책을 맞추고, 원문 2~200자 제한과 정규화 후 최소 2자 검증을 적용합니다.
 
 ### 3. Backend 실행
 
@@ -231,7 +234,7 @@ pnpm dev
 
 최초 실행 시 `InitialDataSeeder`가 다음을 자동으로 처리합니다.
 
-- **기본 문장 5개** 자동 삽입 (`backend/src/main/resources/seed/sentences.txt`). 파일을 편집해 문장을 추가·교체할 수 있으며, 중복은 자동 skip됩니다.
+- **기본 문장 5개** 자동 삽입 (`backend/src/main/resources/seed/sentences.txt`). 파일을 편집해 문장을 추가/교체할 수 있으며, 중복은 자동 skip됩니다.
 - `.env`에 `SEED_ADMIN_PASSWORD`(8자 이상)를 설정하면 **SUPERADMIN 계정이 자동 생성**됩니다 (username: `admin`, 닉네임 자동 생성). 이후 `/admin` 접근이 가능합니다.
 - 비밀번호 8자 미만이거나 시드 파일이 없으면 서버 실행이 중단됩니다.
 
