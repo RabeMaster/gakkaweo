@@ -62,16 +62,48 @@ it("기본 공유를 지원하지 않으면 클립보드를 사용합니다", as
   expect(writeText).toHaveBeenCalledWith(`${text}\n${url}`);
 });
 
-it("공유와 클립보드를 모두 지원하지 않으면 지원 불가로 처리합니다", async () => {
+it("공유와 두 복사 방식이 모두 없는 환경은 지원 불가로 처리합니다", async () => {
   vi.stubGlobal("navigator", {});
   await expect(shareGameResult(text, url)).resolves.toBe("unsupported");
 });
 
-it("복사도 거절되면 호출자에게 오류를 전달합니다", async () => {
-  const error = new DOMException("denied", "NotAllowedError");
+it.each([
+  { name: "Clipboard API가 없으면 임시 입력란으로 복사합니다", clipboardAvailable: false, copied: true },
+  { name: "공유와 Clipboard API가 실패하면 임시 입력란으로 복사합니다", clipboardAvailable: true, copied: true },
+  { name: "임시 입력란 복사도 실패하면 오류를 전달하고 정리합니다", clipboardAvailable: true, copied: false },
+])("$name", async ({ clipboardAvailable, copied }) => {
+  class TestElement {
+    focus = vi.fn();
+  }
+  const activeElement = new TestElement();
+  const textarea = { value: "", readOnly: false, style: {}, focus: vi.fn(), select: vi.fn(), remove: vi.fn() };
+  const append = vi.fn();
+  const execCommand = vi.fn().mockReturnValue(copied);
+  const writeText = vi.fn().mockRejectedValue(new DOMException("denied", "NotAllowedError"));
   vi.stubGlobal("navigator", {
     share: vi.fn().mockRejectedValue(new TypeError("unsupported")),
-    clipboard: { writeText: vi.fn().mockRejectedValue(error) },
+    ...(clipboardAvailable ? { clipboard: { writeText } } : {}),
   });
-  await expect(shareGameResult(text, url)).rejects.toBe(error);
+  vi.stubGlobal("HTMLElement", TestElement);
+  vi.stubGlobal("document", {
+    activeElement,
+    createElement: vi.fn().mockReturnValue(textarea),
+    body: { append },
+    execCommand,
+  });
+
+  if (copied) {
+    await expect(shareGameResult(text, url)).resolves.toBe("copied");
+  } else {
+    await expect(shareGameResult(text, url)).rejects.toThrow("게임 결과를 복사하지 못했습니다.");
+  }
+
+  expect(writeText).toHaveBeenCalledTimes(clipboardAvailable ? 1 : 0);
+  expect(textarea.value).toBe(`${text}\n${url}`);
+  expect(append).toHaveBeenCalledWith(textarea);
+  expect(textarea.focus).toHaveBeenCalledWith({ preventScroll: true });
+  expect(textarea.select).toHaveBeenCalled();
+  expect(execCommand).toHaveBeenCalledWith("copy");
+  expect(textarea.remove).toHaveBeenCalled();
+  expect(activeElement.focus).toHaveBeenCalledWith({ preventScroll: true });
 });
