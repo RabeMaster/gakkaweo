@@ -34,6 +34,16 @@ public class LocalAuthService {
   private final TransactionTemplate transactionTemplate;
   private final AuthSessionService authSessionService;
 
+  private static boolean isPasswordTooLong(String password) {
+    return password.getBytes(StandardCharsets.UTF_8).length > PASSWORD_MAX_BYTES;
+  }
+
+  private static void validateNewPassword(String password) {
+    if (password.length() < PASSWORD_MIN_LENGTH || isPasswordTooLong(password)) {
+      throw new BusinessException(ErrorCode.VALIDATION_FAILED);
+    }
+  }
+
   public LoginResult registerAndLogin(String username, String password) {
     String hash = prepareRegistration(username, password);
 
@@ -190,16 +200,6 @@ public class LocalAuthService {
           account.changePasswordHash(newHash);
           authSessionService.revokeAll(member.getId());
         });
-  }
-
-  private static boolean isPasswordTooLong(String password) {
-    return password.getBytes(StandardCharsets.UTF_8).length > PASSWORD_MAX_BYTES;
-  }
-
-  private static void validateNewPassword(String password) {
-    if (password.length() < PASSWORD_MIN_LENGTH || isPasswordTooLong(password)) {
-      throw new BusinessException(ErrorCode.VALIDATION_FAILED);
-    }
   }
 
   public record LoginResult(Member member, TokenPair tokens) {}

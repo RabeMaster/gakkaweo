@@ -24,12 +24,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AuthSession extends BaseTimeEntity {
 
+  @Column(nullable = false, unique = true, updatable = false)
+  private final UUID publicId = UUID.randomUUID();
+
   @Id
   @GeneratedValue(strategy = IDENTITY)
   private Long id;
-
-  @Column(nullable = false, unique = true, updatable = false)
-  private final UUID publicId = UUID.randomUUID();
 
   @ManyToOne(fetch = LAZY)
   @JoinColumn(name = "member_id", nullable = false)
