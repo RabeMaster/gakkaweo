@@ -11,10 +11,15 @@ export const SOUND_PATHS: Record<SoundType, string> = {
 
 let currentAudio: HTMLAudioElement | null = null;
 
+function validVolume(value: string | null, fallback: number): number {
+  const parsed = value?.trim() ? Number(value) : NaN;
+  return Number.isFinite(parsed) ? Math.min(1, Math.max(0, parsed)) : fallback;
+}
+
 export function getSoundVolume(): number {
   try {
     const v = localStorage.getItem(SOUND_VOLUME_KEY);
-    return v !== null ? parseFloat(v) : DEFAULT_VOLUME;
+    return validVolume(v, DEFAULT_VOLUME);
   } catch {
     return DEFAULT_VOLUME;
   }
@@ -26,8 +31,8 @@ export function getLastVolume(): number {
     if (v === null) {
       return DEFAULT_VOLUME;
     }
-    const parsed = parseFloat(v);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_VOLUME;
+    const parsed = validVolume(v, DEFAULT_VOLUME);
+    return parsed > 0 ? parsed : DEFAULT_VOLUME;
   } catch {
     return DEFAULT_VOLUME;
   }
@@ -38,7 +43,7 @@ export function setLastVolume(v: number): void {
     return;
   }
   try {
-    localStorage.setItem(SOUND_LAST_VOLUME_KEY, String(v));
+    localStorage.setItem(SOUND_LAST_VOLUME_KEY, String(Math.min(1, v)));
   } catch {
     // 스토리지 접근 불가 시 무시
   }
