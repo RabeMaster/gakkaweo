@@ -26,6 +26,12 @@ public interface GameSessionRepository extends JpaRepository<GameSession, Long> 
   boolean existsByIdAndMemberPublicIdAndSentencePublicIdAndSentenceUsedAt(
       Long id, UUID memberId, UUID sentenceId, LocalDate usedAt);
 
+  boolean existsByMemberPublicIdAndSentenceUsedAtAndBestSimilarityGreaterThan(
+      UUID memberPublicId, LocalDate usedAt, BigDecimal similarity);
+
+  boolean existsBySentenceUsedAtAndMemberIsNotNullAndBestSimilarityGreaterThan(
+      LocalDate usedAt, BigDecimal similarity);
+
   @Modifying(clearAutomatically = true)
   @Query(
       "UPDATE GameSession g SET g.status ="

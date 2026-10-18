@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,8 +49,10 @@ import org.springframework.stereotype.Service;
 public class RankingService {
 
   private static final int TOP_RANKING_SIZE = 10;
+  private static final int MAX_REBUILD_ATTEMPTS = 3;
   private static final Duration EXPIRE_TTL = Duration.ofHours(1);
   private static final Duration LIVE_TTL = Duration.ofHours(30);
+  private static final Duration STAGING_TTL = Duration.ofMinutes(5);
   private static final long MAX_RANKING_ELAPSED_MILLIS = Duration.ofDays(1).toMillis() - 1;
 
   // 999회와 하루 경과 밀리초를 합해도 0.1점의 점수 간격을 침범하지 않습니다.
@@ -104,11 +107,7 @@ public class RankingService {
         return null;
       }
       // 커밋 이후 콜백 순서가 바뀌어도 최신 DB 기록과 회원 정보를 사용합니다.
-      session =
-          gameSessionRepository.findAllBySentenceWithMember(session.getSentence()).stream()
-              .filter(candidate -> candidate.getId().equals(submittedSession.getId()))
-              .findFirst()
-              .orElse(null);
+      session = gameSessionRepository.findById(submittedSession.getId()).orElse(null);
       if (session == null || session.getMember() == null) {
         markRecoveryNeeded(today);
         return null;
@@ -231,6 +230,7 @@ public class RankingService {
           String key = RedisKeyConstants.rankingKey(date);
           Set<String> members = redisTemplate.opsForZSet().reverseRange(key, 0, -1);
           Long total = redisTemplate.opsForZSet().zCard(key);
+          validateEmptyRanking(date, members, total == null ? 0 : total);
           return new RankingResponse(
               buildRankingEntries(members == null ? Set.of() : members, date),
               total == null ? 0 : total);
@@ -239,7 +239,7 @@ public class RankingService {
 
   private RankingResponse readRankings(
       LocalDate date, UUID sentencePublicId, Supplier<RankingResponse> reader) {
-    // 정상 조회는 한 번 대조하고 같은 잠금 안에서 응답을 만듭니다. 복구 후에는 다시 확인합니다.
+    // 전체 DB 대조는 주기적 복구에서 수행하고, 조회는 복구 표시와 현재 문제만 확인합니다.
     for (int attempt = 0; attempt < 2; attempt++) {
       writeCoordinator.lock();
       try {
@@ -251,11 +251,19 @@ public class RankingService {
                       .findByUsedAt(date)
                       .map(sentence -> sentence.getPublicId().equals(sentencePublicId))
                       .orElse(false);
-          if (sentenceMatches && !cacheCircuitOpen && !needsRecovery(date)) {
-            return reader.get();
+          if (sentenceMatches && !cacheCircuitOpen && !needsReadRecovery(date)) {
+            try {
+              return reader.get();
+            } catch (BusinessException e) {
+              if (e.getErrorCode() != ErrorCode.RANKING_UNAVAILABLE) {
+                throw e;
+              }
+              markRecoveryNeeded(date);
+            }
           }
         } catch (RuntimeException e) {
           unavailable(date, e);
+          log.warn("랭킹 조회 실패: date={}", date, e);
           throw new BusinessException(ErrorCode.RANKING_UNAVAILABLE);
         }
 
@@ -269,9 +277,10 @@ public class RankingService {
 
       // 재구축은 recoveryLock 다음에 조정 잠금을 잡으므로 조회 잠금을 먼저 해제합니다.
       try {
-        rebuildRankingCache(date);
+        rebuildRankingCache(date, true);
       } catch (RuntimeException e) {
         unavailable(date, e);
+        log.warn("랭킹 조회 중 복구 실패: date={}", date, e);
         throw new BusinessException(ErrorCode.RANKING_UNAVAILABLE);
       }
     }
@@ -288,12 +297,26 @@ public class RankingService {
     if (totalPlayers == null) {
       totalPlayers = 0L;
     }
+    validateEmptyRanking(date, topMembers, totalPlayers);
 
     if (topMembers == null || topMembers.isEmpty()) {
       return new RankingResponse(List.of(), totalPlayers);
     }
 
     return new RankingResponse(buildRankingEntries(topMembers, date), totalPlayers);
+  }
+
+  private void validateEmptyRanking(LocalDate date, Set<String> members, long totalPlayers) {
+    if (members != null && !members.isEmpty()) {
+      return;
+    }
+    // 빈 결과일 때만 존재 여부를 확인해 캐시 전체 유실과 정상 0명을 구분합니다.
+    if (totalPlayers > 0
+        || gameSessionRepository
+            .existsBySentenceUsedAtAndMemberIsNotNullAndBestSimilarityGreaterThan(
+                date, BigDecimal.ZERO)) {
+      throw new BusinessException(ErrorCode.RANKING_UNAVAILABLE);
+    }
   }
 
   private List<RankingEntry> buildRankingEntries(Set<String> memberKeys, LocalDate date) {
@@ -429,7 +452,35 @@ public class RankingService {
 
   @Timed(value = "ranking.cache.rebuild.duration", description = "Ranking cache rebuild time")
   public int rebuildRankingCache(LocalDate date) {
+    return rebuildRankingCache(date, false);
+  }
+
+  private int rebuildRankingCache(LocalDate date, boolean onlyIfNeeded) {
     recoveryLock.lock();
+    try {
+      // 기다리는 동안 다른 요청이 복구했다면 같은 작업을 반복하지 않습니다.
+      if (onlyIfNeeded && (cacheCircuitOpen || !needsReadRecovery(date))) {
+        return 0;
+      }
+      for (int attempt = 1; ; attempt++) {
+        try {
+          return rebuildRankingCacheOnce(date);
+        } catch (BusinessException e) {
+          if (e.getErrorCode() != ErrorCode.CONCURRENT_MODIFICATION
+              || attempt == MAX_REBUILD_ATTEMPTS) {
+            throw e;
+          }
+        }
+      }
+    } catch (RuntimeException e) {
+      unavailable(date, e);
+      throw e;
+    } finally {
+      recoveryLock.unlock();
+    }
+  }
+
+  private int rebuildRankingCacheOnce(LocalDate date) {
     List<String> stagingKeys = new ArrayList<>();
     try {
       long expectedRevision = writeCoordinator.revision();
@@ -456,22 +507,41 @@ public class RankingService {
         String detailKey = RedisKeyConstants.rankingDetailKey(date, member.getPublicId());
         String stagedDetail = detailKey + suffix;
         stagingKeys.add(stagedDetail);
-        redisTemplate
-            .opsForZSet()
-            .add(
-                stagedRanking,
-                RedisKeyConstants.memberKey(member.getPublicId()),
-                encodeScore(
-                    session.getBestSimilarity(),
-                    rankingAttempts(session),
-                    elapsedMillis(session, start),
-                    calculateClearedAtMillis(session, start)));
-        redisTemplate.expire(stagedRanking, Duration.ofMinutes(5));
-        redisTemplate.opsForHash().putAll(stagedDetail, detail(session, start));
-        redisTemplate.expire(stagedDetail, Duration.ofMinutes(5));
         swapKeys.add(detailKey);
         swapKeys.add(stagedDetail);
       }
+      var serializer = redisTemplate.getStringSerializer();
+      redisTemplate.executePipelined(
+          (RedisCallback<Object>)
+              connection -> {
+                byte[] ranking = serializer.serialize(stagedRanking);
+                for (int i = 0; i < sessions.size(); i++) {
+                  GameSession session = sessions.get(i);
+                  connection
+                      .zSetCommands()
+                      .zAdd(
+                          ranking,
+                          encodeScore(
+                              session.getBestSimilarity(),
+                              rankingAttempts(session),
+                              elapsedMillis(session, start),
+                              calculateClearedAtMillis(session, start)),
+                          serializer.serialize(
+                              RedisKeyConstants.memberKey(session.getMember().getPublicId())));
+                  byte[] stagedDetail = serializer.serialize(stagingKeys.get(i + 1));
+                  Map<byte[], byte[]> fields = new HashMap<>();
+                  detail(session, start)
+                      .forEach(
+                          (field, value) ->
+                              fields.put(serializer.serialize(field), serializer.serialize(value)));
+                  connection.hashCommands().hMSet(stagedDetail, fields);
+                  connection.keyCommands().expire(stagedDetail, STAGING_TTL.toSeconds());
+                }
+                if (!sessions.isEmpty()) {
+                  connection.keyCommands().expire(ranking, STAGING_TTL.toSeconds());
+                }
+                return null;
+              });
       writeCoordinator.lock();
       try {
         if (expectedRevision != writeCoordinator.revision()
@@ -539,9 +609,6 @@ public class RankingService {
         writeCoordinator.unlock();
       }
       return sessions.size();
-    } catch (RuntimeException e) {
-      unavailable(date, e);
-      throw e;
     } finally {
       try {
         if (!stagingKeys.isEmpty()) {
@@ -550,8 +617,22 @@ public class RankingService {
       } catch (DataAccessException e) {
         log.debug("임시 랭킹 키는 TTL로 정리합니다: date={}", date);
       }
-      recoveryLock.unlock();
     }
+  }
+
+  private boolean needsReadRecovery(LocalDate date) {
+    var sentence = dailySentenceRepository.findByUsedAt(date);
+    if (sentence.isEmpty()) {
+      return false;
+    }
+    if (cacheCircuitOpen || dirtyDates.containsKey(date)) {
+      return true;
+    }
+    return !sentence
+        .get()
+        .getPublicId()
+        .toString()
+        .equals(redisTemplate.opsForValue().get(RedisKeyConstants.rankingSyncKey(date)));
   }
 
   public void markRecoveryNeeded(LocalDate date) {
@@ -587,6 +668,7 @@ public class RankingService {
           .getPublicId()
           .toString()
           .equals(redisTemplate.opsForValue().get(RedisKeyConstants.rankingSyncKey(date)))) {
+        markRecoveryNeeded(date);
         return true;
       }
       List<GameSession> sessions =
@@ -597,6 +679,7 @@ public class RankingService {
               .toList();
       String key = RedisKeyConstants.rankingKey(date);
       if (redisTemplate.opsForZSet().zCard(key) != sessions.size()) {
+        markRecoveryNeeded(date);
         return true;
       }
       if (sessions.isEmpty()) {
@@ -635,6 +718,7 @@ public class RankingService {
         if (score == null
             || Double.compare(score, expected) != 0
             || !detail(session, start).equals(cachedRecords.get(i * 2 + 1))) {
+          markRecoveryNeeded(date);
           return true;
         }
       }

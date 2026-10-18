@@ -1,9 +1,10 @@
 package com.gakkaweo.backend.member.service;
 
-import com.gakkaweo.backend.domain.member.repository.MemberRepository;
+import com.gakkaweo.backend.domain.game.repository.GameSessionRepository;
 import com.gakkaweo.backend.ranking.event.RankingUpdateEvent;
 import com.gakkaweo.backend.ranking.service.RankingService;
 import com.gakkaweo.backend.ranking.service.RankingWriteCoordinator;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -17,7 +18,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class MemberRedisSyncer {
 
-  private final MemberRepository memberRepository;
+  private final GameSessionRepository gameSessionRepository;
   private final ApplicationEventPublisher eventPublisher;
   private final RankingWriteCoordinator rankingWriteCoordinator;
   private final RankingService rankingService;
@@ -32,20 +33,25 @@ public class MemberRedisSyncer {
   }
 
   private void sync(UUID publicId) {
+    LocalDate today = LocalDate.now(clock);
     rankingWriteCoordinator.lock();
     try {
+      if (!gameSessionRepository
+          .existsByMemberPublicIdAndSentenceUsedAtAndBestSimilarityGreaterThan(
+              publicId, today, BigDecimal.ZERO)) {
+        return;
+      }
       // 호출자가 전달한 이전 값 대신 최신 DB 상태로 전체 랭킹을 복원합니다.
       rankingWriteCoordinator.changed();
-      rankingService.markRecoveryNeeded(LocalDate.now(clock));
-      if (memberRepository.findByPublicId(publicId).isEmpty()
-          || rankingService.isCacheCircuitOpen()) {
+      rankingService.markRecoveryNeeded(today);
+      if (rankingService.isCacheCircuitOpen()) {
         return;
       }
     } finally {
       rankingWriteCoordinator.unlock();
     }
     try {
-      rankingService.rebuildRankingCache(LocalDate.now(clock));
+      rankingService.rebuildRankingCache(today);
       eventPublisher.publishEvent(new RankingUpdateEvent());
     } catch (RuntimeException e) {
       log.warn("회원 정보의 랭킹 반영을 다음 복구 주기에 재시도합니다", e);

@@ -15,6 +15,8 @@ import com.gakkaweo.backend.admin.dto.EmergencyReplaceRequest;
 import com.gakkaweo.backend.admin.service.AdminAuditService;
 import com.gakkaweo.backend.admin.service.AdminSentenceService;
 import com.gakkaweo.backend.auth.service.AccountService;
+import com.gakkaweo.backend.common.exception.BusinessException;
+import com.gakkaweo.backend.common.exception.ErrorCode;
 import com.gakkaweo.backend.common.redis.RedisKeyConstants;
 import com.gakkaweo.backend.domain.game.entity.DailySentence;
 import com.gakkaweo.backend.domain.game.entity.GameSession;
@@ -38,8 +40,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,6 +49,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.QueryTimeoutException;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -137,7 +138,9 @@ class RankingRecoveryIntegrationTest extends IntegrationTestBase {
     Double originalScore = redis.opsForZSet().score(key, memberKey);
     var originalDetail = redis.opsForHash().entries(detail);
     StringRedisTemplate failing = spy(redis);
-    doThrow(new QueryTimeoutException("synthetic staging failure")).when(failing).opsForHash();
+    doThrow(new QueryTimeoutException("synthetic staging failure"))
+        .when(failing)
+        .executePipelined(any(RedisCallback.class));
     var service =
         new RankingService(
             failing, sentenceRepository, sessionRepository, registry, clock, coordinator);
@@ -169,39 +172,50 @@ class RankingRecoveryIntegrationTest extends IntegrationTestBase {
   }
 
   @Test
-  @DisplayName("재구축과 실제 추측이 동시에 실행되어도 마지막 best를 유지한다")
+  @DisplayName("재구축 준비 후 최고 기록이 바뀌면 이전 자료를 버리고 최신 기록으로 재시도합니다")
+  @SuppressWarnings("unchecked")
   void 재구축_추측_경합() throws Exception {
     var sentence = testAuthHelper.createTodaySentence("동시 복구 문장");
     var member = testAuthHelper.createMember();
     seed(member, sentence, "90.0", 1);
     testSimilarityClient.setDefaultScore(new BigDecimal("93.0"));
-    var barrier = new CyclicBarrier(2);
-    try (var executor = Executors.newFixedThreadPool(2)) {
-      var rebuild =
-          executor.submit(
-              () -> {
-                barrier.await(5, TimeUnit.SECONDS);
-                return rankingService.rebuildRankingCache(LocalDate.now(clock));
-              });
-      var guess =
-          executor.submit(
-              () -> {
-                barrier.await(5, TimeUnit.SECONDS);
-                return gameService.guessAuthenticated(
-                    new GuessRequest(sentence.getPublicId(), "다음 추측"), member.getPublicId());
-              });
+    var entered = new CountDownLatch(1);
+    var proceed = new CountDownLatch(1);
+    var calls = new AtomicInteger();
+    var delayed = spy(redis);
+    doAnswer(
+            invocation -> {
+              if (calls.getAndIncrement() == 0) {
+                entered.countDown();
+                assertThat(proceed.await(10, TimeUnit.SECONDS)).isTrue();
+              }
+              return invocation.callRealMethod();
+            })
+        .when(delayed)
+        .executePipelined(any(RedisCallback.class));
+    var service =
+        new RankingService(
+            delayed, sentenceRepository, sessionRepository, registry, clock, coordinator);
+    try (var executor = Executors.newSingleThreadExecutor()) {
+      var rebuild = executor.submit(() -> service.rebuildRankingCache(LocalDate.now(clock)));
       try {
-        rebuild.get(15, TimeUnit.SECONDS);
-      } catch (ExecutionException e) {
-        assertThat(e.getCause())
-            .isInstanceOf(com.gakkaweo.backend.common.exception.BusinessException.class);
+        assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue();
+        assertThat(
+                gameService
+                    .guessAuthenticated(
+                        new GuessRequest(sentence.getPublicId(), "다음 추측"), member.getPublicId())
+                    .similarity())
+            .isEqualByComparingTo("93.0");
+      } finally {
+        proceed.countDown();
       }
-      assertThat(guess.get(15, TimeUnit.SECONDS).similarity()).isEqualByComparingTo("93.0");
+      assertThat(rebuild.get(10, TimeUnit.SECONDS)).isEqualTo(1);
     }
-    recovery.recover();
-    assertThat(rankingService.getRankings().rankings().getFirst().similarity())
+    assertThat(calls.get()).isEqualTo(2);
+    verify(delayed, times(1)).execute(any(RedisScript.class), anyList(), any(Object[].class));
+    assertThat(service.getRankings().rankings().getFirst().similarity())
         .isEqualByComparingTo("93.0");
-    assertThat(rankingService.getRankings().rankings().getFirst().attemptCount()).isEqualTo(2);
+    assertThat(service.getRankings().rankings().getFirst().attemptCount()).isEqualTo(2);
   }
 
   @Test
@@ -234,7 +248,7 @@ class RankingRecoveryIntegrationTest extends IntegrationTestBase {
               return invocation.callRealMethod();
             })
         .when(delayed)
-        .opsForHash();
+        .executePipelined(any(RedisCallback.class));
     var service =
         new RankingService(
             delayed, sentenceRepository, sessionRepository, registry, clock, coordinator);
@@ -267,7 +281,8 @@ class RankingRecoveryIntegrationTest extends IntegrationTestBase {
   }
 
   @Test
-  @DisplayName("게임 변경이 발생하면 staging revision 충돌을 감지해 이전 snapshot을 교체하지 않는다")
+  @DisplayName("준비 중 회원이 탈퇴하면 이전 자료를 버리고 탈퇴 후 기록으로 재시도합니다")
+  @SuppressWarnings("unchecked")
   void staging_중_회원_탈퇴_경합() throws Exception {
     var sentence = testAuthHelper.createTodaySentence("탈퇴 경쟁 문장");
     var member = testAuthHelper.createMember();
@@ -276,14 +291,14 @@ class RankingRecoveryIntegrationTest extends IntegrationTestBase {
     var entered = new CountDownLatch(1);
     var proceed = new CountDownLatch(1);
     StringRedisTemplate delayed = spy(redis);
-    org.mockito.Mockito.doAnswer(
+    doAnswer(
             invocation -> {
               entered.countDown();
               assertThat(proceed.await(10, TimeUnit.SECONDS)).isTrue();
-              return redis.opsForHash();
+              return invocation.callRealMethod();
             })
         .when(delayed)
-        .opsForHash();
+        .executePipelined(any(RedisCallback.class));
     var service =
         new RankingService(
             delayed, sentenceRepository, sessionRepository, registry, clock, coordinator);
@@ -293,13 +308,47 @@ class RankingRecoveryIntegrationTest extends IntegrationTestBase {
       accountService.deleteAccount(member.getPublicId());
       rankingService.cleanupMemberRanking(member.getPublicId());
       proceed.countDown();
-      assertThatThrownBy(() -> rebuild.get(10, TimeUnit.SECONDS))
-          .isInstanceOf(ExecutionException.class)
-          .hasCauseInstanceOf(com.gakkaweo.backend.common.exception.BusinessException.class);
+      assertThat(rebuild.get(10, TimeUnit.SECONDS)).isZero();
     } finally {
       proceed.countDown();
     }
     assertThat(rankingService.getRankings().rankings()).isEmpty();
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  @DisplayName("복구가 계속 충돌하면 세 번만 시도하고 기존 캐시와 복구 표시를 보존합니다")
+  void 복구_충돌_재시도_제한() {
+    var sentence = testAuthHelper.createTodaySentence("복구 재시도 제한 문장");
+    var member = testAuthHelper.createMember();
+    var session = seed(member, sentence, "90.0", 1);
+    rankingService.updateRanking(session, member);
+    String key = RedisKeyConstants.rankingKey(LocalDate.now(clock));
+    Double original =
+        redis.opsForZSet().score(key, RedisKeyConstants.memberKey(member.getPublicId()));
+    var changed = spy(redis);
+    doAnswer(
+            invocation -> {
+              Object result = invocation.callRealMethod();
+              coordinator.changed();
+              return result;
+            })
+        .when(changed)
+        .executePipelined(any(RedisCallback.class));
+    var service =
+        new RankingService(
+            changed, sentenceRepository, sessionRepository, registry, clock, coordinator);
+
+    assertThatThrownBy(() -> service.rebuildRankingCache(LocalDate.now(clock)))
+        .isInstanceOfSatisfying(
+            BusinessException.class,
+            e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.CONCURRENT_MODIFICATION));
+
+    verify(changed, times(3)).executePipelined(any(RedisCallback.class));
+    assertThat(redis.opsForZSet().score(key, RedisKeyConstants.memberKey(member.getPublicId())))
+        .isEqualTo(original);
+    assertThat(redis.keys("*:rebuild:*")).isEmpty();
+    assertThat(service.needsRecovery(LocalDate.now(clock))).isTrue();
   }
 
   @Test

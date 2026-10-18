@@ -4,6 +4,7 @@ import static com.gakkaweo.backend.common.time.TimeConstants.KST;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyList;
 import static org.mockito.Mockito.clearInvocations;
@@ -32,10 +33,14 @@ import com.gakkaweo.backend.ranking.service.RankingWriteCoordinator;
 import com.gakkaweo.backend.support.IntegrationTestBase;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +50,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @DisplayName("랭킹 장애 계약·정본 복구 통합 테스트")
@@ -79,18 +85,23 @@ class RankingContractTest extends IntegrationTestBase {
             clock,
             rankingWriteCoordinator);
     service.recordCacheFailure(today);
+    var staging = new AtomicBoolean(true);
     doAnswer(
             invocation -> {
-              for (int i = 0; i < 3; i++) {
-                assertThatThrownBy(service::getRankings)
-                    .isInstanceOfSatisfying(
-                        BusinessException.class,
-                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.RANKING_UNAVAILABLE));
+              if (staging.getAndSet(false)) {
+                for (int i = 0; i < 3; i++) {
+                  assertThatThrownBy(service::getRankings)
+                      .isInstanceOfSatisfying(
+                          BusinessException.class,
+                          e ->
+                              assertThat(e.getErrorCode())
+                                  .isEqualTo(ErrorCode.RANKING_UNAVAILABLE));
+                }
               }
               return invocation.callRealMethod();
             })
         .when(redis)
-        .opsForHash();
+        .executePipelined(any(RedisCallback.class));
 
     service.rebuildRankingCache(today);
 
@@ -162,8 +173,8 @@ class RankingContractTest extends IntegrationTestBase {
 
   @Test
   @SuppressWarnings("unchecked")
-  @DisplayName("정상 랭킹 조회는 DB 전체 대조 한 번과 Redis 배치 조회로 동일한 순위를 반환합니다")
-  void 정상_조회_단일_대조와_배치() {
+  @DisplayName("정상 랭킹 조회는 전체 DB 대조 없이 필요한 상세 정보만 배치로 조회합니다")
+  void 정상_조회_전체대조_생략() {
     var sentence = testAuthHelper.createTodaySentence("배치 조회 문장");
     for (int i = 0; i < 12; i++) {
       seed(testAuthHelper.createMember(), sentence, "90.0", i + 1, clock.instant());
@@ -186,8 +197,8 @@ class RankingContractTest extends IntegrationTestBase {
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.rankings()).hasSize(10);
     assertThat(actual.totalPlayers()).isEqualTo(12);
-    verify(gameSessionRepository, times(1)).findAllBySentenceWithMember(any());
-    verify(redis, times(2)).executePipelined(any(RedisCallback.class));
+    verify(gameSessionRepository, never()).findAllBySentenceWithMember(any());
+    verify(redis, times(1)).executePipelined(any(RedisCallback.class));
     verify(redis, never()).opsForHash();
   }
 
@@ -211,16 +222,14 @@ class RankingContractTest extends IntegrationTestBase {
             RedisKeyConstants.memberKey(outsider.getPublicId()),
             1);
 
-    assertThat(rankingService.needsRecovery(today)).isTrue();
-    rankingService.getRankings();
+    rankingRecoveryScheduler.recover();
     assertThat(rankingService.getFullRankingsForDate(today)).isEqualTo(expected);
 
     redisTemplate
         .opsForHash()
         .put(RedisKeyConstants.rankingDetailKey(today, outsider.getPublicId()), "nickname", "손상");
 
-    assertThat(rankingService.needsRecovery(today)).isTrue();
-    rankingService.getRankings();
+    rankingRecoveryScheduler.recover();
     assertThat(rankingService.getFullRankingsForDate(today)).isEqualTo(expected);
   }
 
@@ -257,6 +266,23 @@ class RankingContractTest extends IntegrationTestBase {
         .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
 
     assertThat(rankingService.needsRecovery(today)).isFalse();
+  }
+
+  @Test
+  @DisplayName("동기화 키가 남아 있어도 랭킹 키 유실을 정상 0명으로 응답하지 않습니다")
+  void 랭킹키_유실_빈목록_방지() {
+    var sentence = testAuthHelper.createTodaySentence("전체 유실 문장");
+    seed(testAuthHelper.createMember(), sentence, "90", 1, clock.instant());
+    LocalDate today = LocalDate.now(clock);
+    rankingService.rebuildRankingCache(today);
+    var expected = rankingService.getRankings();
+
+    redisTemplate.delete(RedisKeyConstants.rankingKey(today));
+    assertThat(rankingService.getRankings()).isEqualTo(expected);
+
+    redisTemplate.delete(RedisKeyConstants.rankingKey(today));
+    assertThat(rankingService.getFullRankingsForDate(today).rankings())
+        .isEqualTo(expected.rankings());
   }
 
   @Test
@@ -515,6 +541,93 @@ class RankingContractTest extends IntegrationTestBase {
         });
     memberRedisSyncer.updateNickname(member.getPublicId(), "이전닉네임");
     assertThat(rankingService.getRankings().rankings().getFirst().nickname()).isEqualTo("최신닉네임");
+  }
+
+  @Test
+  @DisplayName("최고 기록 콜백은 해당 세션만 다시 조회합니다")
+  void 최고기록_단건_조회() {
+    var sentence = testAuthHelper.createTodaySentence("단건 갱신 문장");
+    var member = testAuthHelper.createMember();
+    var session = seed(member, sentence, "90", 2, clock.instant());
+    clearInvocations(gameSessionRepository);
+
+    assertThat(rankingService.updateRanking(session, member)).isEqualTo(1);
+
+    verify(gameSessionRepository).findById(session.getId());
+    verify(gameSessionRepository, never()).findAllBySentenceWithMember(any());
+  }
+
+  @Test
+  @DisplayName("미참여 회원과 0점 세션의 정보 변경은 랭킹 복구를 유발하지 않습니다")
+  void 순위없는_회원_변경_복구_생략() {
+    var sentence = testAuthHelper.createTodaySentence("참여 조건 문장");
+    var member = testAuthHelper.createMember();
+    LocalDate today = LocalDate.now(clock);
+    rankingService.rebuildRankingCache(today);
+    long revision = rankingWriteCoordinator.revision();
+    clearInvocations(gameSessionRepository);
+
+    memberRedisSyncer.updateNickname(member.getPublicId(), "변경");
+    seed(member, sentence, "0", 1, clock.instant());
+    memberRedisSyncer.updateProfileUrl(member.getPublicId(), "/profile.webp");
+
+    assertThat(rankingWriteCoordinator.revision()).isEqualTo(revision);
+    assertThat(rankingService.isCacheCircuitOpen()).isFalse();
+    assertThat(rankingService.needsRecovery(today)).isFalse();
+    verify(gameSessionRepository, times(1)).findAllBySentenceWithMember(any());
+  }
+
+  @Test
+  @DisplayName("랭킹 참여 회원의 정보 변경은 Redis 차단 중에도 복구 표시를 남깁니다")
+  void 참여회원_차단중_복구표시() {
+    var sentence = testAuthHelper.createTodaySentence("회원 복구 표시 문장");
+    var member = testAuthHelper.createMember();
+    seed(member, sentence, "90", 1, clock.instant());
+    LocalDate today = LocalDate.now(clock);
+    rankingService.rebuildRankingCache(today);
+    rankingService.recordCacheFailure(today);
+    long revision = rankingWriteCoordinator.revision();
+    try {
+      memberRedisSyncer.updateNickname(member.getPublicId(), "변경");
+      assertThat(rankingWriteCoordinator.revision()).isEqualTo(revision + 1);
+      assertThat(rankingService.isCacheCircuitOpen()).isTrue();
+      assertThat(rankingService.needsRecovery(today)).isTrue();
+    } finally {
+      rankingService.rebuildRankingCache(today);
+    }
+  }
+
+  @Test
+  @DisplayName("같은 복구를 기다리는 조회 요청들은 캐시를 한 번만 재구축합니다")
+  void 대기중_조회_중복복구_방지() throws Exception {
+    var sentence = testAuthHelper.createTodaySentence("중복 복구 문장");
+    seed(testAuthHelper.createMember(), sentence, "90", 1, clock.instant());
+    var redis = spy(redisTemplate);
+    var service =
+        new RankingService(
+            redis,
+            dailySentenceRepository,
+            gameSessionRepository,
+            meterRegistry,
+            clock,
+            rankingWriteCoordinator);
+    service.markRecoveryNeeded(LocalDate.now(clock));
+    var lock = (ReentrantLock) ReflectionTestUtils.getField(service, "recoveryLock");
+    clearInvocations(gameSessionRepository);
+    try (var executor = Executors.newFixedThreadPool(2)) {
+      lock.lock();
+      var first = executor.submit(service::getRankings);
+      var second = executor.submit(service::getRankings);
+      try {
+        await().atMost(Duration.ofSeconds(5)).until(() -> lock.getQueueLength() == 2);
+      } finally {
+        lock.unlock();
+      }
+      assertThat(first.get(10, SECONDS)).isEqualTo(second.get(10, SECONDS));
+      assertThat(service.getRankings().rankings()).hasSize(1);
+    }
+    verify(gameSessionRepository, times(1)).findAllBySentenceWithMember(any());
+    verify(redis, times(1)).execute(any(RedisScript.class), anyList(), any(Object[].class));
   }
 
   private GameSession seed(
