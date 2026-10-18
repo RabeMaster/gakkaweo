@@ -16,7 +16,6 @@ import io.swagger.v3.oas.models.servers.Server;
 import java.util.List;
 import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springdoc.core.models.GroupedOpenApi;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -116,17 +115,6 @@ public class OpenApiConfig {
         .group("admin")
         .displayName("Admin API")
         .pathsToMatch("/admin/**")
-        .build();
-  }
-
-  @Bean
-  @ConditionalOnProperty(name = "app.openapi.docs-mode", havingValue = "true")
-  public GroupedOpenApi fullGroup() {
-    return GroupedOpenApi.builder()
-        .group("full")
-        .displayName("Full API (CI)")
-        .pathsToMatch("/**")
-        .addOpenApiCustomizer(oauthPathsCustomizer())
         .build();
   }
 }

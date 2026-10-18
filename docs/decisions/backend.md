@@ -376,10 +376,8 @@ Flyway는 DDL 전용으로 유지하고, DML(초기 admin 계정 + 기본 문장
 
 수기 작성 `docs/api-spec.md`를 springdoc-openapi로 대체했다.
 
-### 이중 분리
-
-- **런타임 Swagger UI** (`/swagger-ui.html`): 비인증 시 public 그룹만, ADMIN 로그인 시 admin 그룹 추가 노출
-- **GitHub Pages 정적 사이트** (`docs-site/`): CI가 `docs-mode=true`로 전체 스펙(`/v3/api-docs/full`)을 생성해 `gh-pages`에 배포
+런타임 Swagger UI(`/swagger-ui.html`)를 API 문서로 사용한다.  
+비인증 시 public 그룹만, ADMIN 로그인 시 admin 그룹도 표시한다.
 
 ### Role 기반 그룹 필터링
 
@@ -388,11 +386,6 @@ Spring Security role 기반으로 admin 그룹 접근을 제어한다.
 - `GroupedOpenApi` admin 빈은 항상 등록하되, `/v3/api-docs/admin`은 `hasRole('ADMIN')`으로 보호
 - `SwaggerConfigController`가 기본 `/v3/api-docs/swagger-config`를 대체해 `SecurityContextHolder` Principal 기반으로 그룹 목록 필터링
 - 비ADMIN에게 admin 그룹명 자체가 드롭다운에 표시되지 않음
-
-### CI 전용 모드 (`docs-mode=true`)
-
-- `NoOpSimilarityService`(`@Primary` + `@ConditionalOnProperty`)로 AI 서비스 없이 Spring 컨텍스트 부팅
-- `full` 그룹은 `@ConditionalOnProperty`(1차) + SecurityConfig `access` 체크(2차)로 이중 차단
 
 ### 어노테이션 Tier 2
 

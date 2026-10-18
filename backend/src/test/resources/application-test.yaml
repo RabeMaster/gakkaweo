@@ -95,8 +95,6 @@ app:
   seed:
     enabled: false
     admin-password: ""
-  openapi:
-    docs-mode: false
 
 springdoc:
   api-docs:

@@ -98,6 +98,52 @@ class SecurityConfigTest extends IntegrationTestBase {
   }
 
   @Test
+  @DisplayName("런타임 public API 문서는 미인증 접근 허용")
+  void public_API_문서_미인증_허용() {
+    ResponseEntity<String> response =
+        restTemplate.getForEntity(url("/v3/api-docs/public"), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).contains("\"openapi\"").doesNotContain("\"/admin/");
+  }
+
+  @Test
+  @DisplayName("런타임 admin API 문서는 일반 회원 접근 차단, 관리자 접근 허용")
+  void admin_API_문서_권한_제한() {
+    Member member = testAuthHelper.createMember();
+    Member admin = testAuthHelper.createAdmin();
+
+    ResponseEntity<String> memberResponse =
+        restTemplate.exchange(
+            url("/v3/api-docs/admin"),
+            HttpMethod.GET,
+            new HttpEntity<>(testAuthHelper.cookieHeaderFor(member)),
+            String.class);
+    ResponseEntity<String> adminResponse =
+        restTemplate.exchange(
+            url("/v3/api-docs/admin"),
+            HttpMethod.GET,
+            new HttpEntity<>(testAuthHelper.cookieHeaderFor(admin)),
+            String.class);
+
+    assertThat(memberResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(adminResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  @DisplayName("별도 게시용 full API 문서는 관리자도 접근 차단")
+  void full_API_문서_관리자_접근_차단() {
+    Member admin = testAuthHelper.createAdmin();
+    HttpHeaders headers = testAuthHelper.cookieHeaderFor(admin);
+
+    ResponseEntity<String> response =
+        restTemplate.exchange(
+            url("/v3/api-docs/full"), HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+  }
+
+  @Test
   @DisplayName("public 엔드포인트 - 미인증 접근 허용")
   void public_미인증_허용() {
     ResponseEntity<String> health = restTemplate.getForEntity(url("/health"), String.class);

@@ -42,9 +42,6 @@ public class SwaggerConfigController {
         .filter(
             group -> {
               String name = group.getGroup();
-              if ("full".equals(name)) {
-                return false;
-              }
               if ("admin".equals(name)) {
                 return isAdmin;
               }

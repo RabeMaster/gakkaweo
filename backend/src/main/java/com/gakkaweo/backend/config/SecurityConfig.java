@@ -10,7 +10,6 @@ import com.gakkaweo.backend.auth.oauth2.handler.OAuth2LoginSuccessHandler;
 import com.gakkaweo.backend.auth.oauth2.service.CustomOAuth2UserService;
 import com.gakkaweo.backend.auth.security.RestAccessDeniedHandler;
 import com.gakkaweo.backend.auth.security.RestAuthenticationEntryPoint;
-import com.gakkaweo.backend.config.openapi.OpenApiProperties;
 import com.gakkaweo.backend.ratelimit.filter.RateLimitFilter;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,6 @@ import org.springframework.security.access.expression.method.DefaultMethodSecuri
 import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
-import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -45,7 +43,6 @@ public class SecurityConfig {
   private final OAuth2Properties oAuth2Properties;
   private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
   private final RestAccessDeniedHandler restAccessDeniedHandler;
-  private final OpenApiProperties openApiProperties;
 
   @Bean
   static RoleHierarchy roleHierarchy() {
@@ -81,7 +78,7 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/uploads/**")
                     .permitAll()
-                    .requestMatchers("/v3/api-docs")
+                    .requestMatchers("/v3/api-docs", "/v3/api-docs/full")
                     .denyAll()
                     .requestMatchers(
                         "/swagger-ui.html",
@@ -93,10 +90,6 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/v3/api-docs/admin")
                     .hasRole("ADMIN")
-                    .requestMatchers("/v3/api-docs/full")
-                    .access(
-                        (authentication, context) ->
-                            new AuthorizationDecision(openApiProperties.docsMode()))
                     .requestMatchers(HttpMethod.GET, "/daily/today")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/daily/guess")
