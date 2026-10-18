@@ -1,3 +1,4 @@
+import { getSessionGeneration } from "@/shared/api/sessionContext";
 import type { ErrorBody } from "@/shared/api/types";
 import { API_BASE_URL } from "@/shared/config/env";
 
@@ -78,6 +79,13 @@ export async function apiFetch<T>(
     throw new TypeError("Specify body or bodyFactory, not both");
   }
 
+  const generation = getSessionGeneration();
+  const assertCurrent = () => {
+    restOptions.signal?.throwIfAborted();
+    if (generation !== getSessionGeneration()) {
+      throw new DOMException("Login context changed", "AbortError");
+    }
+  };
   const url = `${API_BASE_URL}${path}`;
   const method = restOptions.method?.toUpperCase() ?? "GET";
   const hasBody = method !== "GET" && method !== "HEAD";
@@ -107,6 +115,7 @@ export async function apiFetch<T>(
   const canRetry = !(config.body instanceof ReadableStream) || Boolean(bodyFactory);
 
   let res = await fetch(url, config);
+  assertCurrent();
 
   if (
     res.status === 401 &&
@@ -122,10 +131,13 @@ export async function apiFetch<T>(
     }
 
     const refreshed = await refreshPromise;
+    assertCurrent();
     if (refreshed) {
       res = await fetch(url, bodyFactory ? createConfig() : config);
     }
   }
 
-  return handleResponse<T>(res);
+  const result = await handleResponse<T>(res);
+  assertCurrent();
+  return result;
 }
